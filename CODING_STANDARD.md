@@ -1138,17 +1138,39 @@ void motor_init(motor_t *motor, const motor_cfg_t *cfg);
 
 **错误上报**：
 
-采用蓝牙屏显输出，利用项目中已有的 `Display` 模块，将错误信息写入指定行。原则：
-
-- 只上报错误（ERR 级别），不记录一般信息和调试信息
-- 一个时刻通常只有一个错误源，一条屏显行足够
-- 错误格式：模块名 + 错误简述，如 `"motor: init fail"`、`"sensor: i2c nack"`
+采用蓝牙屏显输出，通过 `Display` 模块统一管理。`Display` 模块内部维护一个错误字符串，对外提供修改接口，在 `Display_Task()` 刷新周期中通过 `Blueteeth_Display()` 打印到指定的错误行。
 
 ```c
-/* Display 模块接口（已有） */
+/* === display.h === */
+#define DISPLAY_LINE_ERROR_Y  260   /* 错误信息专用行 */
+
 void display_show_error(const char *format, ...);
 
-/* 各模块中触发错误上报 */
+/* === display.c === */
+static char g_error_msg[64];
+
+void display_show_error(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vsnprintf(g_error_msg, sizeof(g_error_msg), format, args);
+    va_end(args);
+}
+
+void Display_Task(void)
+{
+    if (!displayRefreshFlag) return;
+    displayRefreshFlag = 0;
+
+    /* ... 其他数据行 ... */
+
+    /* 错误行：有错则显示，无错则清空 */
+    Blueteeth_Display(0, DISPLAY_LINE_ERROR_Y,
+                      (g_error_msg[0] != '\0') ? "Err: %s" : "",
+                      g_error_msg);
+}
+
+/* === 各模块中触发错误上报 === */
 void motor_task(void)
 {
     if (motor.error_flag) {
@@ -1163,7 +1185,13 @@ void motor_task(void)
 }
 ```
 
-不需要复杂的日志框架。各模块在错误发生时自行调用 `display_show_error()` 即可。
+原则：
+
+- 蓝牙串口软件：江协科技蓝牙串口小程序
+- 只上报错误，不记录一般信息和调试信息
+- 一个时刻通常只有一个错误源，一条屏显行足够
+- 错误格式：模块名 + 错误简述，如 `"motor: init fail"`、`"sensor: i2c nack"`
+- `Display_Task` 中无错误时该行输出空字符串，覆盖旧的错误信息
 
 ### 12.12 句柄传递
 
