@@ -39,6 +39,9 @@ DriverLibrary/
 | ti + st | encoder | 编码器（static+getter） |
 | ti + st | pwm | PWM 输出 |
 | ti + st | motor | 直流有刷电机，DRV8874（IN/IN，cfg 注入） |
+| ti | cam | 摄像头串口通信（UART DMA+FIFO+帧解析） |
+| ti | gyroscope | 姿态传感器（UART DMA+FIFO+三态帧解析） |
+| ti | ultrasonic | 超声波测距（HC-SR04，定时器捕获） |
 
 ## 模块清单
 
@@ -46,10 +49,10 @@ DriverLibrary/
 |------|-------|-----|------|
 | blueteeth | ✓ (新) | ✓ (新) | 蓝牙串口通信（DMA+FIFO+协议解析） |
 | buzzer | ✓ (新) | ✓ (新) | 蜂鸣器 |
-| cam | ✓ | ✓ | 摄像头串口通信 |
+| cam | ✓ (旧) | ✓ (新) | 摄像头串口通信 |
 | display | — | ✓ | 蓝牙调试仪表盘 |
 | encoder | ✓ (新) | ✓ (新) | 正交编码器 |
-| gyroscope | ✓ | ✓ | 陀螺仪 |
+| gyroscope | ✓ (旧) | ✓ (新) | 陀螺仪 |
 | key | ✓ (新) | ✓ (新) | 按键扫描（双 task：消抖+事件分类） |
 | laser | ✓ | — | 激光测距 |
 | led | ✓ (新) | ✓ (新) | LED 控制 |
@@ -60,7 +63,7 @@ DriverLibrary/
 | pwm | ✓ (新) | ✓ (新) | PWM 输出 |
 | sensor | ✓ | ✓ | I2C 传感器 |
 | step_motor | ✓ | — | 步进电机 |
-| ultrasonic | ✓ | ✓ | 超声波测距 |
+| ultrasonic | ✓ (旧) | ✓ (新) | 超声波测距 |
 
 ## 使用方式
 

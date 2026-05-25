@@ -61,6 +61,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/encoder`、`st/encoder` — 编码器（TI: 左QEI+右捕获，STM32: 双QEI；static+getter）
 - `ti/pwm`、`st/pwm` — PWM 输出（TI: 20kHz/CH0+CH1，STM32: ARR=8400/CH3+CH4）
 - `ti/motor`、`st/motor` — 直流有刷电机，适配 DRV8874（IN/IN 模式，直接 PWM 比较值，左右方向引脚反相；引脚 cfg 注入）
+- `ti/cam` — 摄像头串口通信（UART DMA + FIFO + 帧解析）
+- `ti/gyroscope` — 姿态传感器（UART DMA + FIFO + 三态帧解析 + 校验）
+- `ti/ultrasonic` — 超声波测距（HC-SR04，定时器捕获 + GPIO 触发 + 状态机）
 
 ## 电机闭环链路（encoder + pwm + motor）
 

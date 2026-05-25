@@ -1,49 +1,58 @@
-#ifndef __ULTRASONIC_H
-#define __ULTRASONIC_H
+#ifndef ULTRASONIC_H
+#define ULTRASONIC_H
 
-#include "header.h"
+#include "ti_msp_dl_config.h"
+#include <stdint.h>
 
-#define ULTRASONIC_TRIG_PORT    GPIO_ULTRASONIC_TRIG_PORT
-#define ULTRASONIC_TRIG_PIN     GPIO_ULTRASONIC_TRIG_PIN_3_PIN
+/* 超声波运行参数 */
+#define ULTRASONIC_MAX_TIME_US  65535  /* 超时阈值（us），超过判定为无效 */
+#define ULTRASONIC_PERIOD_MS    70     /* 轮询周期（ms），不能小于 60ms */
+#define ULTRASONIC_SOUND_SPEED  340.0f /* 声速（m/s） */
 
-#define ULTRASONIC_ECHO_PORT    GPIOB
-#define ULTRASONIC_ECHO_PIN     GPIO_CAPTURE_ULTRASONIC_ECHO_C0_PIN
+/* 超声波状态 */
+typedef enum {
+    ULTRASONIC_STATE_IDLE = 0,
+    ULTRASONIC_STATE_WAIT_ECHO,
+} ultrasonic_state_t;
 
-// 超声波定时器运行参数
-#define ULTRASONIC_MAX_TIME_US  65535  // 超过 65.535ms 判定为超出距离
-#define ULTRASONIC_PERIOD_MS    70     // 定时轮询周期不能小于 70ms
-#define ULTRASONIC_SOUND_SPEED  340.0f // 声音传播速度 (m/s)
-
-typedef enum 
-{
-    ULTRA_STATE_IDLE = 0,
-    ULTRA_STATE_WAIT_ECHO         // 等待输入捕获接收
-} Ultrasonic_State_t;
-
-typedef struct
-{
+/* 测距结果 */
+typedef struct {
     float distance_mm;
     uint8_t is_valid;
-} Ultrasonic_Data_Struct;
+} ultrasonic_data_t;
 
-typedef struct 
-{
-    GPTIMER_Regs *htim;     // TI 定时器基址指针 (例如 TIMG0)
+/* 超声波配置结构体 */
+typedef struct {
+    GPIO_Regs *trig_port;
+    uint32_t trig_pin;
+    GPIO_Regs *echo_port;
+    uint32_t echo_pin;
+    uint32_t timer_load_value; /* 捕获定时器 LOAD 值（溢出计算用） */
+} ultrasonic_cfg_t;
+
+/* 超声波句柄 */
+typedef struct {
+    GPTIMER_Regs *htim;
+    GPIO_Regs *trig_port;
+    uint32_t trig_pin;
+
     uint32_t start_time;
     uint32_t end_time;
-    
     uint32_t last_trigger_tick;
-    volatile uint8_t capture_flag;   // 0: 空闲，1: 已捕获上升沿，2: 已捕获下降沿
-    Ultrasonic_State_t state;
-} Ultrasonic_Func_Struct;
 
-extern Ultrasonic_Data_Struct ultrasonicData;
+    volatile uint8_t capture_flag;
+    ultrasonic_state_t state;
+} ultrasonic_handle_t;
 
-// 函数声明，需要在你存放系统滴答的地方提供一个获取毫秒的函数（或者用自定义全局变量 tick_ms）
-extern uint32_t Get_SystemTick(void);
+/* 获取系统 tick（ms），需由应用层提供实现 */
+extern uint32_t get_system_tick(void);
 
-void Ultrasonic_Init(GPTIMER_Regs *htim);
-void Ultrasonic_Task(void);
-void Ultrasonic_CaptureCallback(GPTIMER_Regs *htim);
+void ultrasonic_init(ultrasonic_handle_t *handle,
+                     const ultrasonic_cfg_t *cfg,
+                     GPTIMER_Regs *htim);
+void ultrasonic_task(ultrasonic_handle_t *handle);
+void ultrasonic_capture_callback(ultrasonic_handle_t *handle,
+                                 GPTIMER_Regs *htim);
+ultrasonic_data_t ultrasonic_get_data(void);
 
 #endif
