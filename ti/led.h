@@ -1,11 +1,27 @@
-#ifndef __LED_H_
-#define __LED_H_
+#ifndef LED_H
+#define LED_H
 
-#include "header.h"
+#include "ti_msp_dl_config.h"
+#include <stdint.h>
 
-void LED1_Set_State(uint8_t state);
-void LED1_Toggle(void);
-void LED2_Set_State(uint8_t state);
-void LED2_Toggle(void);
+/* LED 配置结构体 */
+typedef struct {
+    GPIO_Regs *port;
+    uint32_t pin;
+    uint8_t active_level; /* 有效电平：1=高电平点亮，0=低电平点亮 */
+} led_cfg_t;
+
+/* LED 句柄 */
+typedef struct {
+    GPIO_Regs *port;
+    uint32_t pin;
+    uint8_t active_level;
+} led_handle_t;
+
+void led_init(led_handle_t *handle, const led_cfg_t *cfg);
+void led_on(led_handle_t *handle);
+void led_off(led_handle_t *handle);
+void led_toggle(led_handle_t *handle);
+void led_set(led_handle_t *handle, uint8_t state);
 
 #endif

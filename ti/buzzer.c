@@ -1,28 +1,93 @@
+/**
+ * @file    buzzer.c
+ * @brief   蜂鸣器驱动模块（GPIO 控制）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：GPIO 已在 SysConfig 中配置
+ *
+ * @usage
+ * 驱动层模块，负责单一 GPIO 的开关控制，不管理时序。多实例设计，
+ * 引脚通过 buzzer_init() 注入，不依赖具体硬件宏。
+ *
+ * 基本用法：
+ *
+ * static buzzer_handle_t buzzer;
+ *
+ * void system_init(void)
+ * {
+ *     buzzer_cfg_t cfg = { .port = BUZZER_PORT,
+ *                          .pin  = BUZZER_BUZZER1_PIN };
+ *     buzzer_init(&buzzer, &cfg);
+ * }
+ *
+ * buzzer_on(&buzzer);
+ * buzzer_off(&buzzer);
+ * buzzer_toggle(&buzzer);
+ *
+ * 非阻塞鸣叫模式请在应用层用状态机 + tick 实现，
+ * buzzer 模块不提供定时自动关闭功能。
+ */
+
 #include "buzzer.h"
 
 /**
- * @brief 打开蜂鸣器
- * @retval None
+ * @brief  蜂鸣器初始化
+ * @param  handle  蜂鸣器句柄指针
+ * @param  cfg     蜂鸣器配置指针
+ * @retval 无
  */
-void Buzzer_ON(void)
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 {
-    DL_GPIO_setPins(BUZZER_PORT, BUZZER_BUZZER1_PIN);
+    if (!handle || !cfg) {
+        return;
+    }
+
+    handle->port = cfg->port;
+    handle->pin = cfg->pin;
+
+    /* 初始状态：关闭 */
+    DL_GPIO_clearPins(handle->port, handle->pin);
 }
 
 /**
- * @brief 关闭蜂鸣器
- * @retval None
+ * @brief  打开蜂鸣器
+ * @param  handle  蜂鸣器句柄指针
+ * @retval 无
  */
-void Buzzer_OFF(void)
+void buzzer_on(buzzer_handle_t *handle)
 {
-    DL_GPIO_clearPins(BUZZER_PORT, BUZZER_BUZZER1_PIN);
+    if (!handle) {
+        return;
+    }
+
+    DL_GPIO_setPins(handle->port, handle->pin);
 }
 
 /**
- * @brief 翻转蜂鸣器状态
- * @retval None
+ * @brief  关闭蜂鸣器
+ * @param  handle  蜂鸣器句柄指针
+ * @retval 无
  */
-void Buzzer_TOGGLE(void)
+void buzzer_off(buzzer_handle_t *handle)
 {
-    DL_GPIO_togglePins(BUZZER_PORT, BUZZER_BUZZER1_PIN);
+    if (!handle) {
+        return;
+    }
+
+    DL_GPIO_clearPins(handle->port, handle->pin);
+}
+
+/**
+ * @brief  翻转蜂鸣器状态
+ * @param  handle  蜂鸣器句柄指针
+ * @retval 无
+ */
+void buzzer_toggle(buzzer_handle_t *handle)
+{
+    if (!handle) {
+        return;
+    }
+
+    DL_GPIO_togglePins(handle->port, handle->pin);
 }

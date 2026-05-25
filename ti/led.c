@@ -1,49 +1,127 @@
+/**
+ * @file    led.c
+ * @brief   LED 驱动模块（GPIO 控制）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：GPIO 已在 SysConfig 中配置
+ *
+ * @usage
+ * 驱动层模块，负责单一 GPIO 的亮灭控制。多实例设计，每个 LED
+ * 对应一个独立的 handle，通过 active_level 适配高低电平两种接法。
+ *
+ * 基本用法：
+ *
+ * static led_handle_t led1;
+ * static led_handle_t led2;
+ *
+ * void system_init(void)
+ * {
+ *     led_cfg_t cfg1 = { .port = LED_LED1_PORT,
+ *                        .pin  = LED_LED1_PIN,
+ *                        .active_level = 1 };
+ *     led_cfg_t cfg2 = { .port = LED_LED2_PORT,
+ *                        .pin  = LED_LED2_PIN,
+ *                        .active_level = 0 };
+ *     led_init(&led1, &cfg1);
+ *     led_init(&led2, &cfg2);
+ * }
+ *
+ * led_on(&led1);
+ * led_off(&led2);
+ * led_toggle(&led1);
+ * led_set(&led2, flag);   // flag=0 熄灭，非0 点亮
+ *
+ * 闪烁等时序相关模式请在应用层用状态机 + tick 实现。
+ */
+
 #include "led.h"
 
 /**
- * @brief 控制 LED1 的亮灭点亮状态
- * @param state 1代表点亮，0代表熄灭
- * @retval None
+ * @brief  LED 初始化
+ * @param  handle  LED 句柄指针
+ * @param  cfg     LED 配置指针
+ * @retval 无
  */
-void LED1_Set_State(uint8_t state)
+void led_init(led_handle_t *handle, const led_cfg_t *cfg)
 {
-    if (state == 1) {
-        DL_GPIO_setPins(LED_LED1_PORT, LED_LED1_PIN);
+    if (!handle || !cfg) {
+        return;
+    }
+
+    handle->port = cfg->port;
+    handle->pin = cfg->pin;
+    handle->active_level = cfg->active_level;
+
+    /* 初始状态：关闭 */
+    led_off(handle);
+}
+
+/**
+ * @brief  点亮 LED
+ * @param  handle  LED 句柄指针
+ * @retval 无
+ */
+void led_on(led_handle_t *handle)
+{
+    if (!handle) {
+        return;
+    }
+
+    if (handle->active_level) {
+        DL_GPIO_setPins(handle->port, handle->pin);
     } else {
-        DL_GPIO_clearPins(LED_LED1_PORT, LED_LED1_PIN);
+        DL_GPIO_clearPins(handle->port, handle->pin);
     }
 }
 
 /**
- * @brief 翻转 LED1 的当前状态
- * @param None
- * @retval None
+ * @brief  熄灭 LED
+ * @param  handle  LED 句柄指针
+ * @retval 无
  */
-void LED1_Toggle(void)
+void led_off(led_handle_t *handle)
 {
-    DL_GPIO_togglePins(LED_LED1_PORT, LED_LED1_PIN);
-}
+    if (!handle) {
+        return;
+    }
 
-/**
- * @brief 控制 LED2 的亮灭点亮状态
- * @param state 1代表点亮，0代表熄灭
- * @retval None
- */
-void LED2_Set_State(uint8_t state)
-{
-    if (state == 1) {
-        DL_GPIO_setPins(LED_LED2_PORT, LED_LED2_PIN);
+    if (handle->active_level) {
+        DL_GPIO_clearPins(handle->port, handle->pin);
     } else {
-        DL_GPIO_clearPins(LED_LED2_PORT, LED_LED2_PIN);
+        DL_GPIO_setPins(handle->port, handle->pin);
     }
 }
 
 /**
- * @brief 翻转 LED2 的当前状态
- * @param None
- * @retval None
+ * @brief  翻转 LED 状态
+ * @param  handle  LED 句柄指针
+ * @retval 无
  */
-void LED2_Toggle(void)
+void led_toggle(led_handle_t *handle)
 {
-    DL_GPIO_togglePins(LED_LED2_PORT, LED_LED2_PIN);
+    if (!handle) {
+        return;
+    }
+
+    DL_GPIO_togglePins(handle->port, handle->pin);
+}
+
+/**
+ * @brief  设置 LED 状态
+ * @param  handle  LED 句柄指针
+ * @param  state   0=熄灭，非0=点亮
+ * @retval 无
+ */
+void led_set(led_handle_t *handle, uint8_t state)
+{
+    if (!handle) {
+        return;
+    }
+
+    if (state) {
+        led_on(handle);
+    } else {
+        led_off(handle);
+    }
 }
