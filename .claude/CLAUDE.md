@@ -69,7 +69,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/pattern`、`st/pattern` — 循迹图案识别（查表法，纯算法）
 - `ti/pid`、`st/pid` — PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差）
 - `ti/sensor`、`st/sensor` — 感为科技八路灰度传感器（I2C，TI: 轮询状态机，STM32: DMA）
-- `ti/oled`、`st/oled` + `oled_data` — SSD1306 OLED（I2C，128×64，ASCII 字模）
+- `ti/oled`、`st/oled` + `oled_data` — SSD1306 OLED（0.96 寸 I2C 128×64，ASCII 字模）
+- `st/step_motor` — 双轴步进电机（UART DMA+FIFO+二进制协议，梯形加减速，心跳检测）
 
 ## 电机闭环链路（encoder + pwm + motor）
 
