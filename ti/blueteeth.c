@@ -4,6 +4,7 @@
  * @author  mizuniuo01
  * @date    2026-05-25
  * @version 2.0.0
+ * @note    使用江协科技蓝牙小程序，打印和绘图函数适配小程序协议
  * @note    依赖：UART + DMA 外设已在 SysConfig 中配置并生成 ti_msp_dl_config.h
  * @note    TI MSPM0 无硬件 IDLE 中断，使用 DMA 余量不变判定法检测帧结束
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理

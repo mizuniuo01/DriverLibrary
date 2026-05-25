@@ -6,11 +6,11 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#define BLUETEETH_DMA_RX_BUF_SIZE 128
-#define BLUETEETH_DMA_TX_BUF_SIZE 128
-#define BLUETEETH_RX_FIFO_SIZE 1024
-#define BLUETEETH_TX_FIFO_SIZE 1024
-#define BLUETEETH_MAX_FRAME_LEN 128
+#define BLUETEETH_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
+#define BLUETEETH_DMA_TX_BUF_SIZE 128 /* DMA 单次发送最大缓存量 */
+#define BLUETEETH_RX_FIFO_SIZE 1024 /* 接收环形队列容量 */
+#define BLUETEETH_TX_FIFO_SIZE 1024 /* 发送环形队列容量 */
+#define BLUETEETH_MAX_FRAME_LEN 128 /* 单帧协议最大长度 */
 
 #define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0]))
 

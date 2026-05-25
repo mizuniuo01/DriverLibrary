@@ -28,13 +28,13 @@ DriverLibrary/
 
 旧代码已放入 `st/` 和 `ti/` 目录，待逐个按 `CODING_STANDARD.md` 重写。重写完成前，旧代码仅供参考。
 
-已重写模块：`ti/blueteeth`。
+已重写模块：`ti/blueteeth`、`st/blueteeth`。
 
 ## 模块清单
 
 | 模块 | STM32 | TI | 说明 |
 |------|-------|-----|------|
-| blueteeth | ✓ | ✓ | 蓝牙串口通信（DMA+FIFO+协议解析），TI 平台已重写 |
+| blueteeth | ✓ | ✓ | 蓝牙串口通信（DMA+FIFO+协议解析），已重写 |
 | buzzer | ✓ | ✓ | 蜂鸣器 |
 | cam | ✓ | ✓ | 摄像头串口通信 |
 | display | — | ✓ | 蓝牙调试仪表盘 |
