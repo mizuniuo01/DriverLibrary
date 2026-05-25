@@ -66,7 +66,7 @@ DriverLibrary/
 | pid | ✓ (新) | ✓ (新) | PID 控制器 |
 | pwm | ✓ (新) | ✓ (新) | PWM 输出 |
 | sensor | ✓ (新) | ✓ (新) | 感为科技八路灰度 I2C |
-| step_motor | ✓ (新) | — | ZDT X42S 步进电机 UART 协议 |
+| step_motor | ✓ (新) | ✓ (新) | ZDT X42S 步进电机 UART 二进制协议 |
 | ultrasonic | ✓ (新) | ✓ (新) | 超声波测距 |
 
 ## 使用方式
