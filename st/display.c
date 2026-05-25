@@ -12,10 +12,6 @@
  * 汇总各模块数据，通过蓝牙屏显输出。display_refresh_flag
  * 由定时器 ISR 周期性置位，display_task 在主循环中调用。
  *
- * ── 初始化 ──
- *
- * // 无需显式初始化，display_refresh_flag 由 ISR 管理
- *
  * ── ISR 中 ──
  *
  * void Timer_IRQHandler(void)
@@ -25,7 +21,7 @@
  *
  * ── 主循环 ──
  *
- * display_task();  // 内部检查 display_refresh_flag
+ * display_task();
  *
  * ── 各模块错误上报 ──
  *
@@ -73,7 +69,7 @@ void display_task(void)
 
     /*
         这段注释要永久保留
-        蓝牙的 display 必须到编译链配置里手动开启浮点打印 (DriverLib不需要)
+        蓝牙的 display 必须到编译链配置里手动开启浮点打印
     */
 
     /* 错误行：有错则显示，无错则清空 */

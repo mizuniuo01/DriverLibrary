@@ -42,6 +42,10 @@ DriverLibrary/
 | ti + st | cam | 摄像头串口通信（UART DMA+FIFO+帧解析） |
 | ti + st | gyroscope | 姿态传感器（UART DMA+FIFO+三态帧解析） |
 | ti + st | ultrasonic | 超声波测距（HC-SR04，定时器捕获） |
+| ti + st | laser | 激光 GPIO 控制（多实例句柄注入） |
+| ti + st | display | 蓝牙调试仪表盘（错误上报） |
+| ti + st | pattern | 循迹图案识别（查表法，纯算法） |
+| ti + st | pid | PID 控制器 |
 
 ## 模块清单
 
@@ -50,16 +54,16 @@ DriverLibrary/
 | blueteeth | ✓ (新) | ✓ (新) | 蓝牙串口通信（DMA+FIFO+协议解析） |
 | buzzer | ✓ (新) | ✓ (新) | 蜂鸣器 |
 | cam | ✓ (新) | ✓ (新) | 摄像头串口通信 |
-| display | — | ✓ | 蓝牙调试仪表盘 |
+| display | ✓ (新) | ✓ (新) | 蓝牙调试仪表盘（错误上报） |
 | encoder | ✓ (新) | ✓ (新) | 正交编码器 |
 | gyroscope | ✓ (新) | ✓ (新) | 陀螺仪 |
 | key | ✓ (新) | ✓ (新) | 按键扫描（双 task：消抖+事件分类） |
-| laser | ✓ | — | 激光测距 |
+| laser | ✓ (新) | ✓ (新) | 激光测距 |
 | led | ✓ (新) | ✓ (新) | LED 控制 |
 | motor | ✓ (新) | ✓ (新) | 直流有刷电机，DRV8874（IN/IN 模式） |
 | oled | ✓ | ✓ | OLED 显示屏 |
-| pattern | ✓ | ✓ | 图案/模式检测 |
-| pid | ✓ | ✓ | PID 控制器 |
+| pattern | ✓ (新) | ✓ (新) | 图案/模式检测 |
+| pid | ✓ (新) | ✓ (新) | PID 控制器 |
 | pwm | ✓ (新) | ✓ (新) | PWM 输出 |
 | sensor | ✓ | ✓ | I2C 传感器 |
 | step_motor | ✓ | — | 步进电机 |

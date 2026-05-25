@@ -4,12 +4,12 @@
  * @author  mizuniuo01
  * @date    2026-05-25
  * @version 1.0.0
- * @note    依赖：GPIO 已在 CubeMX 中配置
+ * @note    依赖：GPIO 已在 SysConfig 中配置
  *
  * @usage
  * static laser_handle_t laser;
  *
- * laser_cfg_t cfg = { .port = GPIOD, .pin = GPIO_PIN_11 };
+ * laser_cfg_t cfg = { .port = LASER_PORT, .pin = LASER_PIN };
  * laser_init(&laser, &cfg);
  * laser_on(&laser);
  * laser_off(&laser);
@@ -27,7 +27,7 @@ void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
     handle->port = cfg->port;
     handle->pin = cfg->pin;
 
-    HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
+    DL_GPIO_clearPins(handle->port, handle->pin);
 }
 
 void laser_on(laser_handle_t *handle)
@@ -36,7 +36,7 @@ void laser_on(laser_handle_t *handle)
         return;
     }
 
-    HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_SET);
+    DL_GPIO_setPins(handle->port, handle->pin);
 }
 
 void laser_off(laser_handle_t *handle)
@@ -45,7 +45,7 @@ void laser_off(laser_handle_t *handle)
         return;
     }
 
-    HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
+    DL_GPIO_clearPins(handle->port, handle->pin);
 }
 
 void laser_toggle(laser_handle_t *handle)
@@ -54,5 +54,5 @@ void laser_toggle(laser_handle_t *handle)
         return;
     }
 
-    HAL_GPIO_TogglePin(handle->port, handle->pin);
+    DL_GPIO_togglePins(handle->port, handle->pin);
 }

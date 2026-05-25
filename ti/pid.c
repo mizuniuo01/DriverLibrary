@@ -1,29 +1,35 @@
+/**
+ * @file    pid.c
+ * @brief   PID 控制器模块（微分-on-实际值）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    纯算法模块，无硬件依赖
+ * @note    微分项作用在实际值上，避免目标突变导致微分尖峰
+ * @note    含积分饱和限幅和输出限幅
+ *
+ * @usage
+ * pid_t pid;
+ * pid_init(&pid, 1.5f, 0.1f, 0.05f, 500.0f, 200.0f);
+ * float out = pid_calc(&pid, target, actual);
+ * pid_clear(&pid);
+ */
+
 #include "pid.h"
 
-/**
- * @brief 将控制参数及限幅重置入系统控制器句柄
- * @param pid 目标修改其内部数据的控制柄
- * @param p 比例系数权重设定
- * @param i 积分系数权重设定
- * @param d 微分系数权重设定
- * @param out_max 执行总输出绝对限值
- * @param integral_max 积分环抗饱和最大值
- * @retval None
- */
-void PID_Init(PID_Struct *pid, float p, float i, float d, float out_max, float integral_max)
+void pid_init(pid_t *pid, float p, float i, float d,
+              float out_max, float integral_max)
 {
-    if (pid == NULL)
-    {
+    if (!pid) {
         return;
     }
 
-    pid->Kp = p;
-    pid->Ki = i;
-    pid->Kd = d;
-    
+    pid->kp = p;
+    pid->ki = i;
+    pid->kd = d;
+
     pid->target = 0.0f;
     pid->actual = 0.0f;
-    
     pid->error = 0.0f;
     pid->error_last = 0.0f;
     pid->actual_last = 0.0f;
@@ -35,67 +41,49 @@ void PID_Init(PID_Struct *pid, float p, float i, float d, float out_max, float i
     pid->integral_max = integral_max;
 }
 
-/**
- * @brief 执行单次误差反馈调整算法迭代结果
- * @param pid 作用状态柄
- * @param target 用户理想跟踪位置或速度目标
- * @param actual 系统当前的物理实测反馈
- * @retval float 运算结果，应当施加于底层机构的驱动量
- */
-float PID_Calc(PID_Struct *pid, float target, float actual)
+float pid_calc(pid_t *pid, float target, float actual)
 {
-    if (pid == NULL)
-    {
+    if (!pid) {
         return 0.0f;
     }
 
     pid->target = target;
     pid->actual = actual;
-    
-    // 计算本次误差
+
+    /* 计算本次误差 */
     pid->error = pid->target - pid->actual;
-    
-    // 积分项累加
+
+    /* 积分项累加 */
     pid->integral += pid->error;
-    
-    // 限制积分上限，防止积分饱和导致控制超调
-    if (pid->integral > pid->integral_max) 
-    {
+
+    /* 积分饱和限幅 */
+    if (pid->integral > pid->integral_max) {
         pid->integral = pid->integral_max;
-    } 
-    else if (pid->integral < -pid->integral_max) 
-    {
+    } else if (pid->integral < -pid->integral_max) {
         pid->integral = -pid->integral_max;
     }
-    
-    // 核心输出：微分项作用在实际值上，避免目标突变导致微分尖峰
-    pid->out = pid->Kp * pid->error + pid->Ki * pid->integral + pid->Kd * (pid->actual_last - pid->actual);
+
+    /* 微分-on-实际值，避免目标突变尖峰 */
+    pid->out = pid->kp * pid->error
+               + pid->ki * pid->integral
+               + pid->kd * (pid->actual_last - pid->actual);
 
     pid->error_last = pid->error;
     pid->actual_last = pid->actual;
-    
-    // 总输出限幅确保底层驱动板安全
-    if (pid->out > pid->out_max) 
-    {
+
+    /* 输出限幅 */
+    if (pid->out > pid->out_max) {
         pid->out = pid->out_max;
-    } 
-    else if (pid->out < pid->out_min) 
-    {
+    } else if (pid->out < pid->out_min) {
         pid->out = pid->out_min;
     }
-    
+
     return pid->out;
 }
 
-/**
- * @brief 清空PID状态(复位)
- * @param pid PID结构体句柄
- * @retval None
- */
-void PID_Clear(PID_Struct *pid)
+void pid_clear(pid_t *pid)
 {
-    if (pid == NULL)
-    {
+    if (!pid) {
         return;
     }
 

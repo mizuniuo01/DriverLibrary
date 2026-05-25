@@ -64,6 +64,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/cam`、`st/cam` — 摄像头串口通信（UART DMA + FIFO + 帧解析）
 - `ti/gyroscope`、`st/gyroscope` — 姿态传感器（UART DMA + FIFO + 三态帧解析，STM32 额外含 yaw 增量追踪）
 - `ti/ultrasonic`、`st/ultrasonic` — 超声波测距（HC-SR04，定时器捕获 + GPIO 触发 + 状态机）
+- `ti/laser`、`st/laser` — 激光 GPIO 控制（多实例句柄注入）
+- `ti/display`、`st/display` — 蓝牙调试仪表盘（数据汇总屏显，错误上报）
+- `ti/pattern`、`st/pattern` — 循迹图案识别（查表法，纯算法）
+- `ti/pid`、`st/pid` — PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差）
 
 ## 电机闭环链路（encoder + pwm + motor）
 

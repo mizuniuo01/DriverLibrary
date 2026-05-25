@@ -1,31 +1,30 @@
-#ifndef __PID_H
-#define __PID_H
+#ifndef PID_H
+#define PID_H
 
-#include "main.h"
+#include <stdint.h>
 
-// PID 结构体定义
-typedef struct 
-{
-    float Kp;           // 比例系数            
-    float Ki;           // 积分系数
-    float Kd;           // 微分系数
+/* PID 控制器 */
+typedef struct {
+    float kp;           /* 比例系数 */
+    float ki;           /* 积分系数 */
+    float kd;           /* 微分系数 */
 
-    float target;       // 目标值
-    float actual;       // 实际值
+    float target;       /* 目标值 */
+    float actual;       /* 实际值 */
 
-    float error;        // 当前误差
-    float error_last;   // 上一次误差
-    float integral;     // 积分值
+    float error;        /* 当前误差 */
+    float error_last;   /* 上一次误差 */
+    float integral;     /* 积分累加 */
 
-    float out;          // PID 输出值
-    float out_max;      // 输出最大值
-    float out_min;      // 输出最小值
-    float integral_max; // 积分最大值
-} PID_Struct;
+    float out;          /* PID 输出 */
+    float out_max;      /* 输出上限 */
+    float out_min;      /* 输出下限 */
+    float integral_max; /* 积分限幅 */
+} pid_t;
 
-// PID相关操作函数声明
-void PID_Init(PID_Struct *pid, float p, float i, float d, float out_max, float integral_max);
-float PID_Calc(PID_Struct *pid, float target, float actual);
-void PID_Clear(PID_Struct *pid);
+void pid_init(pid_t *pid, float p, float i, float d,
+              float out_max, float integral_max);
+float pid_calc(pid_t *pid, float target, float actual);
+void pid_clear(pid_t *pid);
 
 #endif
