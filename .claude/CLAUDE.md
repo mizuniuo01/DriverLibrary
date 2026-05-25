@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
-- `CODING_STANDARD.md` — 唯一的权威规范文档（v3.2），包含代码风格和软件设计模式
+- `CODING_STANDARD.md` — 唯一的权威规范文档（v4.0），包含代码风格和软件设计模式
 
 ## 无构建系统
 
@@ -16,10 +16,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 核心规范（CODING_STANDARD.md）
 
-所有代码必须遵循 `CODING_STANDARD.md`。关键约定：
+所有代码遵循 `CODING_STANDARD.md`（参照 BARR-C:2018 + Linux 内核编码规范）。关键约定：
 
 - **命名**：函数 `snake_case`，类型 `snake_case_t`（BARR-C 规则 1.5），宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
-- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），80 列宽，指针 `*` 靠右
+- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），100 列宽，指针 `*` 靠右
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
 - **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 80 列时注释放上一行
 - **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`
