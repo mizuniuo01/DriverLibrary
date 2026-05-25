@@ -1,71 +1,89 @@
+/**
+ * @file    pwm.c
+ * @brief   PWM 输出模块（定时器 CH3/CH4 比较值控制）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：PWM 定时器已在 CubeMX 中配置
+ * @note    使用 CH3/CH4 通道，适配 STM32 通用/高级定时器
+ * @note    高级定时器（TIM1/TIM8）额外使能 MOE 主输出
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * PWM 比较值薄封装，供 motor 模块调用。
+ *
+ * CubeMX 配置要点：
+ * - 定时器 CH3/CH4 设为 PWM Generation
+ * - ARR 值决定 PWM_MAX_COMPARE（当前为 8400）
+ * - 若为高级定时器（TIM1/TIM8），需在 CubeMX 中使能 MOE
+ *
+ * ── 初始化 ──
+ *
+ * pwm_init(&htim1);  // 启动 CH3/CH4 PWM 输出
+ *
+ * ── motor 模块调用 ──
+ *
+ * pwm_set_compare_ch3(&htim1, 4200);  // 50% 占空比
+ */
+
 #include "pwm.h"
 
 /**
- * @brief 初始化并启动PWM通道
- * @param htim 绑定的定时器句柄
- * @retval None
+ * @brief  启动 PWM 通道输出
+ * @note   高级定时器额外使能 MOE 和互补输出
+ * @param  htim  定时器句柄指针
+ * @retval 无
  */
-void PWM_Init(TIM_HandleTypeDef *htim)
+void pwm_init(TIM_HandleTypeDef *htim)
 {
-    if (htim == NULL)
-    {
+    if (!htim) {
         return;
     }
 
-    // 启动对应定时器的底层硬件PWM输出功能
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL_3);
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL_4);
 
-    // 如果是高级定时器(如TIM1) 为了保险强制使能MOE
-    if (htim->Instance == TIM1) 
-    {
+    /* 高级定时器（TIM1/TIM8）需使能 MOE 主输出 */
+    if (htim->Instance == TIM1) {
         HAL_TIMEx_PWMN_Start(htim, TIM_CHANNEL_3);
         __HAL_TIM_MOE_ENABLE(htim);
     }
 }
 
 /**
- * @brief 设置定时器通道3的PWM比较值
- * @param htim 绑定的定时器句柄
- * @param compare 比较值
- * @retval None
+ * @brief  设置 PWM 通道 3 的比较值（占空比）
+ * @param  htim     定时器句柄指针
+ * @param  compare  比较值（0~PWM_MAX_COMPARE），超限自动钳位
+ * @retval 无
  */
-void PWM_SetCompare3(TIM_HandleTypeDef *htim, uint16_t compare)
+void pwm_set_compare_ch3(TIM_HandleTypeDef *htim, uint16_t compare)
 {
-    if (htim == NULL)
-    {
+    if (!htim) {
         return;
     }
 
-    // 限制最大比较值，防止占空比溢出或导致硬件保护
-    if (compare > PWM_MAX_COMPARE) 
-    {
+    if (compare > PWM_MAX_COMPARE) {
         compare = PWM_MAX_COMPARE;
     }
-    
-    // 写入定时器比较寄存器，立即更新占空比
+
     __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, compare);
 }
 
 /**
- * @brief 设置定时器通道4的PWM比较值
- * @param htim 绑定的定时器句柄
- * @param compare 比较值
- * @retval None
+ * @brief  设置 PWM 通道 4 的比较值（占空比）
+ * @param  htim     定时器句柄指针
+ * @param  compare  比较值（0~PWM_MAX_COMPARE），超限自动钳位
+ * @retval 无
  */
-void PWM_SetCompare4(TIM_HandleTypeDef *htim, uint16_t compare)
+void pwm_set_compare_ch4(TIM_HandleTypeDef *htim, uint16_t compare)
 {
-    if (htim == NULL)
-    {
+    if (!htim) {
         return;
     }
 
-    // 限制最大比较值，防止占空比溢出或导致硬件保护
-    if (compare > PWM_MAX_COMPARE) 
-    {
+    if (compare > PWM_MAX_COMPARE) {
         compare = PWM_MAX_COMPARE;
     }
-    
-    // 写入定时器比较寄存器，立即更新占空比
+
     __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, compare);
 }

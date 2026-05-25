@@ -1,56 +1,122 @@
+/**
+ * @file    encoder.c
+ * @brief   编码器驱动模块（双 QEI 模式）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    左右轮均使用 STM32 硬件 QEI 模式，方向由硬件自动判定
+ * @note    encoder_scan_left / encoder_scan_right 为 B 类操作，ISR 中直接调用
+ * @note    与 TI 版不同：无需 motor 模块提供方向标志位，无需捕获 ISR
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * 适配两路编码电机方案，与 pwm、motor 模块配合使用。
+ *
+ * 硬件：左右编码器各连接一个定时器的 CH1/CH2（QEI 模式）。
+ * CubeMX 中将两个定时器均配置为 Encoder Mode。
+ *
+ * ── 初始化 ──
+ *
+ * encoder_init(&htim2, &htim3);
+ *
+ * ── ISR 中周期性扫描（B 类）──
+ *
+ * encoder_scan_left(&htim2);
+ * encoder_scan_right(&htim3);
+ *
+ * ── 数据读取 ──
+ *
+ * int16_t left  = encoder_get_left();
+ * int16_t right = encoder_get_right();
+ */
+
 #include "encoder.h"
 
-Encoder_Data_t encoderData = {0, 0};
+static int16_t encoder_left_val;
+static int16_t encoder_right_val;
 
 /**
- * @brief 编码器外设统一初始化
- * @param htim_left 左侧编码器定时器句柄
- * @param htim_right 右侧编码器定时器句柄
- * @retval None
+ * @brief  编码器初始化（双 QEI 定时器）
+ * @param  htim_left   左编码器定时器句柄
+ * @param  htim_right  右编码器定时器句柄
+ * @retval 无
  */
-void Encoder_Init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
+void encoder_init(TIM_HandleTypeDef *htim_left,
+                  TIM_HandleTypeDef *htim_right)
 {
-    if (htim_left == NULL || htim_right == NULL) {
+    if (!htim_left || !htim_right) {
         return;
     }
 
-    // 复位定时器硬件计数值
     __HAL_TIM_SET_COUNTER(htim_left, 0);
     __HAL_TIM_SET_COUNTER(htim_right, 0);
 
-    // 使能对应定时器的底层正交编码器接口模式
     HAL_TIM_Encoder_Start(htim_left, TIM_CHANNEL_ALL);
     HAL_TIM_Encoder_Start(htim_right, TIM_CHANNEL_ALL);
 }
 
 /**
- * @brief 获取左侧编码器计数值增量
- * @param htim 绑定的定时器句柄
- * @retval none
+ * @brief  左编码器扫描（B 类，ISR 中直接调用）
+ * @note   利用无符号转有符号的截断机制，自动处理定时器溢出
+ * @param  htim  左编码器定时器句柄
+ * @retval 无
  */
-void Encoder_Get_Left(TIM_HandleTypeDef *htim)
+void encoder_scan_left(TIM_HandleTypeDef *htim)
 {
     static uint16_t last_count_left = 0;
-    uint16_t current_count = __HAL_TIM_GET_COUNTER(htim);
+    uint16_t current_count;
+    int16_t diff_value;
 
-    // 利用无符号转有符号的截断机制，实现硬件溢出自适应处理
-    int16_t diff_value = (int16_t)(current_count - last_count_left);
-    // 读数取反适应实际轮胎方向
-    encoderData.left_val = -diff_value; // 供外部访问
+    if (!htim) {
+        return;
+    }
+
+    current_count = __HAL_TIM_GET_COUNTER(htim);
+    diff_value = (int16_t)(current_count - last_count_left);
+
+    /* 取反适配安装方向 */
+    encoder_left_val = -diff_value;
     last_count_left = current_count;
 }
 
 /**
- * @brief 获取右侧编码器计数值增量
- * @param htim 绑定的定时器句柄
- * @retval none
+ * @brief  右编码器扫描（B 类，ISR 中直接调用）
+ * @param  htim  右编码器定时器句柄
+ * @retval 无
  */
-void Encoder_Get_Right(TIM_HandleTypeDef *htim)
+void encoder_scan_right(TIM_HandleTypeDef *htim)
 {
     static uint16_t last_count_right = 0;
-    uint16_t current_count = __HAL_TIM_GET_COUNTER(htim);
+    uint16_t current_count;
+    int16_t diff_value;
 
-    int16_t diff_value = (int16_t)(current_count - last_count_right);
-    encoderData.right_val = diff_value; // 供外部访问
+    if (!htim) {
+        return;
+    }
+
+    current_count = __HAL_TIM_GET_COUNTER(htim);
+    diff_value = (int16_t)(current_count - last_count_right);
+
+    encoder_right_val = diff_value;
     last_count_right = current_count;
+}
+
+/**
+ * @brief  获取左编码器值
+ * @param  无
+ * @retval 左轮当前增量
+ */
+int16_t encoder_get_left(void)
+{
+    return encoder_left_val;
+}
+
+/**
+ * @brief  获取右编码器值
+ * @param  无
+ * @retval 右轮当前增量
+ */
+int16_t encoder_get_right(void)
+{
+    return encoder_right_val;
 }

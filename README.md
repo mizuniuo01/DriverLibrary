@@ -36,9 +36,9 @@ DriverLibrary/
 | ti + st | buzzer | 蜂鸣器 GPIO 控制（多实例句柄注入） |
 | ti + st | led | LED GPIO 控制（多实例，高低电平适配） |
 | ti + st | key | 按键（双 task：消抖 + 短按/长按/连发） |
-| ti | encoder | 编码器（左 QEI + 右捕获，static+getter） |
-| ti | pwm | PWM 输出（定时器比较值薄封装） |
-| ti | motor | 直流有刷电机（IN/IN，两路 PWM，cfg 注入） |
+| ti + st | encoder | 编码器（static+getter） |
+| ti + st | pwm | PWM 输出 |
+| ti + st | motor | 直流有刷电机，DRV8874（IN/IN，cfg 注入） |
 
 ## 模块清单
 
@@ -48,16 +48,16 @@ DriverLibrary/
 | buzzer | ✓ (新) | ✓ (新) | 蜂鸣器 |
 | cam | ✓ | ✓ | 摄像头串口通信 |
 | display | — | ✓ | 蓝牙调试仪表盘 |
-| encoder | ✓ (旧) | ✓ (新) | 正交编码器 |
+| encoder | ✓ (新) | ✓ (新) | 正交编码器 |
 | gyroscope | ✓ | ✓ | 陀螺仪 |
 | key | ✓ (新) | ✓ (新) | 按键扫描（双 task：消抖+事件分类） |
 | laser | ✓ | — | 激光测距 |
 | led | ✓ (新) | ✓ (新) | LED 控制 |
-| motor | ✓ (旧) | ✓ (新) | 直流有刷电机（IN/IN 模式） |
+| motor | ✓ (新) | ✓ (新) | 直流有刷电机，DRV8874（IN/IN 模式） |
 | oled | ✓ | ✓ | OLED 显示屏 |
 | pattern | ✓ | ✓ | 图案/模式检测 |
 | pid | ✓ | ✓ | PID 控制器 |
-| pwm | ✓ (旧) | ✓ (新) | PWM 输出 |
+| pwm | ✓ (新) | ✓ (新) | PWM 输出 |
 | sensor | ✓ | ✓ | I2C 传感器 |
 | step_motor | ✓ | — | 步进电机 |
 | ultrasonic | ✓ | ✓ | 超声波测距 |

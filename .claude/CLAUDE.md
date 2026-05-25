@@ -58,13 +58,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/buzzer`、`st/buzzer` — 蜂鸣器 GPIO 控制（多实例句柄注入）
 - `ti/led`、`st/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
 - `ti/key`、`st/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
-- `ti/encoder` — 编码器（左 QEI + 右捕获，static + getter 替代 extern 全局变量）
-- `ti/pwm` — PWM 输出（20kHz 载波，CC 值由定时器时钟频率决定）
-- `ti/motor` — 直流有刷电机，适配 DRV8874（IN/IN 模式，两路 PWM + 方向控制，引脚 cfg 注入）
+- `ti/encoder`、`st/encoder` — 编码器（TI: 左QEI+右捕获，STM32: 双QEI；static+getter）
+- `ti/pwm`、`st/pwm` — PWM 输出（TI: 20kHz/CH0+CH1，STM32: ARR=8400/CH3+CH4）
+- `ti/motor`、`st/motor` — 直流有刷电机，适配 DRV8874（IN/IN 模式，直接 PWM 比较值，左右方向引脚反相；引脚 cfg 注入）
 
 ## 电机闭环链路（encoder + pwm + motor）
 
-三个模块配合 DRV8874 驱动两路编码电机：
+三个模块配合 DRV8874 驱动两路编码电机。TI 和 STM32 版本的速度量纲不同：
+
+| | TI | STM32 |
+|---|---|---|
+| 速度量纲 | PWM 比较值（0~2000） | PWM 比较值（0~8400） |
+| PWM 映射 | 1:1（speed 直接写入 CC） | 1:1（speed 直接写入 CC） |
+| PWM 通道 | CH0 / CH1 | CH3 / CH4 |
+| PWM 载波 | 20kHz（CC=时钟/20000） | CubeMX ARR 决定（当前 8400） |
+| 编码器 | 左 QEI + 右捕获 | 双 QEI（硬件方向判定） |
+| 方向信息 | motor 软件标志位 → encoder | 编码器硬件自主判定 |
+| 电机驱动芯片 | DRV8874 | DRV8874 |
+
+闭环链路：
 
 ```
 encoder_get_left/right()  →  PID  →  motor_set_speed_left/right()
