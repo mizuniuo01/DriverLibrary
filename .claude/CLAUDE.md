@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 所有代码必须遵循 `CODING_STANDARD.md`。关键约定：
 
-- **命名**：函数 `snake_case`，类型 `PascalCase`+`_t`，宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
+- **命名**：函数 `snake_case`，类型 `snake_case_t`（BARR-C 规则 1.5），宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
 - **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），80 列宽，指针 `*` 靠右
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
 - **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 80 列时注释放上一行
@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.7 数据共享**：`static` 私有变量 + getter 函数暴露。模块间通信三种方式按场景选用：直接函数调用（一对一）、getter 函数（一写多读）、回调函数（异步事件）
 - **12.8 单/多实例**：默认多实例（句柄注入），客观上唯一的硬件允许单实例
 - **12.9 错误处理**：公开接口完整校验，内部函数轻量校验，ISR 最简校验。错误恢复：错误上报→复位外设→自动重试（限次数）→仍失败则上报故障
-- **12.11 错误上报**：`Display` 模块内部维护 `g_error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行，无错时输出空字符串覆盖。蓝牙串口软件使用江协科技蓝牙串口小程序
+- **12.11 错误上报**：`Display` 模块内部维护 `error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行，无错时输出空字符串覆盖。蓝牙串口软件使用江协科技蓝牙串口小程序
 
 ## 旧代码 → 新代码迁移要点
 
@@ -88,13 +88,6 @@ encoder_scan_left/right()               ↓
 ```
 
 PWM 参数以 20kHz 载波为基准：`PWM_MAX_COMPARE = 定时器时钟 / 20000`。SysConfig 中修改定时器时钟后必须同步更新 `pwm.h` 的 `PWM_MAX_COMPARE` 和 `motor.h` 的 `MOTOR_MAX_SPEED`。右编码器方向由 `motor_get_right_direction_sign()` 提供（encoder 依赖 motor）。
-
-## 类型命名：PascalCase_t
-
-依照 BARR-C:2018，所有类型名（struct/enum/typedef）统一为 `PascalCase_t` 格式：
-- `MotorCfg_t`、`MotorHandle_t`、`BuzzerHandle_t`、`LedCfg_t`
-- `KeyEvent_t`、`KeyHandle_t`、`KeyPinCfg_t`、`KeyCallback_t`
-- 多单词类型名同样采用大驼峰：`BlueteethFrameState_t`、`EncoderData_t`
 
 ## 平台差异备忘
 

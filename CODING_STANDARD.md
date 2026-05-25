@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v3.0)
+# 嵌入式 C / Python 软件设计规范 (v3.1)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard），Python 部分参照 **PEP 8**。
 
@@ -36,7 +36,7 @@
 ```c
 uint16_t tx_buffer[BUFFER_SIZE];
 uint32_t motor_position;
-uint8_t  sensor_value;
+uint8_t sensor_value;
 ```
 
 **规则**：
@@ -50,32 +50,32 @@ uint8_t  sensor_value;
 
 ```c
 void motor_move_to(uint16_t position);
-void sensor_read(SensorData *data);
-int  pid_compute(PidController *pid, float setpoint, float actual);
+void sensor_read(sensor_data_t *data);
+int32_t pid_compute(pid_controller_t *pid, float setpoint, float actual);
 ```
 
 ### 2.4 类型名
 
-`PascalCase`（大驼峰），每个单词首字母大写。
+`snake_case_t`，全小写，下划线分隔，**`_t` 后缀**（BARR-C:2018 规则 1.5）。
 
 ```c
 typedef struct {
     GPIO_TypeDef *port;
-    uint16_t      pin;
-} GpioMapping;
+    uint16_t pin;
+} gpio_mapping_t;
 
 typedef enum {
     MOTOR_STATE_IDLE,
     MOTOR_STATE_RUNNING,
     MOTOR_STATE_ERROR,
-} MotorState;
+} motor_state_t;
 
-typedef struct MotorController MotorController;
+typedef struct motor_controller_t motor_controller_t;
 ```
 
 **规则**：
-- 类型名（`struct`、`enum`、`typedef`、`union`）必须一眼能看出是类型，不是变量实例。
-- 枚举值使用 `UPPER_SNAKE_CASE` 或与类型名同前缀，如 `MOTOR_STATE_RUNNING`。
+- 类型名（`struct`、`enum`、`typedef`、`union`）通过 `_t` 后缀一眼能看出是类型，不是变量实例。
+- 枚举值使用 `UPPER_SNAKE_CASE`，前缀与类型名对应，如 `MOTOR_STATE_RUNNING`。
 
 ### 2.5 文件名
 
@@ -110,7 +110,7 @@ while (condition) {
     // ...
 }
 
-for (int i = 0; i < n; i++) {
+for (int32_t i = 0; i < n; i++) {
     // ...
 }
 
@@ -173,7 +173,7 @@ void uart_init(UART_HandleTypeDef *huart, uint32_t baudrate);
 
 /* 参数多，每个参数独占一行 */
 void motor_controller_init(
-    MotorController *motor,
+    motor_controller_t *motor,
     GPIO_TypeDef *step_port,
     uint16_t step_pin,
     GPIO_TypeDef *dir_port,
@@ -237,7 +237,7 @@ a = 1; b = 2; c = a + b;
 ```c
 uint8_t *rx_buffer;
 void motor_init(UART_HandleTypeDef *huart);
-int *a, *b;  /* 每个变量单独声明，不要这样批量写在一行 */
+int32_t *a, *b;  /* 每个变量单独声明，不要这样批量写在一行 */
 ```
 
 ### 3.6 变量声明
@@ -248,8 +248,8 @@ int *a, *b;  /* 每个变量单独声明，不要这样批量写在一行 */
 ```c
 void function(void) {
     uint32_t count = 0;
-    uint8_t  flag  = 0;
-    int      i;
+    uint8_t flag = 0;
+    int32_t i;
 
     for (i = 0; i < 10; i++) {
         // ...
@@ -288,14 +288,14 @@ void function(void) {
 /* 禁止：手动对齐产生无意义空白 diff */
 uint32_t count       = 0;
 uint8_t  small_flag  = 0;
-int      i           = 0;
+int32_t  i           = 0;
 ```
 
 正例：
 ```c
 uint32_t count = 0;
 uint8_t small_flag = 0;
-int i = 0;
+int32_t i = 0;
 ```
 
 ### 3.10 禁止内容
@@ -355,7 +355,7 @@ switch (motor->state) {
  * @param  target   目标位置（编码器计数值）
  * @retval 无
  */
-void motor_move_to(MotorController *motor, int32_t target) {
+void motor_move_to(motor_controller_t *motor, int32_t target) {
     // ...
 }
 ```
@@ -427,11 +427,11 @@ if (motor->direction == DIR_REVERSE) {
 ```c
 /* ===== 静态变量 ===== */
 
-static MotorHandle_t motor_inst;
+static motor_handle_t motor_inst;
 
 /* ===== 公开接口 ===== */
 
-void motor_init(const MotorCfg_t *cfg)
+void motor_init(const motor_cfg_t *cfg)
 {
     // ...
 }
@@ -505,10 +505,10 @@ void motor_init(const MotorCfg_t *cfg)
 **必须使用** `<stdint.h>` 的固定宽度类型，禁止使用 `int`、`long`、`short` 等平台相关类型（除非是 HAL 库返回值）。
 
 ```c
-uint8_t   status;       /* 8 位无符号 */
-int32_t   position;     /* 32 位有符号 */
-uint16_t  pwm_duty;     /* 16 位无符号 */
-bool      is_ready;     /* 使用 <stdbool.h> */
+uint8_t status;     /* 8 位无符号 */
+int32_t position;    /* 32 位有符号 */
+uint16_t pwm_duty;   /* 16 位无符号 */
+bool is_ready;       /* 使用 <stdbool.h> */
 ```
 
 ### 6.2 类型修饰符
@@ -519,9 +519,9 @@ bool      is_ready;     /* 使用 <stdbool.h> */
 - 使用这些修饰符时，在注释中简短说明原因。
 
 ```c
-static MotorController motor;          /* 模块私有，外部通过函数接口访问 */
-volatile uint8_t       g_dma_done;     /* DMA 中断中置位，主循环中读取 */
-const uint16_t         pwm_max = 2000; /* 硬件决定的固定上限 */
+static motor_controller_t motor;          /* 模块私有，外部通过函数接口访问 */
+volatile uint8_t dma_done;     /* DMA 中断中置位，主循环中读取 */
+const uint16_t pwm_max = 2000; /* 硬件决定的固定上限 */
 ```
 
 ### 6.3 枚举
@@ -533,7 +533,7 @@ typedef enum {
     UART_STATE_IDLE,
     UART_STATE_RECEIVING,
     UART_STATE_DONE,
-} UartRxState;
+} uart_rx_state_t;
 ```
 
 ---
@@ -585,8 +585,8 @@ typedef enum {
 - 所有通过指针传入的参数，函数开头做空指针检查。
 
 ```c
-void motor_set_speed(MotorController *motor, uint16_t speed) {
-    if (motor == NULL) return;
+void motor_set_speed(motor_controller_t *motor, uint16_t speed) {
+    if (!motor) return;
     if (speed > motor->max_speed) return;
 
     motor->target_speed = speed;
@@ -595,7 +595,7 @@ void motor_set_speed(MotorController *motor, uint16_t speed) {
 
 ### 8.4 返回类型
 
-- 可能失败的函数返回错误码（`int`，0 表示成功，负值表示错误）。
+- 可能失败的函数返回错误码（`int32_t`，0 表示成功，负值表示错误）。
 - 简单的 setter/getter 用 `void`。
 
 ### 8.5 递归
@@ -608,7 +608,7 @@ void motor_set_speed(MotorController *motor, uint16_t speed) {
 
 ### 8.7 变长数组
 
-**禁止使用变长数组（VLA）**。`int arr[n]` 中 `n` 为变量时，同样在栈上动态分配，风险与递归相同。C11 已将 VLA 改为可选特性。
+**禁止使用变长数组（VLA）**。`int32_t arr[n]` 中 `n` 为变量时，同样在栈上动态分配，风险与递归相同。C11 已将 VLA 改为可选特性。
 
 ---
 
@@ -633,10 +633,10 @@ void motor_set_speed(MotorController *motor, uint16_t speed) {
 `goto` 仅允许用于函数末尾的统一错误清理（common exit path）。禁止用 `goto` 向前跳转或构成循环。
 
 ```c
-int spi_transfer(SPI_Handle *spi, uint8_t *tx, uint8_t *rx, uint16_t len) {
-    int ret = 0;
+int32_t spi_transfer(spi_handle_t *spi, uint8_t *tx, uint8_t *rx, uint16_t len) {
+    int32_t ret = 0;
 
-    if (spi == NULL) { ret = -1; goto exit; }
+    if (!spi) { ret = -1; goto exit; }
     if (spi_init(spi) != 0) { ret = -2; goto exit; }
 
     /* ... 数据传输 ... */
@@ -674,8 +674,8 @@ if (a > b && c < d || e == f) {
 ### 10.2 布尔比较
 
 - 禁止与 `true`/`false` 比较：用 `if (flag)` 而非 `if (flag == true)`。
-- 禁止与 `NULL` 比较时写成 `== NULL` 或 `!= NULL`：用 `if (!ptr)` 或 `if (ptr)`。
-- 指针直接判断：`if (ptr)` 等价于 `if (ptr != NULL)`。
+- 禁止与 `NULL` 比较：用 `if (!ptr)` 或 `if (ptr)`，禁止写 `== NULL` 或 `!= NULL`。
+- `if (ptr)` 等价于 `if (ptr != NULL)`，`if (!ptr)` 等价于 `if (ptr == NULL)`。
 
 ```c
 /* 正例 */
@@ -716,7 +716,7 @@ if (ret != 0) { /* ... */ }
 memset(&cfg, 0, sizeof(cfg));
 
 /* 反例 */
-memset(&cfg, 0, sizeof(ConfigStruct));
+memset(&cfg, 0, sizeof(config_struct_t));
 ```
 
 ### 10.5 有符号/无符号混用
@@ -861,7 +861,7 @@ void motor_task(void)
 | A 类（标志位触发） | 复杂状态机、协议解析、控制算法 | 主循环 task 中 | ISR 只置 flag |
 | B 类（ISR 直接执行） | 极简读取：读寄存器、算差值、存缓存 | ISR 对应时间槽中 | 禁止循环等待、禁止 DMA 操作、禁止浮点运算 |
 
-B 类示例：`Encoder_Get_Left` 在 ISR 的对应时间槽中直接调用（读 CNT 寄存器 → 算差值 → 存缓存）。A 类示例：`Blueteeth_Task` 在标志位触发后执行帧解析状态机。
+B 类示例：`encoder_get_left` 在 ISR 的对应时间槽中直接调用（读 CNT 寄存器 → 算差值 → 存缓存）。A 类示例：`blueteeth_task` 在标志位触发后执行帧解析状态机。
 
 ### 12.3 串口通信架构
 
@@ -1011,20 +1011,20 @@ void xxx_task(void)
 
 ```c
 /* === 生命周期 === */
-void xxx_init(XxxHandle *h, XxxCfg *cfg);   /* 初始化：绑定硬件、设置默认参数 */
-void xxx_deinit(XxxHandle *h);               /* 反初始化：安全停机（按需） */
+void xxx_init(xxx_handle_t *h, xxx_cfg_t *cfg);   /* 初始化：绑定硬件、设置默认参数 */
+void xxx_deinit(xxx_handle_t *h);                  /* 反初始化：安全停机（按需） */
 
 /* === 周期性任务 === */
-void xxx_task(void);                         /* 状态机推进，主循环调用 */
+void xxx_task(void);                               /* 状态机推进，主循环调用 */
 
 /* === 控制与查询接口 === */
-int  xxx_set_xxx(XxxHandle *h, ...);         /* 设置参数，返回 0 成功 / 负值错误 */
-int  xxx_get_xxx(XxxHandle *h, ...);         /* 获取数据 */
+int32_t xxx_set_xxx(xxx_handle_t *h, ...);         /* 设置参数，返回 0 成功 / 负值错误 */
+int32_t xxx_get_xxx(xxx_handle_t *h, ...);         /* 获取数据 */
 
 /* === 中断回调（ISR 调用，不对外暴露） === */
-void xxx_rx_callback(XxxHandle *h, ...);     /* 接收完成回调 */
-void xxx_tx_callback(XxxHandle *h);          /* 发送完成回调 */
-void xxx_error_callback(XxxHandle *h);       /* 硬件错误回调 */
+void xxx_rx_callback(xxx_handle_t *h, ...);        /* 接收完成回调 */
+void xxx_tx_callback(xxx_handle_t *h);             /* 发送完成回调 */
+void xxx_error_callback(xxx_handle_t *h);          /* 硬件错误回调 */
 ```
 
 不需要每个模块都实现全部函数——按实际需要取舍。
@@ -1041,7 +1041,7 @@ void xxx_error_callback(XxxHandle *h);       /* 硬件错误回调 */
 ```
 
 - 简单 setter/getter：返回 `void`
-- 可能失败的操作：返回 `int`，0 成功，负值对应错误码
+- 可能失败的操作：返回 `int32_t`，0 成功，负值对应错误码
 - 数据获取需区分有效/无效时，在数据结构中设 `is_valid` 字段
 
 ### 12.7 模块间数据共享
@@ -1054,7 +1054,7 @@ void xxx_error_callback(XxxHandle *h);       /* 硬件错误回调 */
 /* encoder.h */
 int16_t encoder_get_left(void);
 int16_t encoder_get_right(void);
-void    encoder_get_both(int16_t *left, int16_t *right);
+void encoder_get_both(int16_t *left, int16_t *right);
 
 /* encoder.c */
 static int16_t encoder_left_val;   /* 模块私有 */
@@ -1069,7 +1069,7 @@ int16_t encoder_get_left(void) {
 /* === 反例：暴露全局变量 === */
 
 /* encoder.h */
-extern Encoder_Data_t encoderData;  /* 外部可随意读写 */
+extern encoder_data_t encoder_data;  /* 外部可随意读写 */
 ```
 
 **模块间通信方式**：
@@ -1170,36 +1170,36 @@ void motor_init(motor_t *motor, const motor_cfg_t *cfg);
 
 **错误上报**：
 
-采用蓝牙屏显输出，通过 `Display` 模块统一管理。`Display` 模块内部维护一个错误字符串，对外提供修改接口，在 `Display_Task()` 刷新周期中通过 `Blueteeth_Display()` 打印到指定的错误行。
+采用蓝牙屏显输出，通过 `Display` 模块统一管理。`Display` 模块内部维护一个错误字符串，对外提供修改接口，在 `display_task()` 刷新周期中通过 `blueteeth_display()` 打印到指定的错误行。
 
 ```c
 /* === display.h === */
-#define DISPLAY_LINE_ERROR_Y  260   /* 错误信息专用行 */
+#define DISPLAY_LINE_ERROR_Y 260 /* 错误信息专用行 */
 
 void display_show_error(const char *format, ...);
 
 /* === display.c === */
-static char g_error_msg[64];
+static char error_msg[64];
 
 void display_show_error(const char *format, ...)
 {
     va_list args;
     va_start(args, format);
-    vsnprintf(g_error_msg, sizeof(g_error_msg), format, args);
+    vsnprintf(error_msg, sizeof(error_msg), format, args);
     va_end(args);
 }
 
-void Display_Task(void)
+void display_task(void)
 {
-    if (!displayRefreshFlag) return;
-    displayRefreshFlag = 0;
+    if (!display_refresh_flag) return;
+    display_refresh_flag = 0;
 
     /* ... 其他数据行 ... */
 
     /* 错误行：有错则显示，无错则清空 */
-    Blueteeth_Display(0, DISPLAY_LINE_ERROR_Y,
-                      (g_error_msg[0] != '\0') ? "Err: %s" : "",
-                      g_error_msg);
+    blueteeth_display(0, DISPLAY_LINE_ERROR_Y,
+                      (error_msg[0] != '\0') ? "Err: %s" : "",
+                      error_msg);
 }
 
 /* === 各模块中触发错误上报 === */
@@ -1223,7 +1223,7 @@ void motor_task(void)
 - 只上报错误，不记录一般信息和调试信息
 - 一个时刻通常只有一个错误源，一条屏显行足够
 - 错误格式：模块名 + 错误简述，如 `"motor: init fail"`、`"sensor: i2c nack"`
-- `Display_Task` 中无错误时该行输出空字符串，覆盖旧的错误信息
+- `display_task` 中无错误时该行输出空字符串，覆盖旧的错误信息
 
 ### 12.12 句柄传递
 
@@ -1246,7 +1246,7 @@ void uart_send(uint8_t *data, uint16_t len) {
 ```c
 uint32_t primask = __get_PRIMASK();
 __disable_irq();
-g_data_ready = 0;   /* 关中断保护 */
+data_ready = 0;   /* 关中断保护 */
 if (!primask) __enable_irq();
 ```
 
@@ -1414,7 +1414,7 @@ def detect_circle(image, min_radius=10, max_radius=100):
 |------|----------------------|------------|------------|-----------|
 | 变量命名 | `snake_case` | `snake_case` | `snake_case` | `snake_case` |
 | 函数命名 | `snake_case` | `snake_case` | `PascalCase` | `PascalCase` |
-| 类型命名 | `PascalCase` | `snake_case` | `PascalCase` | `PascalCase` |
+| 类型命名 | `snake_case_t` | `snake_case` | `PascalCase` | `PascalCase` |
 | 宏命名 | `UPPER_SNAKE_CASE` | `UPPER_SNAKE_CASE` | `UPPER_SNAKE_CASE` | `UPPER_SNAKE_CASE` |
 | 花括号 | K&R | K&R | K&R | K&R |
 | 缩进 | 4 空格 | 8 空格 | 2 空格 | 2/4 空格 |
