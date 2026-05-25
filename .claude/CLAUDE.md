@@ -51,3 +51,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 6. `HAL_Delay()` 阻塞 → 状态机 + tick 比较
 7. 注释掉的 dead code → 删除
 8. 缺少文件头注释 → 按 Doxygen 模板补全
+
+## 已重写模块
+
+- `ti/blueteeth`、`st/blueteeth` — 蓝牙串口透传
+
+## 平台差异备忘（通信类模块重写时参考）
+
+| | TI MSPM0 | STM32 |
+|---|---|---|
+| 平台头文件 | `"ti_msp_dl_config.h"` | `<stm32f4xx_hal.h>` |
+| DMARX启动 | 手动 `DL_DMA_setSrcAddr`/`setDestAddr`/... | `HAL_UARTEx_ReceiveToIdle_DMA` |
+| 帧结束检测 | DMA 余量不变判定法（task 中轮询） | 硬件 IDLE 中断 |
+| ISR 回调判空 | 无（用户 ISR 已确认实例） | 有（HAL 全局回调需防御） |
+| 实例匹配 | `huart == inst.huart`（指针比较） | `huart->Instance == inst.huart->Instance` |
+| 中断配置 | `DL_UART_Main_setRXInterruptTimeout` + `NVIC_EnableIRQ` | HAL 内部处理 |
