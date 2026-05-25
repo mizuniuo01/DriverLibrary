@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-个人的嵌入式外设驱动库。**旧代码已放入，待逐个按规范重写。**
+个人的嵌入式外设驱动库。**全部模块已完成重写，待实际测试验证。**
 
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
-- `CODING_STANDARD.md` — 唯一的权威规范文档（v3.0），包含代码风格和软件设计模式
+- `CODING_STANDARD.md` — 唯一的权威规范文档（v3.2），包含代码风格和软件设计模式
 
 ## 无构建系统
 
@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 软件设计模式（CODING_STANDARD.md §12）
 
-旧代码重写时必须遵循的架构模式：
+所有模块遵循的架构模式：
 
 - **12.2 统一调度**：定时器 ISR 统一管理所有模块的执行周期，分频计数器 + `volatile` 标志位。A 类（标志位触发，复杂状态机在 task 中处理），B 类（ISR 直接执行，仅限极简读取操作）。调度周期由被控对象物理特性决定，不拍脑袋定值
 - **12.3 串口**：DMA + IDLE 中断 + 环形缓冲区（保留一个空位判别空/满）。TI 平台用 DMA 余量不变判定法替代硬件 IDLE。发送侧对称使用 TX FIFO + DMA
@@ -39,9 +39,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.9 错误处理**：公开接口完整校验，内部函数轻量校验，ISR 最简校验。错误恢复：错误上报→复位外设→自动重试（限次数）→仍失败则上报故障
 - **12.11 错误上报**：`Display` 模块内部维护 `error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行，无错时输出空字符串覆盖。蓝牙串口软件使用江协科技蓝牙串口小程序
 
-## 旧代码 → 新代码迁移要点
+## 旧代码 → 新代码迁移要点（历史参考）
 
-当前旧文件存在的共性问题（重写时需修正）：
+重写过程中修正的共性问题：
 
 1. 函数命名 `PascalCase`（`Motor_Init`）→ `snake_case`（`motor_init`）
 2. 头文件保护 `__MOTOR_H` → `MOTOR_H`
