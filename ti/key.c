@@ -59,6 +59,9 @@
  * - 长按保持 → KEY_EVENT_REPEAT（每 repeat_ms 一次）
  * - 长按后释放 → KEY_EVENT_RELEASE
  * - 回调可选：key_set_callback(&keys, my_handler);
+ *
+ * 注意：key_task_flag 是模块级全局变量，多个 key 实例共享。
+ * 单项目通常只有一组按键，多实例场景需自行管理调度。
  */
 
 #include "key.h"
