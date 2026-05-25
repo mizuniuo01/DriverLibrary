@@ -1,138 +1,164 @@
+/**
+ * @file    cam.c
+ * @brief   摄像头串口通信模块（DMA + 环形缓冲区 + 帧解析）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：UART + DMA 外设已通过 CubeMX 配置
+ * @note    STM32 使用硬件 IDLE 中断检测帧结束
+ * @note    帧协议：0xFF 帧头 + 数据 + 0xFE 帧尾
+ * @warning ISR 回调中只做数据搬运，复杂逻辑在 cam_task 中处理
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * UART DMA + 环形缓冲区 + 帧解析。
+ * 当前为单实例设计（模块内部 static handle）。
+ *
+ * ── 初始化 ──
+ *
+ * cam_init(&huart1);
+ *
+ * ── HAL 回调（重写 HAL 弱函数）──
+ *
+ * void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size)
+ * {
+ *     cam_rx_callback(huart, size);
+ * }
+ *
+ * ── 主循环 ──
+ *
+ * cam_task();  // 帧解析
+ *
+ * ── 数据读取 ──
+ *
+ * cam_data_t data = cam_get_data();
+ */
+
 #include "cam.h"
 
-static Cam_Func_Struct camInfo;
-Cam_Data_Struct camData = {0, 0, 0};    // 摄像头数据结构体实例，根据实际协议定义进行填充
-volatile uint8_t cam_frame_ready = 0;
+#include <string.h>
+
+static cam_handle_t cam_inst;
+static cam_data_t cam_data;
 
 /**
- * @brief 摄像头模块初始化
- * @param huart 绑定的串口句柄指针
- * @retval None
+ * @brief  摄像头模块初始化
+ * @param  huart  绑定的串口句柄指针
+ * @retval 无
  */
-void Cam_Init(UART_HandleTypeDef *huart)
+void cam_init(UART_HandleTypeDef *huart)
 {
-    if (huart == NULL)
-    {
+    if (!huart) {
         return;
     }
 
-    // 绑定外部传入的UART句柄用于底层交互
-    camInfo.huart = huart;
-    cam_frame_ready = 0;
-    
-    // 软状态机与环形缓冲区(FIFO)管理指针重置初始化
-    camInfo.rx_read_pos = 0;
-    camInfo.rx_write_pos = 0;
-    camInfo.rxState = CAM_STATE_WAIT_HEADER;
-    camInfo.frameIndex = 0;
+    cam_inst.huart = huart;
+    cam_inst.rx_read_pos = 0;
+    cam_inst.rx_write_pos = 0;
+    cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
+    cam_inst.frame_index = 0;
 
-    // 清空上次状态并开启DMA空闲中断接收机制
-    HAL_UARTEx_ReceiveToIdle_DMA(camInfo.huart, camInfo.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
+    memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart,
+                                 cam_inst.dma_rx_buffer,
+                                 CAM_DMA_RX_BUF_SIZE);
 }
 
 /**
- * @brief 摄像头的DMA接收回调数据搬运逻辑
- * @param huart 串口句柄指针
- * @param Size 接收到的数据长度
- * @retval None
+ * @brief  DMA 接收完成回调（ISR 中调用），将数据推入 RX FIFO
+ * @param  huart  触发中断的串口句柄
+ * @param  size   实际接收数据长度
+ * @retval 无
  */
-void Cam_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
-    if (huart == NULL || camInfo.huart == NULL)
-    {
+    uint16_t i;
+
+    if (!huart || !cam_inst.huart) {
         return;
     }
 
-    if (huart->Instance == camInfo.huart->Instance)
-    {
-        if (Size > 0)
-        {
-            // 将本次DMA拿到的不定长突发数据，遍历压入应用层的循环FIFO中
-            for (uint16_t i = 0; i < Size; i++)
-            {
-                uint16_t nextWritePos = (camInfo.rx_write_pos + 1) % CAM_RX_FIFO_SIZE;
-                // 检测FIFO队列是否满载越界，防止旧数据被覆盖冲刷
-                if (nextWritePos != camInfo.rx_read_pos)
-                {
-                    camInfo.rxFifo[camInfo.rx_write_pos] = camInfo.dma_rx_buffer[i];
-                    camInfo.rx_write_pos = nextWritePos;
-                }
+    if (huart->Instance != cam_inst.huart->Instance) {
+        return;
+    }
+
+    if (size > 0) {
+        for (i = 0; i < size; i++) {
+            uint16_t next;
+
+            next = (cam_inst.rx_write_pos + 1) % CAM_RX_FIFO_SIZE;
+            if (next != cam_inst.rx_read_pos) {
+                cam_inst.rx_fifo[cam_inst.rx_write_pos] =
+                    cam_inst.dma_rx_buffer[i];
+                cam_inst.rx_write_pos = next;
             }
         }
-
-        // DMA处理完毕后彻底重置硬件缓冲区并再次开启监听
-        memset(camInfo.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-        HAL_UARTEx_ReceiveToIdle_DMA(camInfo.huart, camInfo.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
     }
+
+    memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart,
+                                 cam_inst.dma_rx_buffer,
+                                 CAM_DMA_RX_BUF_SIZE);
 }
 
 /**
- * @brief 摄像头数据解析任务
- * @param None
- * @retval None
+ * @brief  摄像头周期性任务（主循环中调用）
+ * @note   帧解析状态机：帧头 0xFF → 数据 → 帧尾 0xFE
+ * @param  无
+ * @retval 无
  */
-void Cam_Task(void)
+void cam_task(void)
 {
-    // 只要环形队列里有未读数据，就持续提取进行状态机解析
-    while (camInfo.rx_read_pos != camInfo.rx_write_pos)
-    {
-        // 从FIFO提取单个字节流进行消费
-        uint8_t dataReadingPos = camInfo.rxFifo[camInfo.rx_read_pos];
-        camInfo.rx_read_pos = (camInfo.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
+    uint8_t byte;
 
-        // 流式帧解析微状态机
-        switch (camInfo.rxState)
-        {
+    while (cam_inst.rx_read_pos != cam_inst.rx_write_pos) {
+        byte = cam_inst.rx_fifo[cam_inst.rx_read_pos];
+        cam_inst.rx_read_pos =
+            (cam_inst.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
+
+        switch (cam_inst.rx_state) {
             case CAM_STATE_WAIT_HEADER:
-            {
-                // 等待帧头校验达成
-                if (dataReadingPos == CAM_FRAME_HEADER)
-                {
-                    camInfo.frameIndex = 0;
-                    camInfo.rxState = CAM_STATE_RECEIVING_DATA;
+                if (byte == CAM_FRAME_HEADER) {
+                    cam_inst.frame_index = 0;
+                    cam_inst.rx_state = CAM_STATE_RECEIVING_DATA;
                 }
                 break;
-            }
 
             case CAM_STATE_RECEIVING_DATA:
-            {
-                // 判断是否遇到一帧的终止符标志位
-                if (dataReadingPos == CAM_FRAME_TAIL)
-                {   
-                    if (camInfo.frameIndex < CAM_MAX_FRAME_LEN)
-                    {
-                        camInfo.frame_buffer[camInfo.frameIndex] = '\0';
+                if (byte == CAM_FRAME_TAIL) {
+                    if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
+                        cam_inst
+                            .frame_buffer[cam_inst.frame_index] = '\0';
                     }
 
-                    
+                    /* 数据解析：根据实际数据格式填充 cam_data */
 
-                    // 这里写具体解析逻辑
-                    
-
-
-                    cam_frame_ready = 1;
-                    camInfo.rxState = CAM_STATE_WAIT_HEADER;
-                }
-                else if (dataReadingPos == CAM_FRAME_HEADER)
-                {
-                    // 数据域内意外遇到新帧头，强制复位重算
-                    camInfo.frameIndex = 0;
-                }
-                else
-                {
-                    // 正常的有效荷载数据放入用户帧缓存，并附带越界保护
-                    if (camInfo.frameIndex < CAM_MAX_FRAME_LEN)
-                    {
-                        camInfo.frame_buffer[camInfo.frameIndex++] = dataReadingPos;
-                    }
-                    else 
-                    {
-                        // 单帧内容超规，强制抛弃当前包并恢复初始状态
-                        camInfo.rxState = CAM_STATE_WAIT_HEADER;
+                    cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
+                } else if (byte == CAM_FRAME_HEADER) {
+                    cam_inst.frame_index = 0;
+                } else {
+                    if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
+                        cam_inst
+                            .frame_buffer[cam_inst.frame_index++] = byte;
+                    } else {
+                        cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
                     }
                 }
                 break;
-            }
+
+            default:
+                cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
+                break;
         }
     }
+}
+
+/**
+ * @brief  获取摄像头解析数据
+ * @param  无
+ * @retval 摄像头数据结构体
+ */
+cam_data_t cam_get_data(void)
+{
+    return cam_data;
 }

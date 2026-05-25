@@ -1,232 +1,331 @@
+/**
+ * @file    gyroscope.c
+ * @brief   姿态传感器串口通信模块（DMA + 环形缓冲区 + 帧解析 + yaw 增量）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：UART + DMA 外设已通过 CubeMX 配置
+ * @note    STM32 使用硬件 IDLE 中断检测帧结束
+ * @note    帧协议：0x55 + 0x53 + 8字节数据 + 校验和（共11字节）
+ * @note    提供 yaw 增量追踪，配合摄像头帧同步
+ * @warning ISR 回调中只做数据搬运，浮点转换在 gyro_task 中完成
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * UART DMA + 环形缓冲区 + 三态帧解析 + yaw 增量计算。
+ *
+ * ── 初始化 ──
+ *
+ * gyro_init(&huart1);
+ *
+ * ── HAL 回调 ──
+ *
+ * void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t s)
+ * { gyro_rx_callback(huart, s); }
+ * void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+ * { gyro_error_callback(huart); }
+ *
+ * ── ISR 中置 gyro_tick_flag（用于 yaw 增量更新）──
+ *
+ * ── 主循环 ──
+ *
+ * gyro_task();  // 帧解析 + yaw 增量
+ *
+ * ── 摄像头帧同步 ──
+ *
+ * gyro_on_camera_frame();  // 锁定当前增量
+ * float dyaw = gyro_get_delta_yaw();
+ */
+
 #include "gyroscope.h"
 
+#include <string.h>
 
-static Gyro_Func_Struct gyroInfo;               // 陀螺仪通信和帧解析相关状态
-volatile uint8_t gyro_tick_flag = 0;            // 由 1ms 定时器触发，用于驱动陀螺增量计算
-static float gyro_delta_accumulated = 0.0f;     // 累积累计的 yaw 变化量，等待摄像头新帧消费
-static float gyro_frame_delta_yaw = 0.0f;       // 与当前摄像头帧对齐的前馈 yaw 增量
-static float gyro_last_yaw = 0.0f;              // 上一次有效 yaw 用于差分计算
-static uint8_t gyro_delta_initialized = 0;      // 是否已初始化 yaw 差分基准
-Gyro_Data_Struct gyroData = {0.0f, 0.0f, 0.0f}; // 最新姿态角度数据
+static gyro_handle_t gyro_inst;
+static gyro_data_t gyro_data;
+
+volatile uint8_t gyro_tick_flag;
+
+/* yaw 增量追踪 */
+static float gyro_delta_accumulated;
+static float gyro_frame_delta_yaw;
+static float gyro_last_yaw;
+static uint8_t gyro_delta_initialized;
 
 /**
- * @brief 姿态传感器模块初始化
- * @param huart 绑定的串口句柄指针
- * @retval None
+ * @brief  姿态传感器模块初始化
+ * @param  huart  绑定的串口句柄指针
+ * @retval 无
  */
-void Gyro_Init(UART_HandleTypeDef *huart)
+void gyro_init(UART_HandleTypeDef *huart)
 {
-    if (huart == NULL) return;
+    if (!huart) {
+        return;
+    }
 
-    gyroInfo.huart = huart;
-    gyroInfo.rx_read_pos = 0;
-    gyroInfo.rx_write_pos = 0;
-    gyroInfo.rxState = GYRO_STATE_WAIT_HEADER;
-    gyroInfo.frameIndex = 0;
+    gyro_inst.huart = huart;
+    gyro_inst.rx_read_pos = 0;
+    gyro_inst.rx_write_pos = 0;
+    gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
+    gyro_inst.frame_index = 0;
+
     gyro_delta_accumulated = 0.0f;
     gyro_frame_delta_yaw = 0.0f;
     gyro_last_yaw = 0.0f;
     gyro_delta_initialized = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(gyroInfo.huart, gyroInfo.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
+                                 gyro_inst.dma_rx_buffer,
+                                 GYRO_DMA_RX_BUF_SIZE);
 }
 
 /**
- * @brief 姿态传感器的DMA空闲中断接收回调
- * @param huart 串口句柄指针
- * @param Size 接收到的数据长度
- * @retval None
+ * @brief  DMA 接收完成回调（ISR 中调用），将数据推入 RX FIFO
+ * @param  huart  触发中断的串口句柄
+ * @param  size   实际接收数据长度
+ * @retval 无
  */
-void Gyro_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
-    if (huart == NULL || gyroInfo.huart == NULL) return;
+    uint16_t i;
 
-    if (huart->Instance == gyroInfo.huart->Instance)
-    {
-        if (Size > 0)
-        {
-            for (uint16_t i = 0; i < Size; i++)
-            {
-                uint16_t nextWritePos = (gyroInfo.rx_write_pos + 1) % GYRO_RX_FIFO_SIZE;
+    if (!huart || !gyro_inst.huart) {
+        return;
+    }
 
-                if (nextWritePos != gyroInfo.rx_read_pos)
-                {
-                    gyroInfo.rxFifo[gyroInfo.rx_write_pos] = gyroInfo.dma_rx_buffer[i];
-                    gyroInfo.rx_write_pos = nextWritePos;
-                }
+    if (huart->Instance != gyro_inst.huart->Instance) {
+        return;
+    }
+
+    if (size > 0) {
+        for (i = 0; i < size; i++) {
+            uint16_t next;
+
+            next = (gyro_inst.rx_write_pos + 1) % GYRO_RX_FIFO_SIZE;
+            if (next != gyro_inst.rx_read_pos) {
+                gyro_inst.rx_fifo[gyro_inst.rx_write_pos] =
+                    gyro_inst.dma_rx_buffer[i];
+                gyro_inst.rx_write_pos = next;
             }
         }
-
-        memset(gyroInfo.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-        HAL_UARTEx_ReceiveToIdle_DMA(gyroInfo.huart, gyroInfo.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
     }
+
+    memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
+                                 gyro_inst.dma_rx_buffer,
+                                 GYRO_DMA_RX_BUF_SIZE);
 }
 
 /**
- * @brief 姿态传感器数据解析任务
- * @param None
- * @retval None
+ * @brief  串口错误回调（ISR 中调用），复位接收状态机
+ * @param  huart  触发中断的串口句柄
+ * @retval 无
  */
-void Gyro_Task(void)
+void gyro_error_callback(UART_HandleTypeDef *huart)
 {
-    while (gyroInfo.rx_read_pos != gyroInfo.rx_write_pos)
-    {
-        uint8_t dataReadingPos = gyroInfo.rxFifo[gyroInfo.rx_read_pos];
-        gyroInfo.rx_read_pos = (gyroInfo.rx_read_pos + 1) % GYRO_RX_FIFO_SIZE;
+    if (!huart || !gyro_inst.huart) {
+        return;
+    }
 
-        switch (gyroInfo.rxState)
-        {
+    if (huart->Instance != gyro_inst.huart->Instance) {
+        return;
+    }
+
+    gyro_inst.rx_read_pos = 0;
+    gyro_inst.rx_write_pos = 0;
+    gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
+    gyro_inst.frame_index = 0;
+    gyro_delta_initialized = 0;
+    gyro_delta_accumulated = 0.0f;
+    gyro_frame_delta_yaw = 0.0f;
+
+    memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
+                                 gyro_inst.dma_rx_buffer,
+                                 GYRO_DMA_RX_BUF_SIZE);
+}
+
+/**
+ * @brief  校验和验证
+ * @param  buf  数据缓冲区
+ * @param  len  数据长度（含校验字节）
+ * @retval 0=校验失败，1=校验通过
+ */
+static uint8_t verify_checksum(const uint8_t *buf, uint8_t len)
+{
+    uint8_t i;
+    uint8_t sum;
+
+    sum = 0;
+    for (i = 0; i < len - 1; i++) {
+        sum += buf[i];
+    }
+
+    return (sum == buf[len - 1]) ? 1 : 0;
+}
+
+/**
+ * @brief  解析角度数据帧并转换为度
+ * @param  buf  11 字节原始数据帧
+ * @retval 无
+ */
+static void parse_angle_frame(const uint8_t *buf)
+{
+    int16_t roll_raw;
+    int16_t pitch_raw;
+    int16_t yaw_raw;
+
+    roll_raw = (int16_t)((buf[3] << 8) | buf[2]);
+    pitch_raw = (int16_t)((buf[5] << 8) | buf[4]);
+    yaw_raw = (int16_t)((buf[7] << 8) | buf[6]);
+
+    gyro_data.roll = (float)roll_raw / 32768.0f * 180.0f;
+    gyro_data.pitch = (float)pitch_raw / 32768.0f * 180.0f;
+    gyro_data.yaw = (float)yaw_raw / 32768.0f * 180.0f;
+}
+
+/**
+ * @brief  三态帧解析
+ * @note   帧结构：0x55 → 0x53 → 8字节数据+校验
+ * @param  无
+ * @retval 无
+ */
+static void parse_frames(void)
+{
+    uint8_t byte;
+
+    while (gyro_inst.rx_read_pos != gyro_inst.rx_write_pos) {
+        byte = gyro_inst.rx_fifo[gyro_inst.rx_read_pos];
+        gyro_inst.rx_read_pos =
+            (gyro_inst.rx_read_pos + 1) % GYRO_RX_FIFO_SIZE;
+
+        switch (gyro_inst.rx_state) {
             case GYRO_STATE_WAIT_HEADER:
-            {
-                if (dataReadingPos == GYRO_FRAME_HEADER)
-                {
-                    gyroInfo.frame_buffer[0] = dataReadingPos;
-                    gyroInfo.frameIndex = 1;
-                    gyroInfo.rxState = GYRO_STATE_WAIT_TYPE;
+                if (byte == GYRO_FRAME_HEADER) {
+                    gyro_inst.frame_buffer[0] = byte;
+                    gyro_inst.frame_index = 1;
+                    gyro_inst.rx_state = GYRO_STATE_WAIT_TYPE;
                 }
                 break;
-            }
 
             case GYRO_STATE_WAIT_TYPE:
-            {
-                if (dataReadingPos == GYRO_TYPE_ANGLE)
-                {
-                    gyroInfo.frame_buffer[1] = dataReadingPos;
-                    gyroInfo.frameIndex = 2;
-                    gyroInfo.rxState = GYRO_STATE_RECEIVING_DATA;
-                }
-                else if (dataReadingPos == GYRO_FRAME_HEADER)
-                {
-                    gyroInfo.frame_buffer[0] = dataReadingPos;
-                    gyroInfo.frameIndex = 1;
-                }
-                else
-                {
-                    gyroInfo.rxState = GYRO_STATE_WAIT_HEADER;
+                if (byte == GYRO_TYPE_ANGLE) {
+                    gyro_inst.frame_buffer[1] = byte;
+                    gyro_inst.frame_index = 2;
+                    gyro_inst.rx_state = GYRO_STATE_RECEIVING_DATA;
+                } else if (byte == GYRO_FRAME_HEADER) {
+                    gyro_inst.frame_buffer[0] = byte;
+                    gyro_inst.frame_index = 1;
+                } else {
+                    gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
                 }
                 break;
-            }
 
             case GYRO_STATE_RECEIVING_DATA:
-            {
-                gyroInfo.frame_buffer[gyroInfo.frameIndex++] = dataReadingPos;
+                gyro_inst
+                    .frame_buffer[gyro_inst.frame_index++] = byte;
 
-                if (gyroInfo.frameIndex >= GYRO_FRAME_LEN)
-                {
-                    uint8_t checkSum = 0;
-                    for (uint8_t i = 0; i < GYRO_FRAME_LEN - 1; i++)
-                    {
-                        checkSum += gyroInfo.frame_buffer[i];
+                if (gyro_inst.frame_index >= GYRO_FRAME_LEN) {
+                    if (verify_checksum(gyro_inst.frame_buffer,
+                                        GYRO_FRAME_LEN)) {
+                        parse_angle_frame(gyro_inst.frame_buffer);
                     }
 
-                    if (checkSum == gyroInfo.frame_buffer[GYRO_FRAME_LEN - 1])
-                    {
-                        int16_t rollRaw = (int16_t)((gyroInfo.frame_buffer[3] << 8) | gyroInfo.frame_buffer[2]);
-                        int16_t pitchRaw = (int16_t)((gyroInfo.frame_buffer[5] << 8) | gyroInfo.frame_buffer[4]);
-                        int16_t yawRaw = (int16_t)((gyroInfo.frame_buffer[7] << 8) | gyroInfo.frame_buffer[6]);
-
-                        gyroData.roll = (float)rollRaw / 32768.0f * 180.0f;
-                        gyroData.pitch = (float)pitchRaw / 32768.0f * 180.0f;
-                        gyroData.yaw = (float)yawRaw / 32768.0f * 180.0f;
-                    }
-
-                    gyroInfo.rxState = GYRO_STATE_WAIT_HEADER;
+                    gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
                 }
                 break;
-            }
-        }
-    }
 
-    if (gyro_tick_flag != 0)
-    {
-        gyro_tick_flag = 0;
-        Gyro_UpdateDelta();
+            default:
+                gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
+                break;
+        }
     }
 }
 
 /**
- * @brief 更新陀螺仪偏航角增量
- * @param None
- * @retval None
+ * @brief  更新 yaw 增量（由 gyro_tick_flag 触发）
+ * @note   处理角度 ±180° 跨越和异常跳变限幅
+ * @param  无
+ * @retval 无
  */
-void Gyro_UpdateDelta(void)
+static void update_delta_yaw(void)
 {
-    if (!gyro_delta_initialized)
-    {
-        gyro_last_yaw = gyroData.yaw;
+    float current_yaw;
+    float delta;
+
+    if (!gyro_delta_initialized) {
+        gyro_last_yaw = gyro_data.yaw;
         gyro_delta_accumulated = 0.0f;
         gyro_frame_delta_yaw = 0.0f;
         gyro_delta_initialized = 1;
         return;
     }
 
-    float current_yaw = gyroData.yaw;
-    float delta = current_yaw - gyro_last_yaw;
+    current_yaw = gyro_data.yaw;
+    delta = current_yaw - gyro_last_yaw;
 
-    if (delta > 180.0f)
-    {
+    /* 处理 ±180° 跨越 */
+    if (delta > 180.0f) {
         delta -= 360.0f;
-    }
-    else if (delta < -180.0f)
-    {
+    } else if (delta < -180.0f) {
         delta += 360.0f;
     }
 
-    if (delta > GYRO_MAX_DELTA_DEG)
-    {
+    /* 异常跳变限幅 */
+    if (delta > GYRO_MAX_DELTA_DEG) {
         delta = GYRO_MAX_DELTA_DEG;
-    }
-    else if (delta < -GYRO_MAX_DELTA_DEG)
-    {
+    } else if (delta < -GYRO_MAX_DELTA_DEG) {
         delta = -GYRO_MAX_DELTA_DEG;
     }
 
-    // 累积 10ms 级别的偏航变化量，等待摄像头新帧时使用
     gyro_delta_accumulated += delta;
     gyro_last_yaw = current_yaw;
 }
 
 /**
- * @brief 处理摄像头新帧到达后的陀螺仪增量同步
- * @param None
- * @retval None
+ * @brief  姿态传感器周期性任务（主循环中调用）
+ * @note   帧解析 + yaw 增量更新
+ * @param  无
+ * @retval 无
  */
-void Gyro_On_Camera_Frame(void)
+void gyro_task(void)
 {
-    // 将累积值转为当前摄像头帧的前馈量
+    parse_frames();
+
+    if (gyro_tick_flag) {
+        gyro_tick_flag = 0;
+        update_delta_yaw();
+    }
+}
+
+/**
+ * @brief  摄像头帧到达时同步 yaw 增量
+ * @note   将累积的 yaw 增量锁定到当前帧，并清零累积器
+ * @param  无
+ * @retval 无
+ */
+void gyro_on_camera_frame(void)
+{
     gyro_frame_delta_yaw = gyro_delta_accumulated;
     gyro_delta_accumulated = 0.0f;
 }
 
 /**
- * @brief 获取当前陀螺仪偏航角增量
- * @param None
- * @retval 当前增量，单位：度
+ * @brief  获取当前帧的 yaw 增量
+ * @param  无
+ * @retval yaw 增量（度）
  */
-float Gyro_Get_DeltaYaw(void)
+float gyro_get_delta_yaw(void)
 {
     return gyro_frame_delta_yaw;
 }
 
 /**
- * @brief 姿态传感器错误回调
- * @param huart 串口句柄指针
- * @retval None
+ * @brief  获取姿态传感器数据
+ * @param  无
+ * @retval 姿态角数据结构体（roll/pitch/yaw，度）
  */
-void Gyro_ErrorCallback(UART_HandleTypeDef *huart)
+gyro_data_t gyro_get_data(void)
 {
-    if (huart == NULL || gyroInfo.huart == NULL) return;
-
-    if (huart->Instance == gyroInfo.huart->Instance)
-    {
-        gyroInfo.rx_read_pos = 0;
-        gyroInfo.rx_write_pos = 0;
-        gyroInfo.rxState = GYRO_STATE_WAIT_HEADER;
-        gyroInfo.frameIndex = 0;
-        gyro_delta_initialized = 0;
-        gyro_delta_accumulated = 0.0f;
-        gyro_frame_delta_yaw = 0.0f;
-        memset(gyroInfo.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-        HAL_UARTEx_ReceiveToIdle_DMA(gyroInfo.huart, gyroInfo.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
-    }
+    return gyro_data;
 }
