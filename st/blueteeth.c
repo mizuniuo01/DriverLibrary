@@ -97,6 +97,8 @@ static const BlueteethCommandMap_t cmd_table[] = {
     /* {"指令", 回调函数} */
 };
 
+#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0]))
+
 /**
  * @brief  在指令字典中查找匹配的命令并执行回调
  * @param  cmd_string  收到的指令字符串
@@ -195,10 +197,14 @@ void blueteeth_printf(const char *format, ...)
 {
     char temp_buf[128];
     va_list args;
-    int ret;
+    int32_t ret;
     uint16_t length;
     uint32_t primask;
     uint16_t i;
+
+    if (!format) {
+        return;
+    }
 
     va_start(args, format);
     ret = vsnprintf(temp_buf, sizeof(temp_buf), format, args);
@@ -237,10 +243,14 @@ void blueteeth_printf(const char *format, ...)
  * @param  ...     可变参数
  * @retval 无
  */
-void blueteeth_display(int x, int y, const char *format, ...)
+void blueteeth_display(int16_t x, int16_t y, const char *format, ...)
 {
     char temp_buf[128];
     va_list args;
+
+    if (!format) {
+        return;
+    }
 
     va_start(args, format);
     vsnprintf(temp_buf, sizeof(temp_buf), format, args);
@@ -269,6 +279,10 @@ void blueteeth_plot(const char *format, ...)
 {
     char temp_buf[128];
     va_list args;
+
+    if (!format) {
+        return;
+    }
 
     va_start(args, format);
     vsnprintf(temp_buf, sizeof(temp_buf), format, args);

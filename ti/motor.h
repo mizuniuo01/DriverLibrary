@@ -1,17 +1,42 @@
-#ifndef __MOTOR_H
-#define __MOTOR_H
+#ifndef MOTOR_H
+#define MOTOR_H
 
-#include "header.h"
+#include "ti_msp_dl_config.h"
+#include <stdint.h>
 
-// 速度限定（PWM比较值，量程0~PWM_MAX_COMPARE=2000）
-#define MOTOR_MAX_SPEED 2000
-#define MOTOR_MIN_SPEED 0
-// 电机有效最小驱动值（低于该值按0输出）
-#define MOTOR_EFFECTIVE_MIN_SPEED 60
+/*
+ * 速度参数基于 20kHz PWM、PWM_MAX_COMPARE=2000：
+ *   MOTOR_MAX_SPEED = PWM_MAX_COMPARE（100% 占空比）
+ *   MOTOR_EFFECTIVE_MIN_SPEED = 60（3% 占空比，电机死区阈值）
+ *   PWM_MAX_COMPARE 变更时需同步调整 MOTOR_MAX_SPEED。
+ */
+#define MOTOR_MAX_SPEED             2000
+#define MOTOR_MIN_SPEED             0
+#define MOTOR_EFFECTIVE_MIN_SPEED   60 /* 低于该值电机不转，按 0 输出 */
 
-void Motor_Init(void);
-void Motor_Set_Speed_1(GPTIMER_Regs *htim, int16_t speed);
-void Motor_Set_Speed_2(GPTIMER_Regs *htim, int16_t speed);
-extern volatile int8_t motor_right_direction_sign;
+/* 电机配置结构体 */
+typedef struct {
+    GPIO_Regs *port;
+    uint32_t l_nsleep_pin;
+    uint32_t r_nsleep_pin;
+    uint32_t l_ph_in2_pin;
+    uint32_t r_ph_in2_pin;
+} MotorCfg_t;
+
+/* 电机句柄 */
+typedef struct {
+    GPIO_Regs *port;
+    uint32_t l_nsleep_pin;
+    uint32_t r_nsleep_pin;
+    uint32_t l_ph_in2_pin;
+    uint32_t r_ph_in2_pin;
+} MotorHandle_t;
+
+void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg);
+void motor_set_speed_left(MotorHandle_t *handle, GPTIMER_Regs *htim,
+                          int16_t speed);
+void motor_set_speed_right(MotorHandle_t *handle, GPTIMER_Regs *htim,
+                           int16_t speed);
+int8_t motor_get_right_direction_sign(void);
 
 #endif

@@ -13,8 +13,6 @@
 #define BLUETEETH_TX_FIFO_SIZE 512 /* 发送环形队列容量 */
 #define BLUETEETH_MAX_FRAME_LEN 128 /* 单帧协议最大长度 */
 
-#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0]))
-
 #define FRAME_HEADER '@'
 #define FRAME_TAIL '#'
 
@@ -49,7 +47,7 @@ typedef struct {
 
 void blueteeth_init(UART_HandleTypeDef *huart);
 void blueteeth_printf(const char *format, ...);
-void blueteeth_display(int x, int y, const char *format, ...);
+void blueteeth_display(int16_t x, int16_t y, const char *format, ...);
 void blueteeth_clear(void);
 void blueteeth_plot(const char *format, ...);
 void blueteeth_tx_callback(UART_HandleTypeDef *huart);

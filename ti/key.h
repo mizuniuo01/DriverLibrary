@@ -14,7 +14,7 @@ extern volatile uint8_t key_task_flag;
 typedef struct {
     uint32_t pin;
     uint8_t id;
-} key_pin_cfg_t;
+} KeyPinCfg_t;
 
 /* 按键事件类型 */
 typedef enum {
@@ -24,20 +24,20 @@ typedef enum {
     KEY_EVENT_SHORT_PRESS,
     KEY_EVENT_LONG_PRESS,
     KEY_EVENT_REPEAT,
-} key_event_t;
+} KeyEvent_t;
 
 /* 按键句柄 */
-typedef struct key_handle_t key_handle_t;
+typedef struct KeyHandle_t KeyHandle_t;
 
 /* 按键事件回调函数类型 */
-typedef void (*key_callback_t)(key_handle_t *handle, uint8_t key_id,
-                               key_event_t event);
+typedef void (*KeyCallback_t)(KeyHandle_t *handle, uint8_t key_id,
+                              KeyEvent_t event);
 
-struct key_handle_t {
+struct KeyHandle_t {
     GPIO_Regs *port;
     uint32_t pin_mask;
     uint8_t key_count;
-    key_pin_cfg_t pin_cfgs[KEY_MAX_COUNT];
+    KeyPinCfg_t pin_cfgs[KEY_MAX_COUNT];
 
     uint16_t debounce_ms;
     uint16_t long_press_ms;
@@ -50,22 +50,22 @@ struct key_handle_t {
     volatile uint8_t just_released[KEY_MAX_COUNT];
 
     /* task 写入，getter 读取 */
-    volatile key_event_t event[KEY_MAX_COUNT];
+    volatile KeyEvent_t event[KEY_MAX_COUNT];
 
     /* task 私有，ISR 不访问 */
     uint16_t hold_cnt[KEY_MAX_COUNT];
 
-    key_callback_t callback;
+    KeyCallback_t callback;
 };
 
-void key_init(key_handle_t *handle, GPIO_Regs *port,
-              const key_pin_cfg_t *pin_cfgs,
+void key_init(KeyHandle_t *handle, GPIO_Regs *port,
+              const KeyPinCfg_t *pin_cfgs,
               uint8_t key_count, uint16_t debounce_ms,
               uint16_t long_press_ms, uint16_t repeat_ms);
-void key_set_callback(key_handle_t *handle, key_callback_t callback);
-void key_scan_task(key_handle_t *handle);
-void key_task(key_handle_t *handle);
-key_event_t key_get_event(key_handle_t *handle, uint8_t key_id);
-uint8_t key_is_pressed(key_handle_t *handle, uint8_t key_id);
+void key_set_callback(KeyHandle_t *handle, KeyCallback_t callback);
+void key_scan_task(KeyHandle_t *handle);
+void key_task(KeyHandle_t *handle);
+KeyEvent_t key_get_event(KeyHandle_t *handle, uint8_t key_id);
+uint8_t key_is_pressed(KeyHandle_t *handle, uint8_t key_id);
 
 #endif

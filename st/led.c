@@ -12,15 +12,15 @@
  *
  * 基本用法：
  *
- * static led_handle_t led1;
- * static led_handle_t led2;
+ * static LedHandle_t led1;
+ * static LedHandle_t led2;
  *
  * void system_init(void)
  * {
- *     led_cfg_t cfg1 = { .port = LED1_GPIO_Port,
+ *     LedCfg_t cfg1 = { .port = LED1_GPIO_Port,
  *                        .pin  = LED1_Pin,
  *                        .active_level = 1 };
- *     led_cfg_t cfg2 = { .port = LED2_GPIO_Port,
+ *     LedCfg_t cfg2 = { .port = LED2_GPIO_Port,
  *                        .pin  = LED2_Pin,
  *                        .active_level = 0 };
  *     led_init(&led1, &cfg1);
@@ -43,7 +43,7 @@
  * @param  cfg     LED 配置指针
  * @retval 无
  */
-void led_init(led_handle_t *handle, const led_cfg_t *cfg)
+void led_init(LedHandle_t *handle, const LedCfg_t *cfg)
 {
     if (!handle || !cfg) {
         return;
@@ -62,7 +62,7 @@ void led_init(led_handle_t *handle, const led_cfg_t *cfg)
  * @param  handle  LED 句柄指针
  * @retval 无
  */
-void led_on(led_handle_t *handle)
+void led_on(LedHandle_t *handle)
 {
     if (!handle) {
         return;
@@ -80,7 +80,7 @@ void led_on(led_handle_t *handle)
  * @param  handle  LED 句柄指针
  * @retval 无
  */
-void led_off(led_handle_t *handle)
+void led_off(LedHandle_t *handle)
 {
     if (!handle) {
         return;
@@ -98,7 +98,7 @@ void led_off(led_handle_t *handle)
  * @param  handle  LED 句柄指针
  * @retval 无
  */
-void led_toggle(led_handle_t *handle)
+void led_toggle(LedHandle_t *handle)
 {
     if (!handle) {
         return;
@@ -113,7 +113,7 @@ void led_toggle(led_handle_t *handle)
  * @param  state   0=熄灭，非0=点亮
  * @retval 无
  */
-void led_set(led_handle_t *handle, uint8_t state)
+void led_set(LedHandle_t *handle, uint8_t state)
 {
     if (!handle) {
         return;

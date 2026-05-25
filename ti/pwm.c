@@ -1,52 +1,90 @@
+/**
+ * @file    pwm.c
+ * @brief   PWM 输出模块（定时器比较值控制）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    依赖：PWM 定时器已在 SysConfig 中配置
+ * @note    无内部状态，通过传入的定时器句柄直接操作硬件
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * PWM 比较值薄封装，供 motor 模块调用。不独立使用。
+ *
+ * 配合 DRV8874：定时器 CH0/CH1 分别输出 PWM 到两片 DRV8874
+ * 的 IN1 引脚，IN2 由 motor 模块的 GPIO 控制方向。
+ *
+ * 参数推导（以 20kHz 载波频率为基准）：
+ *   PWM_FREQ_HZ = 20000
+ *   PWM_MAX_COMPARE = 定时器时钟频率 / 20000
+ *   例：SysConfig 中定时器时钟 40MHz → CC = 40000000/20000 = 2000
+ *
+ * SysConfig 配置要点：
+ * - 定时器模式：PWM（Up count mode）
+ * - 定时器时钟源频率决定 CC 值：CC = 时钟频率 / 20000
+ * - 若修改时钟源，必须同步更新 pwm.h 中的 PWM_MAX_COMPARE
+ * - 两个通道 CH0/CH1 使能，各自绑定到对应电机引脚
+ *
+ * ── 初始化 ──
+ *
+ * pwm_init(PWM_MOTOR_INST);  // 启动计数器，PWM 开始输出
+ *
+ * ── motor 模块调用（不直接使用）──
+ *
+ * pwm_set_compare_ch0(htim, 1000);  // 左电机 50% 占空比
+ * pwm_set_compare_ch1(htim, 1500);  // 右电机 75% 占空比
+ */
+
 #include "pwm.h"
 
 /**
- * @brief 初始化并使能对应的 PWM 定时器实例
- * @param htim 绑定的定时器句柄指针 (如 PWM_MOTOR_INST)
- * @retval None
+ * @brief  启动 PWM 定时器计数器
+ * @param  htim  定时器句柄指针
+ * @retval 无
  */
-void PWM_Init(GPTIMER_Regs *htim)
+void pwm_init(GPTIMER_Regs *htim)
 {
-    if (htim == NULL) return;
+    if (htim == NULL) {
+        return;
+    }
 
-    // 启动对应的定时器计数器，使能 PWM 在通道上的持续载波输出
     DL_Timer_startCounter(htim);
 }
 
 /**
- * @brief 设置指定的 PWM 定时器中 Channel 0 的比较值(占空比)
- * @param htim 绑定的定时器句柄
- * @param compare 设置的计数值
- * @retval None
+ * @brief  设置 PWM 通道 0 的比较值（占空比）
+ * @param  htim     定时器句柄指针
+ * @param  compare  比较值（0~PWM_MAX_COMPARE），超限自动钳位
+ * @retval 无
  */
-void PWM_Set_Compare_CH0(GPTIMER_Regs *htim, uint16_t compare)
+void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare)
 {
-    if (htim == NULL) return;
+    if (htim == NULL) {
+        return;
+    }
 
-    // 限制最高边界防止发生溢出异常或导致全通死区
-    if (compare > PWM_MAX_COMPARE) 
-    {
+    if (compare > PWM_MAX_COMPARE) {
         compare = PWM_MAX_COMPARE;
     }
-    
-    // 原 HAL 中使用的 __HAL_TIM_SET_COMPARE 替换为 DriverLib 的捕捉比较寄存器赋值 API
+
     DL_Timer_setCaptureCompareValue(htim, compare, DL_TIMER_CC_0_INDEX);
 }
 
 /**
- * @brief 设置指定的 PWM 定时器中 Channel 1 的比较值(占空比)
- * @param htim 绑定的定时器句柄
- * @param compare 设置的计数值
- * @retval None
+ * @brief  设置 PWM 通道 1 的比较值（占空比）
+ * @param  htim     定时器句柄指针
+ * @param  compare  比较值（0~PWM_MAX_COMPARE），超限自动钳位
+ * @retval 无
  */
-void PWM_Set_Compare_CH1(GPTIMER_Regs *htim, uint16_t compare)
+void pwm_set_compare_ch1(GPTIMER_Regs *htim, uint16_t compare)
 {
-    if (htim == NULL) return;
+    if (htim == NULL) {
+        return;
+    }
 
-    if (compare > PWM_MAX_COMPARE) 
-    {
+    if (compare > PWM_MAX_COMPARE) {
         compare = PWM_MAX_COMPARE;
     }
-    
+
     DL_Timer_setCaptureCompareValue(htim, compare, DL_TIMER_CC_1_INDEX);
 }

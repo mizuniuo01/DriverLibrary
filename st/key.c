@@ -16,9 +16,9 @@
  *
  * 完整用法：
  *
- * static key_handle_t keys;
+ * static KeyHandle_t keys;
  *
- * const key_pin_cfg_t pins[] = {
+ * const KeyPinCfg_t pins[] = {
  *     {KEY1_Pin, 0},
  *     {KEY2_Pin, 1},
  *     {KEY3_Pin, 2},
@@ -46,7 +46,7 @@
  *     while (1) {
  *         key_task(&keys);   // 内部检查 key_task_flag
  *
- *         key_event_t e = key_get_event(&keys, 0);
+ *         KeyEvent_t e = key_get_event(&keys, 0);
  *         if (e == KEY_EVENT_SHORT_PRESS) { ... }
  *         if (e == KEY_EVENT_LONG_PRESS)  { ... }
  *     }
@@ -86,8 +86,8 @@ volatile uint8_t key_task_flag;
  * @param  repeat_ms      连发间隔（ms，0 表示禁用连发）
  * @retval 无
  */
-void key_init(key_handle_t *handle, GPIO_TypeDef *port,
-              const key_pin_cfg_t *pin_cfgs,
+void key_init(KeyHandle_t *handle, GPIO_TypeDef *port,
+              const KeyPinCfg_t *pin_cfgs,
               uint8_t key_count, uint16_t debounce_ms,
               uint16_t long_press_ms, uint16_t repeat_ms)
 {
@@ -123,7 +123,7 @@ void key_init(key_handle_t *handle, GPIO_TypeDef *port,
  * @param  callback  回调函数指针（NULL 表示禁用回调）
  * @retval 无
  */
-void key_set_callback(key_handle_t *handle, key_callback_t callback)
+void key_set_callback(KeyHandle_t *handle, KeyCallback_t callback)
 {
     if (!handle) {
         return;
@@ -140,7 +140,7 @@ void key_set_callback(key_handle_t *handle, key_callback_t callback)
  * @param  handle  按键句柄指针
  * @retval 无
  */
-void key_scan_task(key_handle_t *handle)
+void key_scan_task(KeyHandle_t *handle)
 {
     uint8_t i;
 
@@ -187,7 +187,7 @@ void key_scan_task(key_handle_t *handle)
  * @param  handle  按键句柄指针
  * @retval 无
  */
-void key_task(key_handle_t *handle)
+void key_task(KeyHandle_t *handle)
 {
     uint8_t i;
 
@@ -279,10 +279,10 @@ void key_task(key_handle_t *handle)
  * @param  key_id  按键编号
  * @retval 按键事件类型
  */
-key_event_t key_get_event(key_handle_t *handle, uint8_t key_id)
+KeyEvent_t key_get_event(KeyHandle_t *handle, uint8_t key_id)
 {
     uint8_t i;
-    key_event_t evt;
+    KeyEvent_t evt;
 
     if (!handle || key_id >= handle->key_count) {
         return KEY_EVENT_NONE;
@@ -310,7 +310,7 @@ key_event_t key_get_event(key_handle_t *handle, uint8_t key_id)
  * @param  key_id  按键编号
  * @retval 0=未按下，1=按下中
  */
-uint8_t key_is_pressed(key_handle_t *handle, uint8_t key_id)
+uint8_t key_is_pressed(KeyHandle_t *handle, uint8_t key_id)
 {
     uint8_t i;
 

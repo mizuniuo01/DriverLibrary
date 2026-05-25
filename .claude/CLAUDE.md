@@ -58,6 +58,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/buzzer`、`st/buzzer` — 蜂鸣器 GPIO 控制（多实例句柄注入）
 - `ti/led`、`st/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
 - `ti/key`、`st/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
+- `ti/encoder` — 编码器（左 QEI + 右捕获，static + getter 替代 extern 全局变量）
+- `ti/pwm` — PWM 输出（定时器比较值薄封装）
+- `ti/motor` — 直流有刷电机（IN/IN 模式，两路 PWM + 方向控制，引脚 cfg 注入）
 
 ## 平台差异备忘（通信类模块重写时参考）
 
