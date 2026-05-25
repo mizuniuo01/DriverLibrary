@@ -1,14 +1,88 @@
 /**
  * @file    blueteeth.c
- * @brief   蓝牙串口透传模块实现
+ * @brief   蓝牙串口透传模块（DMA + 环形缓冲区 + 帧解析状态机）
  * @author  mizuniuo01
  * @date    2026-05-25
  * @version 2.0.0
  * @note    使用江协科技蓝牙小程序，打印和绘图函数适配小程序协议
- * @note    依赖：UART + DMA 外设已初始化，HAL 库已配置
+ * @note    依赖：UART + DMA 外设已通过 CubeMX 配置并初始化
  * @note    STM32 使用硬件 IDLE 中断检测帧结束，无需软件轮询
  * @note    若使用非 F4 系列 MCU，将头文件中的 <stm32f4xx_hal.h> 替换为对应系列
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * 通信层模块，单实例设计（模块内部 static handle）。
+ * STM32 通过 HAL 库管理 UART+DMA，回调通过 HAL 弱函数
+ * HAL_UARTEx_RxEventCallback / HAL_UART_TxCpltCallback 触发。
+ *
+ * ── CubeMX 配置要点 ──
+ *
+ * - UART：使能全局中断 + DMA TX/RX（Normal 模式）
+ * - DMA RX：Mode = Normal, Data Width = Byte
+ * - DMA TX：Mode = Normal, Data Width = Byte
+ * - NVIC：UART 中断优先级低于控制类 ISR，高于 SysTick
+ *
+ * ── 初始化 ──
+ *
+ * void system_init(void)
+ * {
+ *     blueteeth_init(&huart1);
+ * }
+ *
+ * ── HAL 回调（在 main.c 或其他位置重写 HAL 弱函数）──
+ *
+ * void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart,
+ *                                  uint16_t size)
+ * {
+ *     blueteeth_rx_callback(huart, size);
+ * }
+ *
+ * void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+ * {
+ *     blueteeth_tx_callback(huart);
+ * }
+ *
+ * ── 主循环 ──
+ *
+ * void main(void)
+ * {
+ *     system_init();
+ *     while (1) {
+ *         blueteeth_task();  // 帧解析
+ *     }
+ * }
+ *
+ * ── 发送数据 ──
+ *
+ * blueteeth_printf("value: %d\r\n", val);
+ * blueteeth_display(0, 20, "speed: %d", spd);
+ * blueteeth_plot("%d,%d,%d", ch1, ch2, ch3);
+ * blueteeth_clear();
+ *
+ * ── 接收指令 ──
+ *
+ * // 在 cmd_table[] 中添加条目：
+ * static const BlueteethCommandMap_t cmd_table[] = {
+ *     {"START", on_start_cmd},   // 收到 @START# → on_start_cmd()
+ *     {"STOP",  on_stop_cmd},
+ * };
+ *
+ * ── 缓冲区宏说明 ──
+ *
+ * BLUETEETH_DMA_RX_BUF_SIZE  128   单次 DMA 接收缓冲
+ * BLUETEETH_DMA_TX_BUF_SIZE  128   单次 DMA 发送缓冲
+ * BLUETEETH_RX_FIFO_SIZE     512   接收环形队列
+ * BLUETEETH_TX_FIFO_SIZE     512   发送环形队列
+ * BLUETEETH_MAX_FRAME_LEN    128   单帧最大长度
+ * FRAME_HEADER               '@'   帧头
+ * FRAME_TAIL                 '#'   帧尾
+ *
+ * ── TI / STM32 差异 ──
+ *
+ * STM32 版不使用 blueteeth_check_idle_flag 和
+ * blueteeth_error_callback。帧结束由硬件 IDLE 中断自动触发。
+ * TI 版需要定时器 ISR 周期性置位 check_idle_flag 做软件 IDLE 检测。
  */
 
 #include "blueteeth.h"

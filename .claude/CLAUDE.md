@@ -55,9 +55,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 已重写模块
 
 - `ti/blueteeth`、`st/blueteeth` — 蓝牙串口透传
-- `ti/buzzer` — 蜂鸣器 GPIO 控制（多实例句柄注入）
-- `ti/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
-- `ti/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
+- `ti/buzzer`、`st/buzzer` — 蜂鸣器 GPIO 控制（多实例句柄注入）
+- `ti/led`、`st/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
+- `ti/key`、`st/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
 
 ## 平台差异备忘（通信类模块重写时参考）
 

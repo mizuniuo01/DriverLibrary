@@ -1,10 +1,24 @@
-#ifndef __BUZZER_H
-#define __BUZZER_H
+#ifndef BUZZER_H
+#define BUZZER_H
 
-#include "main.h"
+#include <stm32f4xx_hal.h>
+#include <stdint.h>
 
-void Buzzer_ON(void);
-void Buzzer_OFF(void);
-void Buzzer_TOGGLE(void);
+/* 蜂鸣器配置结构体 */
+typedef struct {
+    GPIO_TypeDef *port;
+    uint16_t pin;
+} buzzer_cfg_t;
+
+/* 蜂鸣器句柄 */
+typedef struct {
+    GPIO_TypeDef *port;
+    uint16_t pin;
+} buzzer_handle_t;
+
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg);
+void buzzer_on(buzzer_handle_t *handle);
+void buzzer_off(buzzer_handle_t *handle);
+void buzzer_toggle(buzzer_handle_t *handle);
 
 #endif

@@ -1,22 +1,27 @@
-#ifndef __LED_H
-#define __LED_H
+#ifndef LED_H
+#define LED_H
 
-#include "main.h"
+#include <stm32f4xx_hal.h>
+#include <stdint.h>
 
-// LED 控制端口宏定义
-#define LED_GPIO_PORT   GPIOA
+/* LED 配置结构体 */
+typedef struct {
+    GPIO_TypeDef *port;
+    uint16_t pin;
+    uint8_t active_level; /* 有效电平：1=高电平点亮，0=低电平点亮 */
+} led_cfg_t;
 
-// LED 引脚宏定义
-#define LED1_GPIO_PIN   GPIO_PIN_0
-#define LED2_GPIO_PIN   GPIO_PIN_1
+/* LED 句柄 */
+typedef struct {
+    GPIO_TypeDef *port;
+    uint16_t pin;
+    uint8_t active_level;
+} led_handle_t;
 
-// LED 状态控制函数声明
-void LED1_ON(void);
-void LED1_OFF(void);
-void LED1_TOGGLE(void);
-void LED2_ON(void);
-void LED2_OFF(void);
-void LED2_TOGGLE(void);
-void LED_ShowSystemStatus(void);
+void led_init(led_handle_t *handle, const led_cfg_t *cfg);
+void led_on(led_handle_t *handle);
+void led_off(led_handle_t *handle);
+void led_toggle(led_handle_t *handle);
+void led_set(led_handle_t *handle, uint8_t state);
 
 #endif
