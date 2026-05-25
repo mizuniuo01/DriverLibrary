@@ -18,12 +18,12 @@
 typedef enum {
     STATE_WAIT_HEADER = 0,
     STATE_RECEIVING_DATA
-} BlueteethFrameState_t;
+} blueteeth_frame_state_t;
 
 typedef struct {
     const char *cmd_string;
     void (*cmd_handler)(void);
-} BlueteethCommandMap_t;
+} blueteeth_command_map_t;
 
 typedef struct {
     UART_Regs *huart;
@@ -39,10 +39,10 @@ typedef struct {
     volatile uint16_t tx_read_pos;
     volatile uint8_t is_tx_busy;
 
-    BlueteethFrameState_t rx_state;
+    blueteeth_frame_state_t rx_state;
     uint8_t frame_buffer[BLUETEETH_MAX_FRAME_LEN];
     uint16_t frame_index;
-} BlueteethHandle_t;
+} blueteeth_handle_t;
 
 extern volatile uint8_t blueteeth_check_idle_flag;
 

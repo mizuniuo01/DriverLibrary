@@ -38,11 +38,11 @@
  *
  * ── 初始化 ──
  *
- * static MotorHandle_t motor;
+ * static motor_handle_t motor;
  *
  * void system_init(void)
  * {
- *     MotorCfg_t cfg = {
+ *     motor_cfg_t cfg = {
  *         .port          = GPIO_MOTOR_PORT_PORT,
  *         .l_nsleep_pin  = GPIO_MOTOR_PORT_L_nSLEEP_PIN,
  *         .r_nsleep_pin  = GPIO_MOTOR_PORT_R_nSLEEP_PIN,
@@ -87,7 +87,7 @@ static volatile int8_t motor_right_direction_sign = 1;
  * @param  cfg     电机配置指针
  * @retval 无
  */
-void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg)
+void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
 {
     if (!handle || !cfg) {
         return;
@@ -112,7 +112,7 @@ void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg)
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_left(MotorHandle_t *handle,
+void motor_set_speed_left(motor_handle_t *handle,
                           GPTIMER_Regs *htim,
                           int16_t speed)
 {
@@ -156,7 +156,7 @@ void motor_set_speed_left(MotorHandle_t *handle,
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_right(MotorHandle_t *handle,
+void motor_set_speed_right(motor_handle_t *handle,
                            GPTIMER_Regs *htim,
                            int16_t speed)
 {

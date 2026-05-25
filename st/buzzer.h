@@ -8,17 +8,17 @@
 typedef struct {
     GPIO_TypeDef *port;
     uint16_t pin;
-} BuzzerCfg_t;
+} buzzer_cfg_t;
 
 /* 蜂鸣器句柄 */
 typedef struct {
     GPIO_TypeDef *port;
     uint16_t pin;
-} BuzzerHandle_t;
+} buzzer_handle_t;
 
-void buzzer_init(BuzzerHandle_t *handle, const BuzzerCfg_t *cfg);
-void buzzer_on(BuzzerHandle_t *handle);
-void buzzer_off(BuzzerHandle_t *handle);
-void buzzer_toggle(BuzzerHandle_t *handle);
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg);
+void buzzer_on(buzzer_handle_t *handle);
+void buzzer_off(buzzer_handle_t *handle);
+void buzzer_toggle(buzzer_handle_t *handle);
 
 #endif

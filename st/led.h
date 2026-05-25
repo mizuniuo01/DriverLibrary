@@ -9,19 +9,19 @@ typedef struct {
     GPIO_TypeDef *port;
     uint16_t pin;
     uint8_t active_level; /* 有效电平：1=高电平点亮，0=低电平点亮 */
-} LedCfg_t;
+} led_cfg_t;
 
 /* LED 句柄 */
 typedef struct {
     GPIO_TypeDef *port;
     uint16_t pin;
     uint8_t active_level;
-} LedHandle_t;
+} led_handle_t;
 
-void led_init(LedHandle_t *handle, const LedCfg_t *cfg);
-void led_on(LedHandle_t *handle);
-void led_off(LedHandle_t *handle);
-void led_toggle(LedHandle_t *handle);
-void led_set(LedHandle_t *handle, uint8_t state);
+void led_init(led_handle_t *handle, const led_cfg_t *cfg);
+void led_on(led_handle_t *handle);
+void led_off(led_handle_t *handle);
+void led_toggle(led_handle_t *handle);
+void led_set(led_handle_t *handle, uint8_t state);
 
 #endif

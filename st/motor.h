@@ -21,7 +21,7 @@ typedef struct {
     uint16_t r_nsleep_pin;
     uint16_t l_ph_in2_pin;
     uint16_t r_ph_in2_pin;
-} MotorCfg_t;
+} motor_cfg_t;
 
 /* 电机句柄 */
 typedef struct {
@@ -30,12 +30,12 @@ typedef struct {
     uint16_t r_nsleep_pin;
     uint16_t l_ph_in2_pin;
     uint16_t r_ph_in2_pin;
-} MotorHandle_t;
+} motor_handle_t;
 
-void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg);
-void motor_set_speed_left(MotorHandle_t *handle, TIM_HandleTypeDef *htim,
+void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg);
+void motor_set_speed_left(motor_handle_t *handle, TIM_HandleTypeDef *htim,
                           int16_t speed);
-void motor_set_speed_right(MotorHandle_t *handle, TIM_HandleTypeDef *htim,
+void motor_set_speed_right(motor_handle_t *handle, TIM_HandleTypeDef *htim,
                            int16_t speed);
 
 #endif

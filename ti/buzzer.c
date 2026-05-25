@@ -12,11 +12,11 @@
  *
  * 基本用法：
  *
- * static BuzzerHandle_t buzzer;
+ * static buzzer_handle_t buzzer;
  *
  * void system_init(void)
  * {
- *     BuzzerCfg_t cfg = { .port = BUZZER_PORT,
+ *     buzzer_cfg_t cfg = { .port = BUZZER_PORT,
  *                          .pin  = BUZZER_BUZZER1_PIN };
  *     buzzer_init(&buzzer, &cfg);
  * }
@@ -37,7 +37,7 @@
  * @param  cfg     蜂鸣器配置指针
  * @retval 无
  */
-void buzzer_init(BuzzerHandle_t *handle, const BuzzerCfg_t *cfg)
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 {
     if (!handle || !cfg) {
         return;
@@ -55,7 +55,7 @@ void buzzer_init(BuzzerHandle_t *handle, const BuzzerCfg_t *cfg)
  * @param  handle  蜂鸣器句柄指针
  * @retval 无
  */
-void buzzer_on(BuzzerHandle_t *handle)
+void buzzer_on(buzzer_handle_t *handle)
 {
     if (!handle) {
         return;
@@ -69,7 +69,7 @@ void buzzer_on(BuzzerHandle_t *handle)
  * @param  handle  蜂鸣器句柄指针
  * @retval 无
  */
-void buzzer_off(BuzzerHandle_t *handle)
+void buzzer_off(buzzer_handle_t *handle)
 {
     if (!handle) {
         return;
@@ -83,7 +83,7 @@ void buzzer_off(BuzzerHandle_t *handle)
  * @param  handle  蜂鸣器句柄指针
  * @retval 无
  */
-void buzzer_toggle(BuzzerHandle_t *handle)
+void buzzer_toggle(buzzer_handle_t *handle)
 {
     if (!handle) {
         return;

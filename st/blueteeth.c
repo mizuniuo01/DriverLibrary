@@ -63,7 +63,7 @@
  * ── 接收指令 ──
  *
  * // 在 cmd_table[] 中添加条目：
- * static const BlueteethCommandMap_t cmd_table[] = {
+ * static const blueteeth_command_map_t cmd_table[] = {
  *     {"START", on_start_cmd},   // 收到 @START# → on_start_cmd()
  *     {"STOP",  on_stop_cmd},
  * };
@@ -90,10 +90,10 @@
 #include <stdio.h>
 #include <string.h>
 
-static BlueteethHandle_t blueteeth_inst;
+static blueteeth_handle_t blueteeth_inst;
 
 /* 蓝牙指令字典，按实际需求添加条目 */
-static const BlueteethCommandMap_t cmd_table[] = {
+static const blueteeth_command_map_t cmd_table[] = {
     /* {"指令", 回调函数} */
 };
 
