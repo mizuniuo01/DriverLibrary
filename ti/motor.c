@@ -76,6 +76,7 @@
  */
 
 #include "motor.h"
+
 #include "pwm.h"
 
 static volatile int8_t motor_right_direction_sign = 1;

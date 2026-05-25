@@ -105,7 +105,7 @@ static const BlueteethCommandMap_t cmd_table[] = {
     /* {"指令", 回调函数} */
 };
 
-#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0]))
+#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0])) /* 指令表条目数 */
 
 /**
  * @brief  在指令字典中查找匹配的命令并执行回调
@@ -164,7 +164,7 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
  */
 void blueteeth_init(UART_Regs *huart)
 {
-    if (huart == NULL) {
+    if (!huart) {
         return;
     }
 
@@ -453,6 +453,10 @@ void blueteeth_task(void)
                         blueteeth_inst.rx_state = STATE_WAIT_HEADER;
                     }
                 }
+                break;
+
+            default:
+                blueteeth_inst.rx_state = STATE_WAIT_HEADER;
                 break;
         }
     }

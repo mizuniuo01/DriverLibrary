@@ -44,7 +44,7 @@
  */
 void pwm_init(GPTIMER_Regs *htim)
 {
-    if (htim == NULL) {
+    if (!htim) {
         return;
     }
 
@@ -59,7 +59,7 @@ void pwm_init(GPTIMER_Regs *htim)
  */
 void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare)
 {
-    if (htim == NULL) {
+    if (!htim) {
         return;
     }
 
@@ -78,7 +78,7 @@ void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare)
  */
 void pwm_set_compare_ch1(GPTIMER_Regs *htim, uint16_t compare)
 {
-    if (htim == NULL) {
+    if (!htim) {
         return;
     }
 

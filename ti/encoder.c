@@ -53,6 +53,7 @@
  */
 
 #include "encoder.h"
+
 #include "motor.h"
 
 /* 模块私有数据 */
@@ -136,7 +137,7 @@ void encoder_scan_left(GPTIMER_Regs *htim)
     uint16_t current_count;
     int16_t diff_value;
 
-    if (htim == NULL) {
+    if (!htim) {
         return;
     }
 

@@ -59,10 +59,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/led`、`st/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
 - `ti/key`、`st/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
 - `ti/encoder` — 编码器（左 QEI + 右捕获，static + getter 替代 extern 全局变量）
-- `ti/pwm` — PWM 输出（定时器比较值薄封装）
-- `ti/motor` — 直流有刷电机（IN/IN 模式，两路 PWM + 方向控制，引脚 cfg 注入）
+- `ti/pwm` — PWM 输出（20kHz 载波，CC 值由定时器时钟频率决定）
+- `ti/motor` — 直流有刷电机，适配 DRV8874（IN/IN 模式，两路 PWM + 方向控制，引脚 cfg 注入）
 
-## 平台差异备忘（通信类模块重写时参考）
+## 电机闭环链路（encoder + pwm + motor）
+
+三个模块配合 DRV8874 驱动两路编码电机：
+
+```
+encoder_get_left/right()  →  PID  →  motor_set_speed_left/right()
+       ↑                                │
+encoder_scan_left/right()               ↓
+       ↑                          pwm_set_compare_ch0/ch1()
+[编码器硬件]                              ↓
+                                  [DRV8874 → 电机]
+```
+
+PWM 参数以 20kHz 载波为基准：`PWM_MAX_COMPARE = 定时器时钟 / 20000`。SysConfig 中修改定时器时钟后必须同步更新 `pwm.h` 的 `PWM_MAX_COMPARE` 和 `motor.h` 的 `MOTOR_MAX_SPEED`。右编码器方向由 `motor_get_right_direction_sign()` 提供（encoder 依赖 motor）。
+
+## 类型命名：PascalCase_t
+
+依照 BARR-C:2018，所有类型名（struct/enum/typedef）统一为 `PascalCase_t` 格式：
+- `MotorCfg_t`、`MotorHandle_t`、`BuzzerHandle_t`、`LedCfg_t`
+- `KeyEvent_t`、`KeyHandle_t`、`KeyPinCfg_t`、`KeyCallback_t`
+- 多单词类型名同样采用大驼峰：`BlueteethFrameState_t`、`EncoderData_t`
+
+## 平台差异备忘
 
 | | TI MSPM0 | STM32 |
 |---|---|---|
