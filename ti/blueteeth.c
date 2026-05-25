@@ -116,8 +116,7 @@ static void data_transmit(void)
     blueteeth_inst.is_tx_busy = 1;
 
     if (blueteeth_inst.tx_write_pos > blueteeth_inst.tx_read_pos) {
-        send_len = blueteeth_inst.tx_write_pos
-                   - blueteeth_inst.tx_read_pos;
+        send_len = blueteeth_inst.tx_write_pos - blueteeth_inst.tx_read_pos;
         len_to_copy = (send_len > sizeof(blueteeth_inst.dma_tx_buffer))
                           ? sizeof(blueteeth_inst.dma_tx_buffer)
                           : send_len;
@@ -177,8 +176,7 @@ void blueteeth_printf(const char *format, ...)
 
         next = (blueteeth_inst.tx_write_pos + 1) % BLUETEETH_TX_FIFO_SIZE;
         if (next != blueteeth_inst.tx_read_pos) {
-            blueteeth_inst.tx_fifo[blueteeth_inst.tx_write_pos]
-                = temp_buf[i];
+            blueteeth_inst.tx_fifo[blueteeth_inst.tx_write_pos] = temp_buf[i];
             blueteeth_inst.tx_write_pos = next;
         }
     }
@@ -269,8 +267,8 @@ void blueteeth_rx_callback(UART_Regs *huart, uint16_t size)
 
         next = (blueteeth_inst.rx_write_pos + 1) % BLUETEETH_RX_FIFO_SIZE;
         if (next != blueteeth_inst.rx_read_pos) {
-            blueteeth_inst.rx_fifo[blueteeth_inst.rx_write_pos]
-                = blueteeth_inst.dma_rx_buffer[i];
+            blueteeth_inst.rx_fifo[blueteeth_inst.rx_write_pos] =
+                blueteeth_inst.dma_rx_buffer[i];
             blueteeth_inst.rx_write_pos = next;
         }
     }
@@ -326,40 +324,39 @@ void blueteeth_task(void)
     /* 帧解析 */
     while (blueteeth_inst.rx_read_pos != blueteeth_inst.rx_write_pos) {
         byte = blueteeth_inst.rx_fifo[blueteeth_inst.rx_read_pos];
-        blueteeth_inst.rx_read_pos = (blueteeth_inst.rx_read_pos + 1)
-                                     % BLUETEETH_RX_FIFO_SIZE;
+        blueteeth_inst.rx_read_pos =
+            (blueteeth_inst.rx_read_pos + 1) % BLUETEETH_RX_FIFO_SIZE;
 
         switch (blueteeth_inst.rx_state) {
-        case STATE_WAIT_HEADER:
-            if (byte == FRAME_HEADER) {
-                blueteeth_inst.frame_index = 0;
-                blueteeth_inst.rx_state = STATE_RECEIVING_DATA;
-            }
-            break;
+            case STATE_WAIT_HEADER:
+                if (byte == FRAME_HEADER) {
+                    blueteeth_inst.frame_index = 0;
+                    blueteeth_inst.rx_state = STATE_RECEIVING_DATA;
+                }
+                break;
 
-        case STATE_RECEIVING_DATA:
-            if (byte == FRAME_TAIL) {
-                if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN) {
-                    blueteeth_inst.frame_buffer[
-                        blueteeth_inst.frame_index] = '\0';
-                }
-                process_command(
-                    (char *)blueteeth_inst.frame_buffer);
-                blueteeth_inst.rx_state = STATE_WAIT_HEADER;
-            } else if (byte == FRAME_HEADER) {
-                /* 帧内出现帧头，重置接收 */
-                blueteeth_inst.frame_index = 0;
-            } else {
-                if (blueteeth_inst.frame_index
-                    < BLUETEETH_MAX_FRAME_LEN - 1) {
-                    blueteeth_inst.frame_buffer[
-                        blueteeth_inst.frame_index++] = byte;
-                } else {
-                    /* 帧超长，丢弃 */
+            case STATE_RECEIVING_DATA:
+                if (byte == FRAME_TAIL) {
+                    if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN) {
+                        blueteeth_inst
+                            .frame_buffer[blueteeth_inst.frame_index] = '\0';
+                    }
+                    process_command((char *)blueteeth_inst.frame_buffer);
                     blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                } else if (byte == FRAME_HEADER) {
+                    /* 帧内出现帧头，重置接收 */
+                    blueteeth_inst.frame_index = 0;
+                } else {
+                    if (blueteeth_inst.frame_index <
+                        BLUETEETH_MAX_FRAME_LEN - 1) {
+                        blueteeth_inst
+                            .frame_buffer[blueteeth_inst.frame_index++] = byte;
+                    } else {
+                        /* 帧超长，丢弃 */
+                        blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                    }
                 }
-            }
-            break;
+                break;
         }
     }
 }

@@ -97,9 +97,9 @@ pid_algorithm.c
 
 ## 3. 代码格式
 
-### 3.1 花括号（K&R 风格）
+### 3.1 花括号（Linux 风格）
 
-左括号不换行，右括号独占一行。
+控制流左括号不换行（K&R），函数左括号独占一行（Allman）。
 
 ```c
 if (condition) {
@@ -114,7 +114,8 @@ for (int i = 0; i < n; i++) {
     // ...
 }
 
-void function(void) {
+void function(void)
+{
     // ...
 }
 ```
@@ -124,9 +125,14 @@ void function(void) {
 
 反例：
 ```c
-/* 禁止：左括号换行（Allman 风格） */
+/* 禁止：控制流左括号换行 */
 if (condition)
 {
+    // ...
+}
+
+/* 禁止：函数左括号不换行 */
+void function(void) {
     // ...
 }
 
@@ -1389,7 +1395,7 @@ def detect_circle(image, min_radius=10, max_radius=100):
 
 | 规则 | clang-format 设置 |
 |------|-------------------|
-| K&R 花括号 | `BreakBeforeBraces: Attach` |
+| Linux 风格花括号（控制流 K&R，函数 Allman） | `BreakBeforeBraces: Linux` |
 | 4 空格缩进 | `IndentWidth: 4` / `UseTab: Never` |
 | 列宽 80 | `ColumnLimit: 80` |
 | 指针靠右 | `PointerAlignment: Right` |
