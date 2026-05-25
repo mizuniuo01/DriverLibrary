@@ -102,8 +102,7 @@ void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg)
     motor_right_direction_sign = 1;
 
     /* 拉高 nSLEEP 使驱动芯片脱离待机模式 */
-    DL_GPIO_setPins(handle->port,
-                    handle->l_nsleep_pin | handle->r_nsleep_pin);
+    DL_GPIO_setPins(handle->port, handle->l_nsleep_pin | handle->r_nsleep_pin);
 }
 
 /**
@@ -113,7 +112,8 @@ void motor_init(MotorHandle_t *handle, const MotorCfg_t *cfg)
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_left(MotorHandle_t *handle, GPTIMER_Regs *htim,
+void motor_set_speed_left(MotorHandle_t *handle,
+                          GPTIMER_Regs *htim,
                           int16_t speed)
 {
     if (!handle || !htim) {
@@ -156,7 +156,8 @@ void motor_set_speed_left(MotorHandle_t *handle, GPTIMER_Regs *htim,
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_right(MotorHandle_t *handle, GPTIMER_Regs *htim,
+void motor_set_speed_right(MotorHandle_t *handle,
+                           GPTIMER_Regs *htim,
                            int16_t speed)
 {
     if (!handle || !htim) {

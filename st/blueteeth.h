@@ -14,7 +14,7 @@
 #define BLUETEETH_MAX_FRAME_LEN 128 /* 单帧协议最大长度 */
 
 #define FRAME_HEADER '@' /* 帧头标识符 */
-#define FRAME_TAIL   '#' /* 帧尾标识符 */
+#define FRAME_TAIL '#' /* 帧尾标识符 */
 
 typedef enum {
     STATE_WAIT_HEADER = 0,

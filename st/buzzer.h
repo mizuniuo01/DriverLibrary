@@ -1,8 +1,8 @@
 #ifndef BUZZER_H
 #define BUZZER_H
 
-#include <stm32f4xx_hal.h>
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
 
 /* 蜂鸣器配置结构体 */
 typedef struct {

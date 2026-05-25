@@ -97,7 +97,8 @@ static const BlueteethCommandMap_t cmd_table[] = {
     /* {"指令", 回调函数} */
 };
 
-#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0])) /* 指令表条目数 */
+/* 指令表条目数 */
+#define CMD_TABLE_SIZE (sizeof(cmd_table) / sizeof(cmd_table[0]))
 
 /**
  * @brief  在指令字典中查找匹配的命令并执行回调

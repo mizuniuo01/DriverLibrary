@@ -1,8 +1,8 @@
 #ifndef LED_H
 #define LED_H
 
-#include <stm32f4xx_hal.h>
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
 
 /* LED 配置结构体 */
 typedef struct {

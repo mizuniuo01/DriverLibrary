@@ -4,8 +4,8 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 
-#define KEY_MAX_COUNT        8  /* 单句柄最大按键数 */
-#define KEY_TASK_PERIOD_MS   10 /* key_task 调度周期(ms) */
+#define KEY_MAX_COUNT 8 /* 单句柄最大按键数 */
+#define KEY_TASK_PERIOD_MS 10 /* key_task 调度周期(ms) */
 
 /* key_task 调度标志位（ISR 置1，task 清0） */
 extern volatile uint8_t key_task_flag;
@@ -30,7 +30,8 @@ typedef enum {
 typedef struct KeyHandle_t KeyHandle_t;
 
 /* 按键事件回调函数类型 */
-typedef void (*KeyCallback_t)(KeyHandle_t *handle, uint8_t key_id,
+typedef void (*KeyCallback_t)(KeyHandle_t *handle,
+                              uint8_t key_id,
                               KeyEvent_t event);
 
 struct KeyHandle_t {
@@ -58,10 +59,13 @@ struct KeyHandle_t {
     KeyCallback_t callback;
 };
 
-void key_init(KeyHandle_t *handle, GPIO_Regs *port,
+void key_init(KeyHandle_t *handle,
+              GPIO_Regs *port,
               const KeyPinCfg_t *pin_cfgs,
-              uint8_t key_count, uint16_t debounce_ms,
-              uint16_t long_press_ms, uint16_t repeat_ms);
+              uint8_t key_count,
+              uint16_t debounce_ms,
+              uint16_t long_press_ms,
+              uint16_t repeat_ms);
 void key_set_callback(KeyHandle_t *handle, KeyCallback_t callback);
 void key_scan_task(KeyHandle_t *handle);
 void key_task(KeyHandle_t *handle);

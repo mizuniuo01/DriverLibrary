@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **命名**：函数 `snake_case`，类型 `PascalCase`+`_t`，宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
 - **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），80 列宽，指针 `*` 靠右
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
-- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头
+- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 80 列时注释放上一行
 - **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`
 - **禁止**：动态内存、递归、VLA、阻塞延时、条件中赋值
 
@@ -89,6 +89,9 @@ PWM 参数以 20kHz 载波为基准：`PWM_MAX_COMPARE = 定时器时钟 / 20000
 | | TI MSPM0 | STM32 |
 |---|---|---|
 | 平台头文件 | `"ti_msp_dl_config.h"` | `<stm32f4xx_hal.h>` |
+| GPIO 端口类型 | `GPIO_Regs *` | `GPIO_TypeDef *` |
+| GPIO 引脚类型 | `uint32_t` | `uint16_t` |
+| GPIO 读取 | `DL_GPIO_readPins(port, mask)` 批量 | `HAL_GPIO_ReadPin(port, pin)` 单引脚 |
 | DMARX启动 | 手动 `DL_DMA_setSrcAddr`/`setDestAddr`/... | `HAL_UARTEx_ReceiveToIdle_DMA` |
 | 帧结束检测 | DMA 余量不变判定法（task 中轮询） | 硬件 IDLE 中断 |
 | ISR 回调判空 | 无（用户 ISR 已确认实例） | 有（HAL 全局回调需防御） |
