@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v3.1)
+# 嵌入式 C / Python 软件设计规范 (v3.2)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard），Python 部分参照 **PEP 8**。
 
@@ -470,17 +470,14 @@ void motor_init(const motor_cfg_t *cfg)
 4. 标准库头文件
 5. HAL 等平台头文件
 
-每组之间空一行。
+按分组顺序排列，组间不加空行。
 
 ```c
 #include "motor_controller.h"
-
 #include "sensor_adc.h"
 #include "pid_algorithm.h"
-
 #include <stdio.h>
 #include <string.h>
-
 #include "stm32f4xx_hal.h"
 ```
 

@@ -1,63 +1,32 @@
-﻿#ifndef __OLED_H
-#define __OLED_H
+#ifndef OLED_H
+#define OLED_H
 
-#include "header.h"
-#include "oled_data.h"
+#include "ti_msp_dl_config.h"
+#include <stdint.h>
 
-/* 参数宏定义*********************/
+#define OLED_I2C_ADDR     0x78 /* SSD1306 I2C 地址 */
+#define OLED_WIDTH        128  /* 显示宽度（像素） */
+#define OLED_HEIGHT       64   /* 显示高度（像素） */
+#define OLED_PAGES        8    /* 页数（高度/8） */
 
-/* OLED I2C 地址，根据实际屏幕可能为 0x78 或 0x7A */
-#define OLED_I2C_ADDRESS        0x78
+#define OLED_FONT_6X8     6  /* 6×8 字体 */
+#define OLED_FONT_8X16    8  /* 8×16 字体 */
 
-/* FontSize参数取值 */
-/* 此参数值不仅用于判断，而且用于计算横向字符偏移，默认值为字体像素宽度 */
-#define OLED_8X16               8
-#define OLED_6X8                6
+/* OLED 定时刷新标志位（ISR 置1，task 清0） */
+extern volatile uint8_t oled_tick_flag;
 
-/* IsFilled参数数值 */
-#define OLED_UNFILLED           0
-#define OLED_FILLED             1
-
-extern volatile uint8_t oled_tick_flag; // OLED定时刷新标志
-
-/* 函数声明*********************/
-
-/* 初始化函数 */
-void OLED_Init(I2C_Regs *hi2c);
-
-/* 更新函数 */
-void OLED_Update(void);
-void OLED_Task(void);
-void OLED_ErrorCallback(I2C_Regs *hi2c);
-void OLED_UpdateArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
-
-/* 显存控制函数 */
-void OLED_Clear(void);
-void OLED_ClearArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
-void OLED_Reverse(void);
-void OLED_ReverseArea(int16_t X, int16_t Y, uint8_t Width, uint8_t Height);
-
-/* 显示函数 */
-void OLED_ShowChar(int16_t X, int16_t Y, char Char, uint8_t FontSize);
-void OLED_ShowString(int16_t X, int16_t Y, char *String, uint8_t FontSize);
-void OLED_ShowNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
-void OLED_ShowSignedNum(int16_t X, int16_t Y, int32_t Number, uint8_t Length, uint8_t FontSize);
-void OLED_ShowHexNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
-void OLED_ShowBinNum(int16_t X, int16_t Y, uint32_t Number, uint8_t Length, uint8_t FontSize);
-void OLED_ShowFloatNum(int16_t X, int16_t Y, double Number, uint8_t IntLength, uint8_t FraLength, uint8_t FontSize);
-void OLED_ShowImage(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, const uint8_t *Image);
-void OLED_Printf(int16_t X, int16_t Y, uint8_t FontSize, char *format, ...);
-
-/* 绘图函数 */
-void OLED_DrawPoint(int16_t X, int16_t Y);
-uint8_t OLED_GetPoint(int16_t X, int16_t Y);
-void OLED_DrawLine(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1);
-void OLED_DrawRectangle(int16_t X, int16_t Y, uint8_t Width, uint8_t Height, uint8_t IsFilled);
-void OLED_DrawTriangle(int16_t X0, int16_t Y0, int16_t X1, int16_t Y1, int16_t X2, int16_t Y2, uint8_t IsFilled);
-void OLED_DrawCircle(int16_t X, int16_t Y, uint8_t Radius, uint8_t IsFilled);
-void OLED_DrawEllipse(int16_t X, int16_t Y, uint8_t A, uint8_t B, uint8_t IsFilled);
-void OLED_DrawArc(int16_t X, int16_t Y, uint8_t Radius, int16_t StartAngle, int16_t EndAngle, uint8_t IsFilled);
-
-/*********************函数声明*/
+void oled_init(I2C_Regs *hi2c);
+void oled_task(void);
+void oled_clear(void);
+void oled_update(void);
+void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size);
+void oled_show_string(int16_t x, int16_t y, const char *str,
+                      uint8_t font_size);
+void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len,
+                   uint8_t font_size);
+void oled_show_signed_num(int16_t x, int16_t y, int32_t num,
+                          uint8_t len, uint8_t font_size);
+void oled_draw_point(int16_t x, int16_t y);
+void oled_error_callback(I2C_Regs *hi2c);
 
 #endif

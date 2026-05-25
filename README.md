@@ -61,7 +61,7 @@ DriverLibrary/
 | laser | ✓ (新) | ✓ (新) | 激光测距 |
 | led | ✓ (新) | ✓ (新) | LED 控制 |
 | motor | ✓ (新) | ✓ (新) | 直流有刷电机，DRV8874（IN/IN 模式） |
-| oled | ✓ | ✓ | OLED 显示屏 |
+| oled | ✓ (新) | ✓ (新) | OLED 0.96寸 SSD1306 I2C |
 | pattern | ✓ (新) | ✓ (新) | 图案/模式检测 |
 | pid | ✓ (新) | ✓ (新) | PID 控制器 |
 | pwm | ✓ (新) | ✓ (新) | PWM 输出 |
@@ -75,4 +75,4 @@ DriverLibrary/
 
 ## 规范
 
-所有代码遵循 `CODING_STANDARD.md`（v3.0），C 语言部分参照 BARR-C:2018，Python 部分参照 PEP 8。
+所有代码遵循 `CODING_STANDARD.md`（v3.1），C 语言部分参照 BARR-C:2018，Python 部分参照 PEP 8。

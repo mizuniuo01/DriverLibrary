@@ -33,9 +33,7 @@
  */
 
 #include "display.h"
-
 #include "blueteeth.h"
-
 #include <stdio.h>
 
 volatile uint8_t display_refresh_flag;

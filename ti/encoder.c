@@ -53,7 +53,6 @@
  */
 
 #include "encoder.h"
-
 #include "motor.h"
 
 /* 模块私有数据 */
