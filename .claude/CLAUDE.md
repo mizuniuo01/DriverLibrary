@@ -68,6 +68,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/display`、`st/display` — 蓝牙调试仪表盘（数据汇总屏显，错误上报）
 - `ti/pattern`、`st/pattern` — 循迹图案识别（查表法，纯算法）
 - `ti/pid`、`st/pid` — PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差）
+- `ti/sensor`、`st/sensor` — 感为科技八路灰度传感器（I2C，TI: 轮询状态机，STM32: DMA）
 
 ## 电机闭环链路（encoder + pwm + motor）
 

@@ -1,24 +1,22 @@
-#ifndef __SENSOR_H
-#define __SENSOR_H
+#ifndef SENSOR_H
+#define SENSOR_H
 
-#include "header.h"
+#include "ti_msp_dl_config.h"
+#include <stdint.h>
 
-// 传感器 I2C 7位硬件地址 (TI 底层I2C库要求传入的是不移位的7位地址)
-#define SENSOR_I2C_ADDR_7BIT   0x4C
-// 传感器 I2C 通信命令符
-#define SENSOR_CMD_READ_DIG    0xDD
+#define SENSOR_I2C_ADDR_7BIT 0x4C /* 感为科技八路灰度 I2C 7 位地址 */
+#define SENSOR_CMD_READ_DIG  0xDD /* 读取数字量命令 */
 
-// 传感器状态枚举
 typedef enum {
-    SENSOR_IDLE = 0,
-    SENSOR_BUSY
-} Sensor_State_t;
+    SENSOR_STATE_IDLE = 0,
+    SENSOR_STATE_BUSY,
+} sensor_state_t;
 
-void Sensor_Init(I2C_Regs *hi2c);
-Sensor_State_t Sensor_GetState(void);
-void Sensor_RequestData_DMA(void);
-void Sensor_RxCpltCallback(I2C_Regs *hi2c);
-void Sensor_ErrorCallback(I2C_Regs *hi2c);
-uint8_t Sensor_ReadData(void);
+void sensor_init(I2C_Regs *hi2c);
+sensor_state_t sensor_get_state(void);
+void sensor_request(void);
+void sensor_rx_callback(I2C_Regs *hi2c);
+void sensor_error_callback(I2C_Regs *hi2c);
+uint8_t sensor_read_data(void);
 
 #endif

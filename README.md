@@ -65,7 +65,7 @@ DriverLibrary/
 | pattern | ✓ (新) | ✓ (新) | 图案/模式检测 |
 | pid | ✓ (新) | ✓ (新) | PID 控制器 |
 | pwm | ✓ (新) | ✓ (新) | PWM 输出 |
-| sensor | ✓ | ✓ | I2C 传感器 |
+| sensor | ✓ (新) | ✓ (新) | 感为科技八路灰度 I2C |
 | step_motor | ✓ | — | 步进电机 |
 | ultrasonic | ✓ (新) | ✓ (新) | 超声波测距 |
 

@@ -1,129 +1,172 @@
+/**
+ * @file    sensor.c
+ * @brief   感为科技八路灰度传感器驱动（I2C DMA 模式）
+ * @author  mizuniuo01
+ * @date    2026-05-25
+ * @version 1.0.0
+ * @note    仅适配带 MCU 的感为科技八路灰度传感器
+ * @note    I2C 协议，7 位地址 0x4C，通过 DMA 发送 0xDD 命令读取数字量
+ * @note    数据位序：低电平(0)=黑线，高电平(1)=白底，模块内部取反
+ * @note    sensor_task 由 sensor_tick_flag 触发
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * I2C DMA 模式：HAL_I2C_Mem_Read_DMA → 回调中位取反处理。
+ *
+ * ── 初始化 ──
+ *
+ * sensor_init(&hi2c1);
+ *
+ * ── ISR 中置 sensor_tick_flag ──
+ *
+ * ── 主循环 ──
+ *
+ * sensor_task();  // 检查 tick_flag → 发起 DMA 请求
+ *
+ * ── HAL 回调 ──
+ *
+ * void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+ * { sensor_rx_callback(hi2c); }
+ * void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
+ * { sensor_error_callback(hi2c); }
+ *
+ * ── 数据读取 ──
+ *
+ * uint8_t data = sensor_read_data();
+ * // bit0=最左侧探头 ... bit7=最右侧探头，1=黑线
+ */
+
 #include "sensor.h"
 
-// 读取灰度传感器数据结构定义与句柄
-static I2C_HandleTypeDef *sensor_hi2c = NULL;
+static I2C_HandleTypeDef *sensor_hi2c;
 static uint8_t sensor_rx_buffer[1];
-static volatile uint8_t sensor_processed_data = 0;
-static volatile uint8_t dma_busy = 0;
-volatile uint8_t sensor_tick_flag = 0;
+static volatile uint8_t sensor_processed_data;
+static volatile uint8_t dma_busy;
+
+volatile uint8_t sensor_tick_flag;
 
 /**
- * @brief 灰度传感器硬件I2C初始化
- * @param hi2c 绑定的I2C硬件句柄指针
- * @retval None
+ * @brief  传感器 I2C 硬件初始化
+ * @param  hi2c  I2C 外设句柄
+ * @retval 无
  */
-void Sensor_Init(I2C_HandleTypeDef *hi2c)
+void sensor_init(I2C_HandleTypeDef *hi2c)
 {
-    if (hi2c == NULL) return;
+    if (!hi2c) {
+        return;
+    }
+
     sensor_hi2c = hi2c;
     dma_busy = 0;
 }
 
 /**
- * @brief 获取 DMA 工作状态
- * @param None
- * @retval Sensor_State_t 当前传感器状态（忙/空闲）
+ * @brief  获取 DMA 忙闲状态
+ * @param  无
+ * @retval 当前状态
  */
-Sensor_State_t Sensor_GetState(void) 
+sensor_state_t sensor_get_state(void)
 {
-    return dma_busy ? SENSOR_BUSY : SENSOR_IDLE;
+    return dma_busy ? SENSOR_STATE_BUSY : SENSOR_STATE_IDLE;
 }
 
 /**
- * @brief 发起DMA请求读取传感器数字数据
- * @param None
- * @retval None
+ * @brief  发起 DMA 读取传感器数据
+ * @note   由 sensor_task 调用，非阻塞
+ * @param  无
+ * @retval 无
  */
-void Sensor_RequestData_DMA(void)
+void sensor_request_dma(void)
 {
-    if (sensor_hi2c == NULL || dma_busy) return;
+    HAL_StatusTypeDef status;
 
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_DMA(sensor_hi2c, SENSOR_I2C_ADDR, SENSOR_CMD_READ_DIG, I2C_MEMADD_SIZE_8BIT, sensor_rx_buffer, 1);
+    if (!sensor_hi2c || dma_busy) {
+        return;
+    }
 
-    if (status == HAL_OK) 
-    {
+    status = HAL_I2C_Mem_Read_DMA(sensor_hi2c,
+                                   SENSOR_I2C_ADDR,
+                                   SENSOR_CMD_READ_DIG,
+                                   I2C_MEMADD_SIZE_8BIT,
+                                   sensor_rx_buffer, 1);
+
+    if (status == HAL_OK) {
         dma_busy = 1;
-    } 
-    else 
-    {
-        // 遇到通信阻塞主动释掉标志位
+    } else {
         dma_busy = 0;
     }
 }
 
 /**
- * @brief I2C DMA 内存读取完成中断回调
- * @param hi2c 触发中断的I2C句柄
- * @retval None
+ * @brief  I2C DMA 接收完成回调（ISR 中调用）
+ * @note   对原始数据做位取反：低电平(0)=黑线 → 正逻辑(1=黑线)
+ * @param  hi2c  I2C 句柄
+ * @retval 无
  */
-void Sensor_RxCpltCallback(I2C_HandleTypeDef *hi2c)
+void sensor_rx_callback(I2C_HandleTypeDef *hi2c)
 {
-    if (sensor_hi2c == NULL) return;
+    if (!sensor_hi2c) {
+        return;
+    }
 
-    if (hi2c->Instance == sensor_hi2c->Instance)
+    if (hi2c->Instance != sensor_hi2c->Instance) {
+        return;
+    }
+
+    dma_busy = 0;
+
     {
-        dma_busy = 0;
-
         uint8_t raw_data = sensor_rx_buffer[0];
         uint8_t temp_data = 0;
-        
-        /* 
-         * [统一标准约定 —— 低位在左/高位在右]
-         * 物理层面：最左侧探头 -> bit 0，最右侧探头 -> bit 7 
-         * 逻辑定义：0(白底/未触发) 1(黑线/触发)
-         * 假设传感器硬件原始返回值的bit X正好对应从左到右的探头X，
-         * 因为原始I2C数据低电平是黑 需要将其取反提取。
+        uint8_t i;
+
+        /*
+         * 位序标准：bit0=最左探头, bit7=最右探头
+         * 原始数据低电平(0)=黑线，取反转为正逻辑(1=黑线)
          */
-        for (uint8_t i = 0; i < 8; i++)
-        {
-            // 原始引脚为低(0)时代表探测到黑线，此处将其转为正逻辑(1)
-            if (((raw_data >> i) & 0x01) == 0)
-            {
-                // 直接让新数据的 bit i 等于探测到的 1
-                // i = 0存到bit0 (最左), i = 7存到bit7 (最右)
+        for (i = 0; i < 8; i++) {
+            if (((raw_data >> i) & 0x01) == 0) {
                 temp_data |= (1 << i);
             }
         }
-        
-        // 安全刷新系统应用层的全局存储变量
+
         sensor_processed_data = temp_data;
     }
 }
 
 /**
- * @brief DMA 发生通讯错误回调
- * @param hi2c 触发错误的I2C句柄
- * @retval None
+ * @brief  I2C 错误回调（ISR 中调用）
+ * @param  hi2c  I2C 句柄
+ * @retval 无
  */
-void Sensor_ErrorCallback(I2C_HandleTypeDef *hi2c) 
+void sensor_error_callback(I2C_HandleTypeDef *hi2c)
 {
-    if (sensor_hi2c && hi2c->Instance == sensor_hi2c->Instance) 
-    {
-        dma_busy = 0;  // 错误时重置忙标志 防止后续请求永远被拒绝
+    if (sensor_hi2c
+        && hi2c->Instance == sensor_hi2c->Instance) {
+        dma_busy = 0;
     }
 }
 
 /**
- * @brief 获取并在底层完成位序转换后的传感器数据
- * @param None
- * @retval uint8_t 转换后的位图数据
+ * @brief  读取转换后的传感器数据
+ * @param  无
+ * @retval 8 位灰度数据（bit0=最左, 1=黑线）
  */
-uint8_t Sensor_ReadData(void)
+uint8_t sensor_read_data(void)
 {
-    // 直接返回由 DMA 完成中断处理后的最新状态数据
     return sensor_processed_data;
 }
 
 /**
- * @brief 传感器轮询读取任务
- * @param None
- * @retval None
+ * @brief  传感器轮询任务（主循环中调用）
+ * @note   由 sensor_tick_flag 触发
+ * @param  无
+ * @retval 无
  */
-void Sensor_Task(void)
+void sensor_task(void)
 {
-    if (sensor_tick_flag == 1)
-    {
+    if (sensor_tick_flag) {
         sensor_tick_flag = 0;
-        Sensor_RequestData_DMA();
+        sensor_request_dma();
     }
 }
