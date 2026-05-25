@@ -1,6 +1,6 @@
 /**
  * @file    blueteeth.c
- * @brief   蓝牙串口透传模块实现
+ * @brief   蓝牙串口透传模块（DMA + 环形缓冲区 + 帧解析状态机）
  * @author  mizuniuo01
  * @date    2026-05-25
  * @version 2.0.0
@@ -8,6 +8,88 @@
  * @note    依赖：UART + DMA 外设已在 SysConfig 中配置并生成 ti_msp_dl_config.h
  * @note    TI MSPM0 无硬件 IDLE 中断，使用 DMA 余量不变判定法检测帧结束
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理
+ *
+ * @usage
+ * ─────────────────────────────────────────────────────────
+ * 通信层模块，提供蓝牙串口透传 + 格式化输出 + 指令接收解析。
+ * 当前为单实例设计（模块内部 static handle），严重依赖
+ * SysConfig 生成的宏（见下文"硬依赖清单"），因此无法像
+ * buzzer/led/key 那样通过 cfg 结构体完全解耦硬件。
+ *
+ * ── 初始化 ──
+ *
+ * void system_init(void)
+ * {
+ *     blueteeth_init(UART_BLUETEETH_INST);
+ * }
+ *
+ * ── ISR 配置 ──
+ *
+ * // 1. UART 中断：调用 blueteeth 回调
+ * void UART_BLUETEETH_INST_IRQHandler(void)
+ * {
+ *     // 用户自行判断中断源，调用对应回调：
+ *     // - TX DMA 完成 → blueteeth_tx_callback(UART_BLUETEETH_INST)
+ *     // - RX 完成/超时 → blueteeth_rx_callback(UART_BLUETEETH_INST, size)
+ *     // - 错误       → blueteeth_error_callback(UART_BLUETEETH_INST)
+ * }
+ *
+ * // 2. 定时器 ISR：周期性置位软件 IDLE 检测标志（TI 平台特有）
+ * //    周期建议 2ms，STM32 平台不需要此步骤
+ * void Timer_IRQHandler(void)
+ * {
+ *     blueteeth_check_idle_flag = 1;
+ * }
+ *
+ * ── 主循环 ──
+ *
+ * void main(void)
+ * {
+ *     system_init();
+ *     while (1) {
+ *         blueteeth_task();  // 帧解析 + 软件 IDLE 检测
+ *     }
+ * }
+ *
+ * ── 发送数据 ──
+ *
+ * // 格式化文本
+ * blueteeth_printf("sensor: %d, speed: %d\r\n", val, spd);
+ *
+ * // 定点显示（在手机 APP 指定坐标显示）
+ * blueteeth_display(0, 20, "speed: %d", spd);
+ *
+ * // 波形绘图
+ * blueteeth_plot("%d,%d,%d", ch1, ch2, ch3);
+ *
+ * // 清屏
+ * blueteeth_clear();
+ *
+ * ── 接收指令 ──
+ *
+ * // 在 blueteeth.c 的 cmd_table[] 中添加指令映射：
+ * static const BlueteethCommandMap_t cmd_table[] = {
+ *     {"START", on_start_cmd},    // 收到 @START# 时调用 on_start_cmd()
+ *     {"STOP",  on_stop_cmd},
+ * };
+ *
+ * ── 硬依赖清单（全部由 SysConfig 生成，不可改名） ──
+ *
+ * UART_BLUETEETH_INST               UART 外设基地址
+ * UART_BLUETEETH_INST_INT_IRQN      UART 中断向量号
+ * DMA                                DMA 外设基地址
+ * DMA_CH_BLUETEETH_RX_CHAN_ID       DMA 接收通道号
+ * DMA_CH_BLUETEETH_TX_CHAN_ID       DMA 发送通道号
+ *
+ * ── 缓冲区宏说明 ──
+ *
+ * BLUETEETH_DMA_RX_BUF_SIZE  128   单次 DMA 接收缓冲
+ * BLUETEETH_DMA_TX_BUF_SIZE  128   单次 DMA 发送缓冲
+ * BLUETEETH_RX_FIFO_SIZE     1024  接收环形队列（高吞吐时加大）
+ * BLUETEETH_TX_FIFO_SIZE     1024  发送环形队列
+ * BLUETEETH_MAX_FRAME_LEN    128   单帧最大长度
+ * FRAME_HEADER               '@'   帧头
+ * FRAME_TAIL                 '#'   帧尾
  */
 
 #include "blueteeth.h"

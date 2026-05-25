@@ -28,21 +28,29 @@ DriverLibrary/
 
 旧代码已放入 `st/` 和 `ti/` 目录，待逐个按 `CODING_STANDARD.md` 重写。重写完成前，旧代码仅供参考。
 
-已重写模块：`ti/blueteeth`、`st/blueteeth`。
+**已重写模块：**
+
+| 平台 | 模块 | 说明 |
+|------|------|------|
+| ti | blueteeth | 蓝牙串口透传（DMA+FIFO+帧解析） |
+| ti | buzzer | 蜂鸣器 GPIO 控制（多实例句柄注入） |
+| ti | led | LED GPIO 控制（多实例，高低电平适配） |
+| ti | key | 按键（双 task：消抖 + 短按/长按/连发） |
+| st | blueteeth | 蓝牙串口透传 |
 
 ## 模块清单
 
 | 模块 | STM32 | TI | 说明 |
 |------|-------|-----|------|
-| blueteeth | ✓ | ✓ | 蓝牙串口通信（DMA+FIFO+协议解析），已重写 |
-| buzzer | ✓ | ✓ | 蜂鸣器 |
+| blueteeth | ✓ (新) | ✓ (新) | 蓝牙串口通信（DMA+FIFO+协议解析） |
+| buzzer | ✓ (旧) | ✓ (新) | 蜂鸣器 |
 | cam | ✓ | ✓ | 摄像头串口通信 |
 | display | — | ✓ | 蓝牙调试仪表盘 |
 | encoder | ✓ | ✓ | 正交编码器 |
 | gyroscope | ✓ | ✓ | 陀螺仪 |
-| key | ✓ | ✓ | 按键扫描 |
+| key | ✓ (旧) | ✓ (新) | 按键扫描（双 task：消抖+事件分类） |
 | laser | ✓ | — | 激光测距 |
-| led | ✓ | ✓ | LED 控制 |
+| led | ✓ (旧) | ✓ (新) | LED 控制 |
 | motor | ✓ | ✓ | 直流有刷电机（IN/IN 模式） |
 | oled | ✓ | ✓ | OLED 显示屏 |
 | pattern | ✓ | ✓ | 图案/模式检测 |

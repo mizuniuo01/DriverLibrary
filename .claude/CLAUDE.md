@@ -55,6 +55,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 已重写模块
 
 - `ti/blueteeth`、`st/blueteeth` — 蓝牙串口透传
+- `ti/buzzer` — 蜂鸣器 GPIO 控制（多实例句柄注入）
+- `ti/led` — LED GPIO 控制（多实例句柄注入，支持高低电平）
+- `ti/key` — 按键扫描（双 task 架构：B 类消抖 + A 类事件分类，短按/长按/连发）
 
 ## 平台差异备忘（通信类模块重写时参考）
 
@@ -66,3 +69,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | ISR 回调判空 | 无（用户 ISR 已确认实例） | 有（HAL 全局回调需防御） |
 | 实例匹配 | `huart == inst.huart`（指针比较） | `huart->Instance == inst.huart->Instance` |
 | 中断配置 | `DL_UART_Main_setRXInterruptTimeout` + `NVIC_EnableIRQ` | HAL 内部处理 |
+
+## key 双 task 架构（重写其他输入模块时参考）
+
+key 模块将按键处理拆分为两层 task，这是输入类模块的推荐架构：
+
+- **key_scan_task**（B 类，ISR 1ms 直接调用）：积分式消抖 + 边沿检测，只做 GPIO 读取和计数器增减
+- **key_task**（A 类，主循环 10ms flag 触发）：长按计时、连发计时、事件分类（SHORT/LONG/REPEAT/RELEASE）
+
+两层之间通过 `volatile` 标志位（`just_pressed[]`/`just_released[]`）通信，scan 只写、task 只读并清零。
+
+事件读取提供两种方式：`key_get_event()` 轮询和 `key_set_callback()` 回调。
