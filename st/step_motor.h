@@ -11,52 +11,61 @@
 #define STEPMOTOR_TX_FIFO_SIZE      512  /* 发送环形队列容量 */
 #define STEPMOTOR_MAX_FRAME_LEN     64   /* 单帧协议最大长度 */
 #define STEPMOTOR_POWER_ON_DELAY_MS 50   /* 上电等待稳定延时 */
-#define STEPMOTOR_MAX_SPEED_LIMIT   30000 /* 限速防爆保护(RPM) */
+#define STEPMOTOR_MAX_SPEED_LIMIT   30000 /* 最大速度限制（手册：0~3000.0RPM，保留一位小数） */
 #define STEPMOTOR_REACH_TOLERANCE   0.1f /* 判定到达的容差角度 */
 
 /* 电机 ID */
 /*
- * 仅适配张大头 ZDT X42S 第二代步进电机控制器，
- * 使用指令模式（非脉冲模式）。
- * 通信协议：UART 二进制，地址+命令+数据+固定校验 0x6B。
+ * 仅适配张大头 ZDT X42S 第二代闭环步进电机控制器（X 固件）。
+ * 使用指令模式（RS485/UART），不支持脉冲控制。
+ * 协议细节以官方用户手册 V1.0.3 为准，以下注释仅供参考。
+ *
+ * 物理层：默认波特率 115200，8 数据位，1 停止位，无校验（§4.1）
+ * 帧格式：地址(1B) + 命令(1B) + 数据(NB) + 校验(1B)（§4.1.1）
+ *         地址 1~255，0 广播；校验默认固定字节 0x6B
+ *
+ * 本驱动使用 X 固件梯形加减速位置模式（FD 命令，§5.3.10）：
+ *   16 字节帧：Addr + FD + 方向(1) + 加速加速度(2) + 减速加速度(2)
+ *            + 最大速度(2) + 位置角度(4) + 运动模式(1) + 同步标志(1) + 6B
+ *   本驱动将加减速加速度设为相同值以简化参数。
  */
 
-#define MOTOR_ID_X    0x01 /* X 轴 */
-#define MOTOR_ID_Y    0x02 /* Y 轴 */
-#define MOTOR_ID_SYNC 0x00 /* 广播/同步 */
+#define MOTOR_ID_X    0x01 /* X 轴地址 */
+#define MOTOR_ID_Y    0x02 /* Y 轴地址 */
+#define MOTOR_ID_SYNC 0x00 /* 广播地址，触发多机同步（§5.3.14） */
 
-/* 协议指令码 */
-#define MOTOR_CHECKSUM     0x6B /* 固定校验字节 */
-#define MOTOR_CMD_MOVE_ACC 0xFD /* 梯形曲线位置模式 */
-#define MOTOR_CMD_STOP     0xFE /* 紧急停止 */
-#define MOTOR_CMD_SYNC_TRIG 0xFF /* 多机同步触发 */
-#define MOTOR_CMD_READ_POS 0x36 /* 读取实时位置 */
-#define MOTOR_CMD_CLEAR_ZERO 0x0A /* 清除位置零点 */
+/* 命令码（§5.2~§5.5） */
+#define MOTOR_CHECKSUM     0x6B /* 固定校验字节（§4.1.1） */
+#define MOTOR_CMD_MOVE_ACC 0xFD /* 梯形加减速位置模式（X 固件 §5.3.10） */
+#define MOTOR_CMD_STOP     0xFE /* 立即停止（§5.3.13） */
+#define MOTOR_CMD_SYNC_TRIG 0xFF /* 触发多机同步运动（§5.3.14） */
+#define MOTOR_CMD_READ_POS 0x36 /* 读取实时位置角度（§5.5.13） */
+#define MOTOR_CMD_CLEAR_ZERO 0x0A /* 清除当前位置零点（§5.2.3） */
 
-/* 协议补充参数 */
-#define MOTOR_PARAM_STOP_1 0x98 /* 急停参数位 1 */
-#define MOTOR_PARAM_STOP_2 0x00 /* 急停参数位 2 */
-#define MOTOR_PARAM_CLEAR  0x6D /* 清零参数位 */
-#define MOTOR_PARAM_SYNC   0x66 /* 同步触发参数位 */
+/* 命令辅助参数 */
+#define MOTOR_PARAM_STOP_1 0x98 /* 停止辅助码（§5.3.13） */
+#define MOTOR_PARAM_STOP_2 0x00 /* 同步标志：立即执行 */
+#define MOTOR_PARAM_CLEAR  0x6D /* 清零辅助码（§5.2.3） */
+#define MOTOR_PARAM_SYNC   0x66 /* 同步触发辅助码（§5.3.14） */
 
-/* 应答状态 */
-#define MOTOR_STATUS_REACHED 0x9F /* 已到达 */
-#define MOTOR_STATUS_ERR1    0xE2 /* 堵转错误 1 */
-#define MOTOR_STATUS_ERR2    0xEE /* 堵转错误 2 */
+/* 应答状态码（§4.1.2） */
+#define MOTOR_STATUS_REACHED 0x9F /* 操作执行完成 */
+#define MOTOR_STATUS_ERR1    0xE2 /* 参数超限/堵转/过流/过热保护触发 */
+#define MOTOR_STATUS_ERR2    0xEE /* 格式错误 */
 
 /* 角度换算 */
-#define ANGLE_SEND_MULTIPLIER 100.0f /* 发送放大 100 倍 */
+#define ANGLE_SEND_MULTIPLIER 100.0f /* 发送放大 100 倍（0.1° 分辨率） */
 #define ANGLE_READ_DIVIDER    100.0f /* 接收缩小 100 倍 */
 
 /* 心跳参数 */
 #define HEARTBEAT_TIMEOUT_MS 1000 /* 超时判定离线（ms） */
 #define HEARTBEAT_PING_MS    100  /* 轮询间隔（ms） */
 
-/* 默认速度与加速度 */
-#define TRACKING_DEFAULT_SPEED 800  /* 默认转速（RPM） */
-#define TRACKING_DEFAULT_ACC   300  /* 默认加速度（RPM/s） */
-#define TRACKING_SYNC_FLAG_ON  1    /* 同步开启 */
-#define TRACKING_SYNC_FLAG_OFF 0    /* 同步关闭 */
+/* 默认速度与加速度（RPM / RPM/s） */
+#define TRACKING_DEFAULT_SPEED 800  /* 默认转速 */
+#define TRACKING_DEFAULT_ACC   300  /* 默认加速度 */
+#define TRACKING_SYNC_FLAG_ON  1    /* 同步开启（先缓存，等 FF 触发） */
+#define TRACKING_SYNC_FLAG_OFF 0    /* 同步关闭（立即执行） */
 
 /* 接收解析状态 */
 typedef enum {
@@ -65,11 +74,11 @@ typedef enum {
     MOTOR_STATE_RECEIVING_DATA,
 } motor_rx_state_t;
 
-/* 运动模式 */
+/* 运动模式（§5.3.10） */
 typedef enum {
-    MOTOR_MODE_REL_PREV = 0x00,
-    MOTOR_MODE_ABS      = 0x01,
-    MOTOR_MODE_REL_CURR = 0x02,
+    MOTOR_MODE_REL_PREV = 0x00, /* 相对上一目标位置运动 */
+    MOTOR_MODE_ABS      = 0x01, /* 相对坐标零点绝对运动 */
+    MOTOR_MODE_REL_CURR = 0x02, /* 相对当前实时位置运动 */
 } motor_move_mode_t;
 
 /* 单电机状态 */

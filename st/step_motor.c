@@ -4,11 +4,12 @@
  * @author  mizuniuo01
  * @date    2026-05-25
  * @version 1.0.0
- * @note    仅适配张大头 ZDT X42S 第二代步进电机控制器，指令模式（非脉冲模式）
- * @note    DMA + IDLE 中断 + 环形缓冲区架构
- * @note    协议：地址 + 命令 + 数据 + 固定校验字 0x6B
+ * @note    仅适配张大头 ZDT X42S 第二代闭环步进电机（X 固件），指令模式
+ * @note    DMA + IDLE 中断 + 环形缓冲区架构（§12.3）
+ * @note    协议：地址 + 命令 + 数据 + 固定校验 0x6B（手册 §4.1.1）
  * @note    含心跳检测、软限位、梯形加减速控制
- * @warning 上电初始化阶段使用 HAL_Delay 等待底板稳定
+ * @note    协议细节以官方用户手册 V1.0.3 为准
+ * @warning 上电初始化阶段使用 HAL_Delay 等待底板稳定（38.4ms）
  *
  * @usage
  * step_motor_init(&huart1);
@@ -130,7 +131,9 @@ static void push_tx_data(uint8_t *data, uint16_t len)
 }
 
 /**
- * @brief  解析应答帧并更新电机状态
+ * @brief  解析应答帧并更新电机状态（手册 §4.1.2）
+ * @note   读位置返回 8B：Addr+36+符号+位置(4B)+6B
+ * @note   运动命令返回 4B：Addr+FD/FE/FF+状态+6B
  * @param  frame   帧数据
  * @param  length  帧长度
  * @retval 无
@@ -344,7 +347,7 @@ void step_motor_error_callback(UART_HandleTypeDef *huart)
 }
 
 /**
- * @brief  设置电机目标角度（梯形加减速位置模式）
+ * @brief  设置电机目标角度（X 固件梯形加减速位置模式，手册 §5.3.10）
  * @param  id         电机 ID
  * @param  mode       运动模式
  * @param  angle      目标角度
@@ -445,7 +448,7 @@ uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode,
 }
 
 /**
- * @brief  触发多机同步执行
+ * @brief  触发多机同步运动（广播 00+FF+66+6B，手册 §5.3.14）
  * @param  无
  * @retval 无
  */
@@ -462,7 +465,7 @@ void step_motor_sync_trigger(void)
 }
 
 /**
- * @brief  紧急停止指定电机
+ * @brief  立即停止电机（Addr+FE+98+6B，手册 §5.3.13）
  * @param  id  电机 ID
  * @retval 无
  */
@@ -480,7 +483,7 @@ void step_motor_stop(uint8_t id)
 }
 
 /**
- * @brief  清除电机零点
+ * @brief  清除当前位置零点（Addr+0A+6D+6B，手册 §5.2.3）
  * @param  id  电机 ID
  * @retval 无
  */
