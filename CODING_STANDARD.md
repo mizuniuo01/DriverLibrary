@@ -370,14 +370,21 @@ void motor_move_to(MotorController *motor, int32_t target) {
 
 ### 4.4 文件头注释
 
-每个 `.c` 和 `.h` 文件开头写简短说明：
+**仅 `.c` 文件**开头写详细文件头，`.h` 头文件不写文件头。
 
 ```c
 /**
  * @file    motor_controller.c
  * @brief   步进电机运动控制模块
+ * @author  your_name
+ * @date    2026-01-01
+ * @version 1.0.0
+ * @note    依赖 PWM 定时器已初始化
+ * @warning 未做死区保护，PWM 互补输出需外部电路保证
  */
 ```
+
+必填字段：`@file`、`@brief`、`@author`、`@date`、`@version`。`@note` 和 `@warning` 按需填写。
 
 ### 4.5 注释位置
 
@@ -406,6 +413,23 @@ if (motor->direction == DIR_REVERSE) {
 
 - 说明"为什么这么做"，不说明"做了什么"——代码命名已经说明了"做什么"。
 - 禁止在注释中向 AI 或其他人隔空喊话、解释历史原因、贴临时的设计讨论。
+
+### 4.7 代码块分隔
+
+`.c` 文件代码量较大时，可用 `/* ===== 分组名 ===== */` 分隔不同类型的代码块（静态变量、公有函数、回调等），提高浏览效率。代码量小的文件不必加。
+
+```c
+/* ===== 静态变量 ===== */
+
+static MotorHandle_t motor_inst;
+
+/* ===== 公开接口 ===== */
+
+void motor_init(const MotorCfg_t *cfg)
+{
+    // ...
+}
+```
 
 ---
 
@@ -462,7 +486,9 @@ if (motor->direction == DIR_REVERSE) {
 - 全局变量声明（`extern`）
 - 函数声明
 - 禁止写函数实现（`static inline` 小函数除外）。
-- 禁止写函数文档注释。
+- 禁止写函数文档注释（`@brief/@param/@retval` 形式的 Doxygen 注释）。
+- 简短的中文行注释（`/* 按键消抖时间(ms) */`）可用于解释宏或类型，
+  不必为每个声明单独加注释
 
 ---
 
