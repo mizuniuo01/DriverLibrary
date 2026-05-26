@@ -18,6 +18,12 @@
 
 #include "laser.h"
 
+/**
+ * @brief  激光初始化
+ * @param  handle  激光句柄指针
+ * @param  cfg     激光配置指针
+ * @retval 无
+ */
 void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
 {
     if (!handle || !cfg) {
@@ -30,6 +36,11 @@ void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
     DL_GPIO_clearPins(handle->port, handle->pin);
 }
 
+/**
+ * @brief  打开激光
+ * @param  handle  激光句柄指针
+ * @retval 无
+ */
 void laser_on(laser_handle_t *handle)
 {
     if (!handle) {
@@ -39,6 +50,11 @@ void laser_on(laser_handle_t *handle)
     DL_GPIO_setPins(handle->port, handle->pin);
 }
 
+/**
+ * @brief  关闭激光
+ * @param  handle  激光句柄指针
+ * @retval 无
+ */
 void laser_off(laser_handle_t *handle)
 {
     if (!handle) {
@@ -48,6 +64,11 @@ void laser_off(laser_handle_t *handle)
     DL_GPIO_clearPins(handle->port, handle->pin);
 }
 
+/**
+ * @brief  翻转激光状态
+ * @param  handle  激光句柄指针
+ * @retval 无
+ */
 void laser_toggle(laser_handle_t *handle)
 {
     if (!handle) {

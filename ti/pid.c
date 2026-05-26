@@ -17,6 +17,16 @@
 
 #include "pid.h"
 
+/**
+ * @brief  PID 初始化
+ * @param  pid           PID 句柄指针
+ * @param  p             比例系数
+ * @param  i             积分系数
+ * @param  d             微分系数
+ * @param  out_max       输出限幅
+ * @param  integral_max  积分饱和限幅
+ * @retval 无
+ */
 void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
 {
     if (!pid) {
@@ -40,6 +50,13 @@ void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integr
     pid->integral_max = integral_max;
 }
 
+/**
+ * @brief  PID 计算（微分-on-实际值）
+ * @param  pid     PID 句柄指针
+ * @param  target  目标值
+ * @param  actual  实际值
+ * @retval PID 输出值
+ */
 float pid_calc(pid_t *pid, float target, float actual)
 {
     if (!pid) {
@@ -79,6 +96,11 @@ float pid_calc(pid_t *pid, float target, float actual)
     return pid->out;
 }
 
+/**
+ * @brief  清除 PID 历史状态
+ * @param  pid  PID 句柄指针
+ * @retval 无
+ */
 void pid_clear(pid_t *pid)
 {
     if (!pid) {

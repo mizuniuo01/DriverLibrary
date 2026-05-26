@@ -51,6 +51,10 @@ void display_show_error(const char *format, ...)
 {
     va_list args;
 
+    if (!format) {
+        return;
+    }
+
     va_start(args, format);
     vsnprintf(error_msg, sizeof(error_msg), format, args);
     va_end(args);

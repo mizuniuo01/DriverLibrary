@@ -2,7 +2,6 @@
 #define DISPLAY_H
 
 #include <stdint.h>
-#include <stm32f4xx_hal.h>
 
 #define DISPLAY_LINE_1_Y 0    /* 第 1 行 */
 #define DISPLAY_LINE_2_Y 20   /* 第 2 行 */

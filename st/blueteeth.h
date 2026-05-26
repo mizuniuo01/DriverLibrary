@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stdarg.h>
-
 #include <stm32f4xx_hal.h>
 
 #define BLUETEETH_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */

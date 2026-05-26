@@ -1,7 +1,6 @@
 #ifndef DISPLAY_H
 #define DISPLAY_H
 
-#include "ti_msp_dl_config.h"
 #include <stdint.h>
 
 #define DISPLAY_LINE_1_Y 0    /* 第 1 行 */
