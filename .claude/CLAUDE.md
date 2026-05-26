@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
-- `CODING_STANDARD.md` — 唯一的权威规范文档（v4.2），包含代码风格和软件设计模式
+- `CODING_STANDARD.md` — 唯一的权威规范文档（v1.0 Release），包含代码风格和软件设计模式
 
 ## 无构建系统
 

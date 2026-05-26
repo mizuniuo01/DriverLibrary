@@ -2,7 +2,7 @@
 
 个人嵌入式外设驱动库，适用于 STM32（HAL）和 TI MSPM0（DriverLib）系列 MCU。
 
-所有代码遵循 `CODING_STANDARD.md`（v4.2），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
+所有代码遵循 `CODING_STANDARD.md`（v1.0 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
 
 > **注意**：全部模块已完成代码重写，但**均未实际测试**，使用前请验证。
 
@@ -96,6 +96,6 @@ DriverLibrary/
 
 ## 规范
 
-所有代码遵循 `CODING_STANDARD.md`（v4.2），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
+所有代码遵循 `CODING_STANDARD.md`（v1.0 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
 
 所有 `.c` 文件的文件头中包含完整的 `@usage` 使用示例。各模块详细说明见 `CLAUDE.md`。

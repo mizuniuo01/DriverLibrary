@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v4.2)
+# 嵌入式 C / Python 软件设计规范 (v1.0 Release)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard）
 和 **Linux 内核编码规范**（CodingStyle），Python 部分参照 **PEP 8**。
@@ -20,14 +20,19 @@
 
 ## 2. 命名规范
 
-### 2.1 宏 / 常量
+### 2.1 宏
 
-`UPPER_SNAKE_CASE`，全大写，单词间下划线分隔。
+`UPPER_SNAKE_CASE`，全大写，单词间下划线分隔。仅用于孤立的配置常量（非逻辑组），逻辑相关的常量归入 `typedef enum`（见 §6.3）。
 
 ```c
-#define MAX_PWM_VALUE       2000
-#define UART_TIMEOUT_MS     100
-#define BUFFER_SIZE         256
+/* 浮点常量 */
+#define GYRO_MAX_DELTA_DEG 50.0f
+
+/* 运算宏（不可用 enum 替代） */
+#define SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1)
+
+/* 孤立单值 */
+#define MOTOR_CHECKSUM 0x6B
 ```
 
 ### 2.2 变量
@@ -244,7 +249,7 @@ int32_t *a, *b;  /* 每个变量单独声明，不要这样批量写在一行 */
 ### 3.6 变量声明
 
 - **一行只声明一个变量**。
-- 变量声明放在所在代码块的开头（C99 及以后不强制，但保持一致性）。
+- 变量声明推迟到首次使用时，尽量在声明处直接初始化，缩小作用域，方便加 `const`。
 
 ```c
 void function(void)
@@ -424,6 +429,7 @@ if (motor->direction == DIR_REVERSE) {
 **例外**：
 - **宏定义**允许行尾注释（这是 C 工业界的惯例，见 4.3 示例）。
 - **极短的变量用途说明**允许行尾注释： `volatile uint8_t dma_done; /* DMA 完成标志，ISR 中置位 */`
+- **枚举值**允许行尾注释，枚举成员多且带值时上方注释反而难以对齐，行尾注释更直观（见 6.3 示例）。
 
 ### 4.6 注释内容
 
@@ -445,10 +451,6 @@ void motor_init(const motor_cfg_t *cfg)
 {
     // ...
 }
-```
-
-```c
-/* 正确的函数括号：Allman（左括号独占一行） */
 ```
 
 ---
@@ -554,15 +556,45 @@ const uint16_t pwm_max = 2000; /* 硬件决定的固定上限 */
 
 ### 6.3 枚举
 
-优先使用 `enum` 代替一堆 `#define` 做状态标识。
+逻辑相关的整数常量应归入 `typedef enum`（BARR-C:2018 规则 1.8），不仅是状态标识，也适用于命令码、设备 ID、状态码、帧定界字节、缓冲区大小、配置参数等任何概念上属于同一组的常量。
+
+**枚举类型名**：`snake_case_t`，成员名：`UPPER_SNAKE_CASE`。
 
 ```c
+/* 状态标识 */
 typedef enum {
     UART_STATE_IDLE,
     UART_STATE_RECEIVING,
     UART_STATE_DONE,
 } uart_rx_state_t;
+
+/* 协议命令码 */
+typedef enum {
+    MOTOR_CMD_CLEAR_ZERO = 0x0A,
+    MOTOR_CMD_READ_POS = 0x36,
+    MOTOR_CMD_MOVE_ACC = 0xFD,
+    MOTOR_CMD_STOP = 0xFE,
+} motor_cmd_t;
+
+/* 设备 ID */
+typedef enum {
+    MOTOR_ID_SYNC = 0x00,
+    MOTOR_ID_X = 0x01,
+    MOTOR_ID_Y = 0x02,
+} motor_id_t;
+
+/* 配置参数 */
+typedef enum {
+    KEY_MAX_COUNT = 8,
+    KEY_TASK_PERIOD_MS = 10,
+} key_cfg_param_t;
 ```
+
+与数量无关——2 个相关值也应放入 enum。特殊情况保留 `#define`：
+
+- **浮点常量**：C 的 `enum` 只支持整数，`GYRO_MAX_DELTA_DEG 50.0f` 等只能用 `#define`
+- **运算宏**：如 `SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1)`，预处理器无法展开 enum 成员，必须保留 `#define`
+- **孤立单值**：与其他常量没有概念关联，如 `MOTOR_CHECKSUM 0x6B`，继续用 `#define`
 
 ---
 
@@ -653,8 +685,7 @@ void motor_set_speed(motor_controller_t *motor, uint16_t speed)
 
 ### 9.2 全局变量
 
-- 全局变量尽可能少用。
-- 必须使用时，通过 `extern` 在头文件中声明，在 `.c` 中定义。
+- `extern` 不是禁止项，但优先用 `static` + getter 封装模块数据（§12.7）。两种场景 `extern` 合理：ISR 与主循环共享的标志位（如 `xxx_tick_flag`），以及硬件句柄的跨文件引用。
 - 不额外使用 `g_` 前缀，靠 `static` 和作用域管理可见性。
 
 ### 9.3 作用域最小化
@@ -822,7 +853,7 @@ snprintf(buf, 256, "Sensor: %lu", value); /* 硬编码大小 */
 **标志位规范**：
 
 - 类型：`volatile uint8_t`（bool 型标志），需要累积计数的场合用 `volatile uint32_t`
-- 命名：`<module>_tick_flag`（如 `motor_tick_flag`、`sensor_tick_flag`）
+- 命名：`<module>_tick_flag`（如 `motor_tick_flag`、`sensor_tick_flag`），也可按语义使用 `_task_flag`、`_refresh_flag`，但同一项目内同类标志位命名必须统一
 - ISR 只写（置 1），task 读并清零
 - 声明：模块 `.c` 定义，`.h` 中以 `extern` 暴露（供 ISR 所在文件引用）
 
@@ -1094,7 +1125,7 @@ typedef enum {
 
 ### 12.7 模块间数据共享
 
-模块内部数据用 `static` 限定作用域，外部通过**函数接口**访问，禁止暴露全局变量。
+模块内部数据用 `static` 限定作用域，外部通过**函数接口**访问。原则上不暴露全局变量——`extern` 仅限于 ISR 共享标志位等必要场景（见 §9.2）。
 
 ```c
 /* === 正例：函数接口封装 === */
@@ -1205,6 +1236,36 @@ SYSCFG / 时钟
 void motor_init(motor_t *motor, const motor_cfg_t *cfg);
 ```
 
+**初始化失败处理（参考示例）**：
+
+`system_init()` 中若某模块初始化失败，可根据模块重要性分级处理，而非一律停机。以下为一种做法：
+
+```c
+drv_err_t system_init(void)
+{
+    drv_err_t ret;
+
+    /* 关键外设：失败则停机 + LED 快闪错误码 */
+    ret = motor_init(&motor, &motor_cfg);
+    if (ret != DRV_OK) {
+        led_flash_error(1); /* 1 长闪 = 电机初始化失败 */
+        return ret;
+    }
+
+    /* 非关键外设：失败则标记故障，继续运行（降级模式） */
+    ret = sensor_init(&sensor, &sensor_cfg);
+    if (ret != DRV_OK) {
+        sensor.fault = 1;
+        display_show_error("sensor: init fail");
+        /* 不 return，系统以无传感器模式继续 */
+    }
+
+    return DRV_OK;
+}
+```
+
+若降级运行后关键功能不可用，在首次 task 循环中检测并停机。具体分级策略和停机条件由项目自行决定。
+
 ### 12.11 看门狗与错误上报
 
 **硬件看门狗**：
@@ -1247,9 +1308,9 @@ void display_task(void)
 
     /* ... 其他数据行 ... */
 
-    /* 错误行：有错则显示，无错则清空 */
+    /* 错误行：有错则显示，无错则显示正常信息 */
     blueteeth_display(0, DISPLAY_LINE_ERROR_Y,
-                      (error_msg[0] != '\0') ? "Err: %s" : "",
+                      (error_msg[0] != '\0') ? "Err: %s" : "Working...",
                       error_msg);
 }
 
@@ -1274,7 +1335,7 @@ void motor_task(void)
 - 只上报错误，不记录一般信息和调试信息
 - 一个时刻通常只有一个错误源，一条屏显行足够
 - 错误格式：模块名 + 错误简述，如 `"motor: init fail"`、`"sensor: i2c nack"`
-- `display_task` 中无错误时该行输出空字符串，覆盖旧的错误信息
+- `display_task` 中无错误时该行输出 `"Working..."` 表示系统正常运行
 
 ### 12.12 句柄传递
 
@@ -1295,10 +1356,17 @@ void uart_send(uint8_t *data, uint16_t len) {
 在 main loop 和中断**同时访问**同一个变量时，必须使用临界区保护：
 
 ```c
+/* STM32（ARM CMSIS） */
 uint32_t primask = __get_PRIMASK();
 __disable_irq();
 data_ready = 0;   /* 关中断保护 */
 if (!primask) __enable_irq();
+
+/* TI MSPM0 */
+uint32_t primask = __get_PRIMASK();
+__disable_interrupts();
+data_ready = 0;
+if (!primask) __enable_interrupts();
 ```
 
 **规则**：
@@ -1319,21 +1387,28 @@ motor_set_pwm(pwm_output);
 
 ### 12.15 魔法数字
 
-严禁在代码中出现无名称的常量。必须在头文件中用 `#define` 或 `const` 语句定义，并按类型分组排列。
+严禁在代码中出现无名称的常量。逻辑相关的常量用 `typedef enum` 定义在驱动 `.h` 中（§6.3），浮点常量、运算宏和孤立单值用 `#define`。按类型分组排列。
 
-配置常量（如 `MOTOR_MAX_SPEED`）直接定义在驱动 `.h` 中。不同项目使用时自行修改驱动文件中的值，无需额外的配置覆盖机制。
+配置常量直接定义在驱动 `.h` 中。不同项目使用时自行修改驱动文件中的值，无需额外的配置覆盖机制。
 
 ```c
-/* motor.h */
+/* motor.h — 优先 enum，孤立值用 #define */
 
-/* PWM 参数 */
-#define PWM_PERIOD          2000
-#define PWM_MAX             2000
-#define PWM_MIN             0
+/* PWM 参数（逻辑相关 → enum） */
+typedef enum {
+    PWM_MIN = 0,
+    PWM_MAX_COMPARE = 2000,
+} pwm_cfg_t;
 
-/* 运动参数 */
-#define MOTOR_MAX_SPEED     5000
-#define MOTOR_ACCELERATION  100
+/* 运动参数（逻辑相关 → enum） */
+typedef enum {
+    MOTOR_MIN_SPEED = 0,
+    MOTOR_EFFECTIVE_MIN_SPEED = 60,
+    MOTOR_MAX_SPEED = 2000,
+} motor_speed_limit_t;
+
+/* 加速度（孤立单值 → #define） */
+#define MOTOR_ACCELERATION 100
 ```
 
 ### 12.16 模块独立性检查清单
@@ -1455,7 +1530,6 @@ def detect_circle(image, min_radius=10, max_radius=100):
 | 禁止短 if/for 同⾏ | `AllowShortIfStatementsOnASingleLine: false` / `AllowShortLoopsOnASingleLine: false` |
 | 不人为对齐 | `AlignConsecutiveAssignments: false` / `AlignConsecutiveDeclarations: false` |
 | 缩进 case 标签 | `IndentCaseLabels: true` |
-| include 排序 | `SortIncludes: true` |
 
 ---
 
