@@ -10,29 +10,32 @@
 #define GYRO_TYPE_ANGLE 0x53     /* 角度数据类型 */
 #define GYRO_FRAME_LEN 11        /* 角度数据帧长度（含校验） */
 
+/* 帧解析状态 */
 typedef enum {
     GYRO_STATE_WAIT_HEADER = 0,
     GYRO_STATE_WAIT_TYPE,
     GYRO_STATE_RECEIVING_DATA,
 } gyro_frame_state_t;
 
+/* 姿态角数据（度） */
 typedef struct {
-    float roll;
-    float pitch;
-    float yaw;
+    float roll;  /* 横滚角 */
+    float pitch; /* 俯仰角 */
+    float yaw;   /* 偏航角 */
 } gyro_data_t;
 
+/* 姿态传感器句柄 */
 typedef struct {
-    UART_Regs *huart;
+    UART_Regs *huart; /* 绑定的串口 */
 
-    uint8_t dma_rx_buffer[GYRO_DMA_RX_BUF_SIZE];
-    uint8_t rx_fifo[GYRO_RX_FIFO_SIZE];
-    volatile uint16_t rx_write_pos;
-    volatile uint16_t rx_read_pos;
+    uint8_t dma_rx_buffer[GYRO_DMA_RX_BUF_SIZE]; /* DMA 接收缓冲 */
+    uint8_t rx_fifo[GYRO_RX_FIFO_SIZE];          /* 接收环形队列 */
+    volatile uint16_t rx_write_pos;              /* FIFO 写指针（ISR 写入） */
+    volatile uint16_t rx_read_pos;               /* FIFO 读指针 */
 
-    gyro_frame_state_t rx_state;
-    uint8_t frame_buffer[GYRO_FRAME_LEN];
-    uint16_t frame_index;
+    gyro_frame_state_t rx_state;           /* 当前解析状态 */
+    uint8_t frame_buffer[GYRO_FRAME_LEN];  /* 帧组装缓冲 */
+    uint16_t frame_index;                  /* 帧缓冲写入位置 */
 } gyro_handle_t;
 
 /* 软件 IDLE 检测标志位（定时器 ISR 中周期性置 1） */

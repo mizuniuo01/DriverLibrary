@@ -8,6 +8,7 @@
 #define SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1) /* 左移 1 位地址 */
 #define SENSOR_CMD_READ_DIG 0xDD                    /* 读取数字量命令 */
 
+/* 传感器 DMA 状态 */
 typedef enum {
     SENSOR_STATE_IDLE = 0,
     SENSOR_STATE_BUSY,

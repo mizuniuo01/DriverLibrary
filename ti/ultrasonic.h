@@ -32,16 +32,16 @@ typedef struct {
 
 /* 超声波句柄 */
 typedef struct {
-    GPTIMER_Regs *htim;
-    GPIO_Regs *trig_port;
-    uint32_t trig_pin;
+    GPTIMER_Regs *htim;       /* 输入捕获定时器 */
+    GPIO_Regs *trig_port;     /* TRIG 引脚端口 */
+    uint32_t trig_pin;        /* TRIG 引脚编号 */
 
-    uint32_t start_time;
-    uint32_t end_time;
-    uint32_t last_trigger_tick;
+    uint32_t start_time;        /* 上升沿捕获时间戳 */
+    uint32_t end_time;          /* 下降沿捕获时间戳 */
+    uint32_t last_trigger_tick; /* 上次触发时刻（tick） */
 
-    volatile uint8_t capture_flag;
-    ultrasonic_state_t state;
+    volatile uint8_t capture_flag; /* 捕获阶段（ISR 写入） */
+    ultrasonic_state_t state;      /* 当前状态机状态 */
 } ultrasonic_handle_t;
 
 /* 获取系统 tick（ms），需由应用层提供实现 */

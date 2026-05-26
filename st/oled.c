@@ -7,6 +7,7 @@
  * @note    仅适配 0.96 寸 SSD1306 I2C 接口 128×64 OLED，不支持 SPI
  * @note    依赖：I2C 外设已在 CubeMX 中配置
  * @note    使用 HAL_I2C_Mem_Write 发送命令和数据
+ * @note    此模块仅包含基础的字符显示功能，未实现图形绘制等高级功能
  *
  * @usage
  * oled_init(&hi2c1);

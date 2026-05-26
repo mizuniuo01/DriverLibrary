@@ -7,26 +7,27 @@
 #define CAM_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
 #define CAM_RX_FIFO_SIZE 512    /* 接收环形队列容量 */
 #define CAM_MAX_FRAME_LEN 128   /* 单帧最大长度 */
-
 #define CAM_FRAME_HEADER 0xFF /* 帧头标识 */
 #define CAM_FRAME_TAIL 0xFE   /* 帧尾标识 */
 
+/* 帧解析状态 */
 typedef enum {
     CAM_STATE_WAIT_HEADER = 0,
     CAM_STATE_RECEIVING_DATA,
 } cam_frame_state_t;
 
+/* 摄像头句柄 */
 typedef struct {
-    UART_HandleTypeDef *huart;
+    UART_HandleTypeDef *huart; /* 绑定的串口 */
 
-    uint8_t dma_rx_buffer[CAM_DMA_RX_BUF_SIZE];
-    uint8_t rx_fifo[CAM_RX_FIFO_SIZE];
-    uint16_t rx_write_pos;
-    uint16_t rx_read_pos;
+    uint8_t dma_rx_buffer[CAM_DMA_RX_BUF_SIZE]; /* DMA 接收缓冲 */
+    uint8_t rx_fifo[CAM_RX_FIFO_SIZE];          /* 接收环形队列 */
+    uint16_t rx_write_pos;                      /* FIFO 写指针 */
+    uint16_t rx_read_pos;                       /* FIFO 读指针 */
 
-    cam_frame_state_t rx_state;
-    uint8_t frame_buffer[CAM_MAX_FRAME_LEN];
-    uint16_t frame_index;
+    cam_frame_state_t rx_state;           /* 当前解析状态 */
+    uint8_t frame_buffer[CAM_MAX_FRAME_LEN]; /* 帧组装缓冲 */
+    uint16_t frame_index;                 /* 帧缓冲写入位置 */
 } cam_handle_t;
 
 /* 摄像头解析数据（根据实际数据格式定义） */

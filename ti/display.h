@@ -22,11 +22,12 @@
 #define DISPLAY_LINE_17_Y 320 /* 第 17 行 */
 #define DISPLAY_LINE_18_Y 340 /* 第 18 行 */
 
-#define DISPLAY_LINE_ERROR_Y 260 /* 错误信息专用行 */
+#define DISPLAY_LINE_ERROR_Y 0 /* 错误信息专用行 */
 
 /* 显示刷新标志位（定时器 ISR 置1，task 清0） */
 extern volatile uint8_t display_refresh_flag;
 
 void display_task(void);
+void display_show_error(const char *format, ...);
 
 #endif

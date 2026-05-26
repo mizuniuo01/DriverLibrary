@@ -32,7 +32,7 @@
  * gyro_task();  // 帧解析 + yaw 增量
  *
  * ── 摄像头帧同步 ──
- *
+ * 可用于使用陀螺仪数据预测视觉延迟
  * gyro_on_camera_frame();  // 锁定当前增量
  * float dyaw = gyro_get_delta_yaw();
  */

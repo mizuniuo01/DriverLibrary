@@ -78,7 +78,7 @@ void display_task(void)
         蓝牙的 display 必须到编译链配置里手动开启浮点打印 (DriverLib不需要)
     */
 
-    /* 错误行：有错则显示，无错则清空 */
+    /* 错误行：有错则显示，无错则显示正常信息 */
     blueteeth_display(
-        0, DISPLAY_LINE_ERROR_Y, (error_msg[0] != '\0') ? "Err: %s" : "", error_msg);
+        0, DISPLAY_LINE_ERROR_Y, (error_msg[0] != '\0') ? "Err: %s" : "Working...", error_msg);
 }

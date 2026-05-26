@@ -67,6 +67,8 @@
  *     {"START", on_start_cmd},   // 收到 @START# → on_start_cmd()
  *     {"STOP",  on_stop_cmd},
  * };
+ * 
+ * 建议在cmd_table上放置所有回调函数，回调函数中再置标志位或调用接口
  *
  * ── 缓冲区宏说明 ──
  *

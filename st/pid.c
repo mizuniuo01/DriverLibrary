@@ -17,6 +17,16 @@
 
 #include "pid.h"
 
+/**
+ * @brief  PID 初始化
+ * @param  pid           PID 句柄指针
+ * @param  p             比例系数
+ * @param  i             积分系数
+ * @param  d             微分系数
+ * @param  out_max       输出限幅
+ * @param  integral_max  积分饱和限幅
+ * @retval 无
+ */
 void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
 {
     if (!pid) {

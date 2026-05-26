@@ -30,16 +30,16 @@ typedef struct {
 
 /* 超声波句柄 */
 typedef struct {
-    TIM_HandleTypeDef *htim;
-    GPIO_TypeDef *trig_port;
-    uint16_t trig_pin;
+    TIM_HandleTypeDef *htim;    /* 输入捕获定时器 */
+    GPIO_TypeDef *trig_port;    /* TRIG 引脚端口 */
+    uint16_t trig_pin;          /* TRIG 引脚编号 */
 
-    uint32_t start_time;
-    uint32_t end_time;
-    uint32_t last_trigger_tick;
+    uint32_t start_time;        /* 上升沿捕获时间戳 */
+    uint32_t end_time;          /* 下降沿捕获时间戳 */
+    uint32_t last_trigger_tick; /* 上次触发时刻（tick） */
 
-    uint8_t capture_flag;
-    ultrasonic_state_t state;
+    uint8_t capture_flag;       /* 捕获阶段：0=等待上升沿，1=等待下降沿，2=完成 */
+    ultrasonic_state_t state;   /* 当前状态机状态 */
 } ultrasonic_handle_t;
 
 void ultrasonic_init(ultrasonic_handle_t *handle,

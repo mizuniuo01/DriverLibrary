@@ -7,7 +7,8 @@
  * @note    仅适配 0.96 寸 SSD1306 I2C 接口 128×64 OLED，不支持 SPI
  * @note    依赖：I2C 外设已在 SysConfig 中配置
  * @note    非阻塞 I2C 状态机，每 tick 推进一个 I2C 操作，严禁忙等
- *
+ * @note    此模块仅包含基础的字符显示功能，未实现图形绘制等高级功能
+ * 
  * @usage
  * oled_init(I2C_OLED_INST);
  * oled_clear();

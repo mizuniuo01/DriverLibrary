@@ -14,33 +14,36 @@
 #define BLUETEETH_FRAME_HEADER '@' /* 帧头标识符 */
 #define BLUETEETH_FRAME_TAIL '#'   /* 帧尾标识符 */
 
+/* 帧解析状态 */
 typedef enum {
     BLUETEETH_STATE_WAIT_HEADER = 0,
     BLUETEETH_STATE_RECEIVING_DATA,
 } blueteeth_frame_state_t;
 
+/* 蓝牙指令映射表条目 */
 typedef struct {
-    const char *cmd_string;
-    void (*cmd_handler)(void);
+    const char *cmd_string;       /* 指令字符串 */
+    void (*cmd_handler)(void);    /* 回调函数 */
 } blueteeth_command_map_t;
 
+/* 蓝牙通信句柄 */
 typedef struct {
-    UART_Regs *huart;
+    UART_Regs *huart; /* 绑定的串口 */
 
-    uint8_t dma_rx_buffer[BLUETEETH_DMA_RX_BUF_SIZE];
-    uint8_t rx_fifo[BLUETEETH_RX_FIFO_SIZE];
-    volatile uint16_t rx_write_pos;
-    volatile uint16_t rx_read_pos;
+    uint8_t dma_rx_buffer[BLUETEETH_DMA_RX_BUF_SIZE]; /* DMA 接收缓冲 */
+    uint8_t rx_fifo[BLUETEETH_RX_FIFO_SIZE];          /* 接收环形队列 */
+    volatile uint16_t rx_write_pos;                   /* FIFO 写指针（ISR 写入） */
+    volatile uint16_t rx_read_pos;                    /* FIFO 读指针 */
 
-    uint8_t dma_tx_buffer[BLUETEETH_DMA_TX_BUF_SIZE];
-    uint8_t tx_fifo[BLUETEETH_TX_FIFO_SIZE];
-    volatile uint16_t tx_write_pos;
-    volatile uint16_t tx_read_pos;
-    volatile uint8_t is_tx_busy;
+    uint8_t dma_tx_buffer[BLUETEETH_DMA_TX_BUF_SIZE]; /* DMA 发送缓冲 */
+    uint8_t tx_fifo[BLUETEETH_TX_FIFO_SIZE];          /* 发送环形队列 */
+    volatile uint16_t tx_write_pos;                   /* FIFO 写指针 */
+    volatile uint16_t tx_read_pos;                    /* FIFO 读指针 */
+    volatile uint8_t is_tx_busy;                      /* 发送忙标志 */
 
-    blueteeth_frame_state_t rx_state;
-    uint8_t frame_buffer[BLUETEETH_MAX_FRAME_LEN];
-    uint16_t frame_index;
+    blueteeth_frame_state_t rx_state;           /* 当前解析状态 */
+    uint8_t frame_buffer[BLUETEETH_MAX_FRAME_LEN]; /* 帧组装缓冲 */
+    uint16_t frame_index;                       /* 帧缓冲写入位置 */
 } blueteeth_handle_t;
 
 extern volatile uint8_t blueteeth_check_idle_flag;
