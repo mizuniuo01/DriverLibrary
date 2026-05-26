@@ -46,12 +46,12 @@ volatile uint8_t cam_frame_ready;
 /**
  * @brief  摄像头模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void cam_init(UART_HandleTypeDef *huart)
+drv_err_t cam_init(UART_HandleTypeDef *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     cam_inst.huart = huart;
@@ -64,6 +64,8 @@ void cam_init(UART_HandleTypeDef *huart)
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
     HAL_UARTEx_ReceiveToIdle_DMA(
         cam_inst.huart, cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

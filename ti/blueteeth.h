@@ -4,6 +4,7 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 #include <stdarg.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -54,7 +55,7 @@ typedef struct {
 
 extern volatile uint8_t blueteeth_check_idle_flag;
 
-void blueteeth_init(UART_Regs *huart);
+drv_err_t blueteeth_init(UART_Regs *huart);
 void blueteeth_printf(const char *format, ...);
 void blueteeth_display(int16_t x, int16_t y, const char *format, ...);
 void blueteeth_clear(void);

@@ -84,12 +84,12 @@ static volatile int8_t motor_right_direction_sign = 1;
  * @brief  电机初始化（唤醒驱动芯片）
  * @param  handle  电机句柄指针
  * @param  cfg     电机配置指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
+drv_err_t motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->port = cfg->port;
@@ -102,6 +102,8 @@ void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
 
     /* 拉高 nSLEEP 使驱动芯片脱离待机模式 */
     DL_GPIO_setPins(handle->port, handle->l_nsleep_pin | handle->r_nsleep_pin);
+
+    return DRV_OK;
 }
 
 /**

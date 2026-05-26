@@ -56,12 +56,12 @@ static void start_dma_rx(uint8_t *buf, uint16_t size)
 /**
  * @brief  摄像头模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void cam_init(UART_Regs *huart)
+drv_err_t cam_init(UART_Regs *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     DL_UART_Main_setRXInterruptTimeout(UART_CAM_INST, 10);
@@ -75,6 +75,8 @@ void cam_init(UART_Regs *huart)
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
     start_dma_rx(cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

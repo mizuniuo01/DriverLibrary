@@ -49,14 +49,14 @@ static void oled_write_cmd(uint8_t cmd)
 /**
  * @brief  OLED 初始化
  * @param  hi2c  I2C 外设句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void oled_init(I2C_HandleTypeDef *hi2c)
+drv_err_t oled_init(I2C_HandleTypeDef *hi2c)
 {
     uint8_t i;
 
     if (!hi2c) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     oled_i2c = hi2c;
@@ -66,6 +66,8 @@ void oled_init(I2C_HandleTypeDef *hi2c)
     }
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
+
+    return DRV_OK;
 }
 
 /**

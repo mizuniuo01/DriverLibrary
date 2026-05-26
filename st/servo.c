@@ -106,12 +106,12 @@ static drv_err_t fsus_to_drv_err(FSUS_STATUS status)
  * @brief  舵机初始化
  * @param  handle  舵机句柄
  * @param  cfg     舵机配置
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
+drv_err_t servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
 {
     if (!handle || !cfg || !cfg->huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->cfg = *cfg;
@@ -125,6 +125,8 @@ void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
 
     HAL_UARTEx_ReceiveToIdle_DMA(
         cfg->huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

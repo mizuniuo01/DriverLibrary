@@ -40,15 +40,17 @@
 /**
  * @brief  启动 PWM 定时器计数器
  * @param  htim  定时器句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void pwm_init(GPTIMER_Regs *htim)
+drv_err_t pwm_init(GPTIMER_Regs *htim)
 {
     if (!htim) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     DL_Timer_startCounter(htim);
+
+    return DRV_OK;
 }
 
 /**

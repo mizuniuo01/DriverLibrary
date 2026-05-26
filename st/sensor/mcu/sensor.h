@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 #define SENSOR_I2C_ADDR_7BIT 0x4C                   /* 感为科技八路灰度 I2C 7 位地址 */
 #define SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1) /* 左移 1 位地址 */
@@ -16,7 +17,7 @@ typedef enum {
 
 extern volatile uint8_t sensor_tick_flag;
 
-void sensor_init(I2C_HandleTypeDef *hi2c);
+drv_err_t sensor_init(I2C_HandleTypeDef *hi2c);
 sensor_state_t sensor_get_state(void);
 void sensor_request_dma(void);
 void sensor_rx_callback(I2C_HandleTypeDef *hi2c);

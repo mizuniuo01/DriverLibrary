@@ -3,6 +3,7 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
+#include "drv_err.h"
 
 /* LED 配置结构体 */
 typedef struct {
@@ -18,7 +19,7 @@ typedef struct {
     uint8_t active_level;
 } led_handle_t;
 
-void led_init(led_handle_t *handle, const led_cfg_t *cfg);
+drv_err_t led_init(led_handle_t *handle, const led_cfg_t *cfg);
 void led_on(led_handle_t *handle);
 void led_off(led_handle_t *handle);
 void led_toggle(led_handle_t *handle);

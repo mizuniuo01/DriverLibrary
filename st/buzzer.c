@@ -35,12 +35,12 @@
  * @brief  蜂鸣器初始化
  * @param  handle  蜂鸣器句柄指针
  * @param  cfg     蜂鸣器配置指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
+drv_err_t buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->port = cfg->port;
@@ -48,6 +48,8 @@ void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 
     /* 初始状态：关闭 */
     HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
+
+    return DRV_OK;
 }
 
 /**

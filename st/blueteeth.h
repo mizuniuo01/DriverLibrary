@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -52,7 +53,7 @@ typedef struct {
     uint16_t frame_index;                       /* 帧缓冲写入位置 */
 } blueteeth_handle_t;
 
-void blueteeth_init(UART_HandleTypeDef *huart);
+drv_err_t blueteeth_init(UART_HandleTypeDef *huart);
 void blueteeth_printf(const char *format, ...);
 void blueteeth_display(int16_t x, int16_t y, const char *format, ...);
 void blueteeth_clear(void);

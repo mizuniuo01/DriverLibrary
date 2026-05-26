@@ -68,14 +68,14 @@ static void delay_10us(void)
  * @param  handle  超声波句柄指针
  * @param  cfg     超声波配置指针
  * @param  htim    捕获定时器句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                     const ultrasonic_cfg_t *cfg,
-                     GPTIMER_Regs *htim)
+drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+                          const ultrasonic_cfg_t *cfg,
+                          GPTIMER_Regs *htim)
 {
     if (!handle || !cfg || !htim) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     NVIC_EnableIRQ(CAPTURE_ULTRASONIC_ECHO_INST_INT_IRQN);
@@ -88,6 +88,8 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
     handle->last_trigger_tick = get_system_tick();
 
     DL_Timer_startCounter(handle->htim);
+
+    return DRV_OK;
 }
 
 /**

@@ -60,12 +60,12 @@ static void start_dma_rx(uint8_t *buf, uint16_t size)
 /**
  * @brief  姿态传感器模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void gyro_init(UART_Regs *huart)
+drv_err_t gyro_init(UART_Regs *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     DL_UART_Main_setRXInterruptTimeout(UART_GYROSCOPE_INST, 10);
@@ -112,8 +112,9 @@ void gyro_rx_callback(UART_Regs *huart, uint16_t size)
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
     start_dma_rx(gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
-}
 
+    return DRV_OK;
+}
 /**
  * @brief  串口错误回调（ISR 中调用），复位接收状态机
  * @param  huart  触发中断的串口句柄

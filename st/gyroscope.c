@@ -54,12 +54,12 @@ static uint8_t gyro_delta_initialized;
 /**
  * @brief  姿态传感器模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void gyro_init(UART_HandleTypeDef *huart)
+drv_err_t gyro_init(UART_HandleTypeDef *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     gyro_inst.huart = huart;
@@ -75,6 +75,8 @@ void gyro_init(UART_HandleTypeDef *huart)
 
     HAL_UARTEx_ReceiveToIdle_DMA(
         gyro_inst.huart, gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

@@ -32,12 +32,12 @@
  * @brief  启动 PWM 通道输出
  * @note   高级定时器额外使能 MOE 和互补输出
  * @param  htim  定时器句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void pwm_init(TIM_HandleTypeDef *htim)
+drv_err_t pwm_init(TIM_HandleTypeDef *htim)
 {
     if (!htim) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL_3);
@@ -48,6 +48,8 @@ void pwm_init(TIM_HandleTypeDef *htim)
         HAL_TIMEx_PWMN_Start(htim, TIM_CHANNEL_3);
         __HAL_TIM_MOE_ENABLE(htim);
     }
+
+    return DRV_OK;
 }
 
 /**

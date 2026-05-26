@@ -3,6 +3,7 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
+#include "drv_err.h"
 
 /*
  * PWM 参数均以 20kHz 载波频率为基准。
@@ -15,7 +16,7 @@ typedef enum {
     PWM_MAX_COMPARE = 2000, /* 占空比最大比较值 = TimerClock / 20000 */
 } pwm_cfg_t;
 
-void pwm_init(GPTIMER_Regs *htim);
+drv_err_t pwm_init(GPTIMER_Regs *htim);
 void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare);
 void pwm_set_compare_ch1(GPTIMER_Regs *htim, uint16_t compare);
 

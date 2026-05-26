@@ -41,12 +41,12 @@
  * @brief  LED 初始化
  * @param  handle  LED 句柄指针
  * @param  cfg     LED 配置指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void led_init(led_handle_t *handle, const led_cfg_t *cfg)
+drv_err_t led_init(led_handle_t *handle, const led_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->port = cfg->port;
@@ -55,6 +55,8 @@ void led_init(led_handle_t *handle, const led_cfg_t *cfg)
 
     /* 初始状态：关闭 */
     led_off(handle);
+
+    return DRV_OK;
 }
 
 /**

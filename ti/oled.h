@@ -3,6 +3,7 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
+#include "drv_err.h"
 
 /* SSD1306 硬件参数 */
 typedef enum {
@@ -21,7 +22,7 @@ typedef enum {
 /* OLED 定时刷新标志位（ISR 置1，task 清0） */
 extern volatile uint8_t oled_tick_flag;
 
-void oled_init(I2C_Regs *hi2c);
+drv_err_t oled_init(I2C_Regs *hi2c);
 void oled_task(void);
 void oled_clear(void);
 void oled_update(void);

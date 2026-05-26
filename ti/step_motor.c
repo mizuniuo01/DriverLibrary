@@ -256,14 +256,14 @@ static void heartbeat_check(void)
 /**
  * @brief  步进电机初始化
  * @param  huart  绑定的串口句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void step_motor_init(UART_Regs *huart)
+drv_err_t step_motor_init(UART_Regs *huart)
 {
     uint32_t current_tick;
 
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     /* 配置 UART 中断超时（用于 RX 超时检测） */
@@ -293,8 +293,9 @@ void step_motor_init(UART_Regs *huart)
 
     step_motor_clear_zero(MOTOR_ID_X);
     step_motor_clear_zero(MOTOR_ID_Y);
-}
 
+    return DRV_OK;
+}
 /**
  * @brief  DMA 发送完成回调（ISR 中调用）
  * @param  huart  串口句柄

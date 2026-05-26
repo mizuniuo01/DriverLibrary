@@ -3,6 +3,7 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -42,7 +43,7 @@ typedef struct {
     uint8_t reserved[32];
 } cam_data_t;
 
-void cam_init(UART_Regs *huart);
+drv_err_t cam_init(UART_Regs *huart);
 void cam_rx_callback(UART_Regs *huart, uint16_t size);
 void cam_error_callback(UART_Regs *huart);
 void cam_task(void);

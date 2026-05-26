@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -45,7 +46,7 @@ typedef struct {
 /* 帧就绪标志位（收到完整帧时置 1，外部读取后手动清零） */
 extern volatile uint8_t cam_frame_ready;
 
-void cam_init(UART_HandleTypeDef *huart);
+drv_err_t cam_init(UART_HandleTypeDef *huart);
 void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size);
 void cam_task(void);
 cam_data_t cam_get_data(void);

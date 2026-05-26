@@ -48,16 +48,18 @@ volatile uint8_t sensor_tick_flag;
 /**
  * @brief  传感器 I2C 硬件初始化
  * @param  hi2c  I2C 外设句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void sensor_init(I2C_HandleTypeDef *hi2c)
+drv_err_t sensor_init(I2C_HandleTypeDef *hi2c)
 {
     if (!hi2c) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     sensor_hi2c = hi2c;
     dma_busy = 0;
+
+    return DRV_OK;
 }
 
 /**

@@ -3,6 +3,7 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
+#include "drv_err.h"
 
 /*
  * 速度参数基于 20kHz PWM、PWM_MAX_COMPARE=2000：
@@ -34,7 +35,7 @@ typedef struct {
     uint32_t r_ph_in2_pin;
 } motor_handle_t;
 
-void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg);
+drv_err_t motor_init(motor_handle_t *handle, const motor_cfg_t *cfg);
 void motor_set_speed_left(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed);
 void motor_set_speed_right(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed);
 int8_t motor_get_right_direction_sign(void);

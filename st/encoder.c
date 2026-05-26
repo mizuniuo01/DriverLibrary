@@ -39,12 +39,12 @@ static int16_t encoder_right_val;
  * @brief  编码器初始化（双 QEI 定时器）
  * @param  htim_left   左编码器定时器句柄
  * @param  htim_right  右编码器定时器句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
+drv_err_t encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
 {
     if (!htim_left || !htim_right) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     __HAL_TIM_SET_COUNTER(htim_left, 0);
@@ -52,6 +52,8 @@ void encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
 
     HAL_TIM_Encoder_Start(htim_left, TIM_CHANNEL_ALL);
     HAL_TIM_Encoder_Start(htim_right, TIM_CHANNEL_ALL);
+
+    return DRV_OK;
 }
 
 /**

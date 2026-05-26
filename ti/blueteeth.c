@@ -160,12 +160,12 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
 /**
  * @brief  蓝牙模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void blueteeth_init(UART_Regs *huart)
+drv_err_t blueteeth_init(UART_Regs *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     DL_UART_Main_setRXInterruptTimeout(UART_BLUETEETH_INST, 15);
@@ -181,6 +181,8 @@ void blueteeth_init(UART_Regs *huart)
     blueteeth_inst.frame_index = 0;
 
     start_dma_rx(blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

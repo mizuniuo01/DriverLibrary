@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -139,7 +140,7 @@ typedef struct {
     uint8_t ping_target_id;
 } step_motor_comm_t;
 
-void step_motor_init(UART_HandleTypeDef *huart);
+drv_err_t step_motor_init(UART_HandleTypeDef *huart);
 void step_motor_data_task(void);
 void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size);
 void step_motor_tx_callback(UART_HandleTypeDef *huart);

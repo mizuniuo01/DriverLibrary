@@ -65,9 +65,9 @@ volatile uint16_t timer_capture_right_count;
  * @brief  编码器初始化
  * @param  htim_left_qei       左轮 QEI 定时器句柄
  * @param  htim_right_capture  右轮捕获定时器句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_capture)
+drv_err_t encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_capture)
 {
     if (htim_left_qei) {
         DL_Timer_setTimerCount(htim_left_qei, 0);
@@ -116,6 +116,8 @@ void encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_capture)
 
         NVIC_EnableIRQ(CAPTURE_ENCODER_RIGHT_INST_INT_IRQN);
     }
+
+    return DRV_OK;
 }
 
 /**

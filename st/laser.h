@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 激光配置结构体 */
 typedef struct {
@@ -16,7 +17,7 @@ typedef struct {
     uint16_t pin;
 } laser_handle_t;
 
-void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg);
+drv_err_t laser_init(laser_handle_t *handle, const laser_cfg_t *cfg);
 void laser_on(laser_handle_t *handle);
 void laser_off(laser_handle_t *handle);
 void laser_toggle(laser_handle_t *handle);

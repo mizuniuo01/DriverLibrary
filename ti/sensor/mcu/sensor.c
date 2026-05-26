@@ -45,12 +45,12 @@ static volatile sensor_pol_state_t pol_state = MODE_IDLE;
 /**
  * @brief  传感器 I2C 外设初始化
  * @param  hi2c  I2C 外设句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void sensor_init(I2C_Regs *hi2c)
+drv_err_t sensor_init(I2C_Regs *hi2c)
 {
     if (!hi2c) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     NVIC_EnableIRQ(I2C_SENSOR_INST_INT_IRQN);
@@ -63,6 +63,8 @@ void sensor_init(I2C_Regs *hi2c)
 
     sensor_hi2c = hi2c;
     pol_state = MODE_IDLE;
+
+    return DRV_OK;
 }
 
 /**

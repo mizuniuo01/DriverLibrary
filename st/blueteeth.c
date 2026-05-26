@@ -120,12 +120,12 @@ static void process_command(const char *cmd_string)
 /**
  * @brief  蓝牙模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void blueteeth_init(UART_HandleTypeDef *huart)
+drv_err_t blueteeth_init(UART_HandleTypeDef *huart)
 {
     if (!huart) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     blueteeth_inst.huart = huart;
@@ -139,6 +139,8 @@ void blueteeth_init(UART_HandleTypeDef *huart)
 
     HAL_UARTEx_ReceiveToIdle_DMA(
         blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
+
+    return DRV_OK;
 }
 
 /**

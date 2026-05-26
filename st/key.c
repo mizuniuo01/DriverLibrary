@@ -84,20 +84,20 @@ volatile uint8_t key_task_flag;
  * @param  debounce_ms    消抖时间（ms，典型值 20~50）
  * @param  long_press_ms  长按判定时间（ms，典型值 500~1000）
  * @param  repeat_ms      连发间隔（ms，0 表示禁用连发）
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void key_init(key_handle_t *handle,
-              GPIO_TypeDef *port,
-              const key_pin_cfg_t *pin_cfgs,
-              uint8_t key_count,
-              uint16_t debounce_ms,
-              uint16_t long_press_ms,
-              uint16_t repeat_ms)
+drv_err_t key_init(key_handle_t *handle,
+                   GPIO_TypeDef *port,
+                   const key_pin_cfg_t *pin_cfgs,
+                   uint8_t key_count,
+                   uint16_t debounce_ms,
+                   uint16_t long_press_ms,
+                   uint16_t repeat_ms)
 {
     uint8_t i;
 
     if (!handle || !port || !pin_cfgs || key_count == 0 || key_count > KEY_MAX_COUNT) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->port = port;
@@ -117,6 +117,8 @@ void key_init(key_handle_t *handle,
         handle->event[i] = KEY_EVENT_NONE;
         handle->hold_cnt[i] = 0;
     }
+
+    return DRV_OK;
 }
 
 /**

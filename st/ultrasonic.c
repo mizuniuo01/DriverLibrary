@@ -56,14 +56,14 @@ static ultrasonic_data_t ultra_data;
  * @param  handle  超声波句柄指针
  * @param  cfg     超声波配置指针
  * @param  htim    输入捕获定时器句柄
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                     const ultrasonic_cfg_t *cfg,
-                     TIM_HandleTypeDef *htim)
+drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+                          const ultrasonic_cfg_t *cfg,
+                          TIM_HandleTypeDef *htim)
 {
     if (!handle || !cfg || !htim) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->htim = htim;
@@ -75,6 +75,8 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
 
     /* 启动上升沿输入捕获中断 */
     HAL_TIM_IC_Start_IT(handle->htim, TIM_CHANNEL_1);
+
+    return DRV_OK;
 }
 
 /**

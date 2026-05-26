@@ -54,15 +54,15 @@ volatile uint8_t sensor_tick_flag;
 /**
  * @brief  传感器初始化
  * @param  cfg  传感器配置指针（通道引脚、数量、有效电平）
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void sensor_init(const sensor_cfg_t *cfg)
+drv_err_t sensor_init(const sensor_cfg_t *cfg)
 {
     uint8_t i;
 
     if (!cfg || cfg->channel_count == 0
         || cfg->channel_count > SENSOR_MAX_CHANNELS) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     sensor_cfg.channel_count = cfg->channel_count;
@@ -74,6 +74,8 @@ void sensor_init(const sensor_cfg_t *cfg)
     }
 
     sensor_data = 0;
+
+    return DRV_OK;
 }
 
 /**

@@ -42,7 +42,7 @@ typedef struct {
     RingBufferTypeDef tx_ring;                     /* 发送环形队列 */
 } servo_handle_t;
 
-void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg);
+drv_err_t servo_init(servo_handle_t *handle, const servo_cfg_t *cfg);
 void servo_rx_callback(servo_handle_t *handle,
                        UART_HandleTypeDef *huart,
                        uint16_t size);

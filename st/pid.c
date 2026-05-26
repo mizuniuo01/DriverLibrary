@@ -25,12 +25,12 @@
  * @param  d             微分系数
  * @param  out_max       输出限幅
  * @param  integral_max  积分饱和限幅
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
+drv_err_t pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
 {
     if (!pid) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     pid->kp = p;
@@ -47,6 +47,8 @@ void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integr
     pid->out_max = out_max;
     pid->out_min = -out_max;
     pid->integral_max = integral_max;
+
+    return DRV_OK;
 }
 
 /**

@@ -22,18 +22,20 @@
  * @brief  激光初始化
  * @param  handle  激光句柄指针
  * @param  cfg     激光配置指针
- * @retval 无
+ * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
  */
-void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
+drv_err_t laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return;
+        return DRV_ERR_PARAM;
     }
 
     handle->port = cfg->port;
     handle->pin = cfg->pin;
 
     HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
+
+    return DRV_OK;
 }
 
 /**

@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -51,7 +52,7 @@ typedef struct {
 /* gyro_task 中 yaw 增量更新标志位（ISR 置1，task 清0） */
 extern volatile uint8_t gyro_tick_flag;
 
-void gyro_init(UART_HandleTypeDef *huart);
+drv_err_t gyro_init(UART_HandleTypeDef *huart);
 void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size);
 void gyro_error_callback(UART_HandleTypeDef *huart);
 void gyro_task(void);

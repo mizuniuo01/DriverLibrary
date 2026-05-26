@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
+#include "drv_err.h"
 
 /* 按键模块配置参数 */
 typedef enum {
@@ -59,13 +60,13 @@ struct key_handle_t {
     key_callback_t callback;
 };
 
-void key_init(key_handle_t *handle,
-              GPIO_TypeDef *port,
-              const key_pin_cfg_t *pin_cfgs,
-              uint8_t key_count,
-              uint16_t debounce_ms,
-              uint16_t long_press_ms,
-              uint16_t repeat_ms);
+drv_err_t key_init(key_handle_t *handle,
+                   GPIO_TypeDef *port,
+                   const key_pin_cfg_t *pin_cfgs,
+                   uint8_t key_count,
+                   uint16_t debounce_ms,
+                   uint16_t long_press_ms,
+                   uint16_t repeat_ms);
 void key_set_callback(key_handle_t *handle, key_callback_t callback);
 void key_scan_task(key_handle_t *handle);
 void key_task(key_handle_t *handle);
