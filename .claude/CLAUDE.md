@@ -37,7 +37,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.7 数据共享**：`static` 私有变量 + getter 函数暴露。模块间通信三种方式按场景选用：直接函数调用（一对一）、getter 函数（一写多读）、回调函数（异步事件）
 - **12.8 单/多实例**：默认多实例（句柄注入），客观上唯一的硬件允许单实例
 - **12.9 错误处理**：公开接口完整校验，内部函数轻量校验，ISR 最简校验。错误恢复：错误上报→复位外设→自动重试（限次数）→仍失败则上报故障
-- **12.11 错误上报**：`Display` 模块内部维护 `error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行，无错时输出空字符串覆盖。蓝牙串口软件使用江协科技蓝牙串口小程序
+- **12.11 错误上报**：`Display` 模块内部维护 `error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行（当前值为 `0`，即屏显第 1 行），有错显示 `"Err: xxx"`，无错显示 `"Working..."`。蓝牙串口软件使用江协科技蓝牙串口小程序
 
 ## 旧代码 → 新代码迁移要点（历史参考）
 
