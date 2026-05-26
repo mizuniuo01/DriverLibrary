@@ -40,6 +40,9 @@
 static cam_handle_t cam_inst;
 static cam_data_t cam_data;
 
+/* 帧就绪标志位（ISR/task 置1，外部轮询清零） */
+volatile uint8_t cam_frame_ready;
+
 /**
  * @brief  摄像头模块初始化
  * @param  huart  绑定的串口句柄指针
@@ -56,6 +59,7 @@ void cam_init(UART_HandleTypeDef *huart)
     cam_inst.rx_write_pos = 0;
     cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
     cam_inst.frame_index = 0;
+    cam_frame_ready = 0;
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
     HAL_UARTEx_ReceiveToIdle_DMA(
@@ -127,6 +131,7 @@ void cam_task(void)
 
                     /* 数据解析：根据实际数据格式填充 cam_data */
 
+                    cam_frame_ready = 1;
                     cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
                 } else if (byte == CAM_FRAME_HEADER) {
                     cam_inst.frame_index = 0;

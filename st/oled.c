@@ -23,6 +23,12 @@
 static uint8_t oled_buffer[OLED_PAGES][OLED_WIDTH];
 static I2C_HandleTypeDef *oled_i2c;
 
+/*
+ * I2C 超时（ms）。SSD1306 单页刷新 128 字节约需 4ms，
+ * 全屏刷新约 32ms，100ms 留有充足余量应对时钟拉伸和总线竞争
+ */
+#define OLED_I2C_TIMEOUT_MS 100
+
 /* SSD1306 初始化命令序列 */
 static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40,
                                          0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
@@ -36,7 +42,7 @@ static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x0
 static void oled_write_cmd(uint8_t cmd)
 {
     HAL_I2C_Mem_Write(
-        oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, &cmd, 1, 10);
+        oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, &cmd, 1, OLED_I2C_TIMEOUT_MS);
 }
 
 /**
@@ -89,14 +95,14 @@ void oled_update(void)
         cmds[2] = 0x10;
 
         HAL_I2C_Mem_Write(
-            oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, cmds, 3, 10);
+            oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, cmds, 3, OLED_I2C_TIMEOUT_MS);
         HAL_I2C_Mem_Write(oled_i2c,
                           OLED_I2C_ADDR << 1,
                           0x40,
                           I2C_MEMADD_SIZE_8BIT,
                           oled_buffer[page],
                           OLED_WIDTH,
-                          10);
+                          OLED_I2C_TIMEOUT_MS);
     }
 }
 

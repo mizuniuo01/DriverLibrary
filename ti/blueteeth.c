@@ -73,7 +73,9 @@
  *     {"STOP",  on_stop_cmd},
  * };
  *
- * ── 硬依赖清单（全部由 SysConfig 生成，不可改名） ──
+ * 建议在cmd_table上放置所有回调函数，回调函数中再置标志位或调用接口
+ * 
+ * ── 硬依赖清单（全部由 SysConfig 生成，使用时对应实际情况进行更改） ──
  *
  * UART_BLUETEETH_INST               UART 外设基地址
  * UART_BLUETEETH_INST_INT_IRQN      UART 中断向量号

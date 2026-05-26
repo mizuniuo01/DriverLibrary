@@ -3,10 +3,10 @@
  * @brief   SSD1306 OLED 驱动模块（0.96 寸，I2C，128×64）
  * @author  mizuniuo01
  * @date    2026-05-25
- * @version 1.0.0
+ * @version 1.1.0
  * @note    仅适配 0.96 寸 SSD1306 I2C 接口 128×64 OLED，不支持 SPI
  * @note    依赖：I2C 外设已在 SysConfig 中配置
- * @note    非阻塞 I2C 状态机，oled_task 由 oled_tick_flag 驱动
+ * @note    非阻塞 I2C 状态机，每 tick 推进一个 I2C 操作，严禁忙等
  *
  * @usage
  * oled_init(I2C_OLED_INST);
@@ -19,26 +19,35 @@
 
 #include "oled.h"
 #include "oled_data.h"
+#include <stdbool.h>
 #include <string.h>
 
 /* 显存 */
 static uint8_t oled_buffer[OLED_PAGES][OLED_WIDTH];
 
-/* I2C 发送状态机 */
-typedef enum {
-    OLED_TX_IDLE = 0,
-    OLED_TX_BUSY,
-} oled_tx_state_t;
-
+/* 运行状态 */
 typedef enum {
     OLED_RUN_IDLE = 0,
     OLED_RUN_INIT,
     OLED_RUN_UPDATE,
 } oled_run_state_t;
 
+/* 页刷新子状态 */
+typedef enum {
+    OLED_SUB_SEND_CMD = 0,
+    OLED_SUB_SEND_DATA,
+} oled_sub_state_t;
+
 static I2C_Regs *oled_i2c;
-static oled_tx_state_t oled_tx_state = OLED_TX_IDLE;
 static oled_run_state_t oled_run_state = OLED_RUN_IDLE;
+static oled_sub_state_t oled_sub_state = OLED_SUB_SEND_CMD;
+
+/* 初始化命令发送进度 */
+static uint8_t oled_init_index;
+
+/* 页刷新进度 */
+static uint8_t oled_page;
+static bool oled_update_pending;
 
 volatile uint8_t oled_tick_flag;
 
@@ -47,7 +56,7 @@ static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x0
                                          0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
                                          0xDB, 0x30, 0xA4, 0xA6, 0x8D, 0x14, 0xAF};
 
-/* 当前 I2C 发送的单字节缓冲 */
+/* 当前 I2C 发送的单字节缓冲（供 oled_tx_byte_start 使用） */
 static uint8_t oled_tx_byte;
 
 /**
@@ -65,11 +74,10 @@ static void oled_tx_start(uint8_t ctrl, const uint8_t *data, uint16_t count)
     }
     DL_I2C_startControllerTransfer(
         oled_i2c, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, 1 + count);
-    oled_tx_state = OLED_TX_BUSY;
 }
 
 /**
- * @brief  发送单字节
+ * @brief  发送单字节命令/数据
  * @param  ctrl  控制字节
  * @param  byte  数据字节
  * @retval 无
@@ -78,6 +86,18 @@ static void oled_tx_byte_start(uint8_t ctrl, uint8_t byte)
 {
     oled_tx_byte = byte;
     oled_tx_start(ctrl, &oled_tx_byte, 1);
+}
+
+/**
+ * @brief  判断 I2C 控制器是否空闲
+ * @param  无
+ * @retval true  空闲
+ * @retval false 忙
+ */
+static bool oled_i2c_is_idle(void)
+{
+    return (DL_I2C_getControllerStatus(oled_i2c)
+            & DL_I2C_CONTROLLER_STATUS_IDLE) != 0;
 }
 
 /**
@@ -97,7 +117,10 @@ void oled_init(I2C_Regs *hi2c)
 
     oled_i2c = hi2c;
     oled_run_state = OLED_RUN_IDLE;
-    oled_tx_state = OLED_TX_IDLE;
+    oled_init_index = 0;
+    oled_page = 0;
+    oled_sub_state = OLED_SUB_SEND_CMD;
+    oled_update_pending = false;
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
 }
@@ -115,39 +138,6 @@ void oled_error_callback(I2C_Regs *hi2c)
 
     DL_I2C_resetControllerTransfer(hi2c);
     DL_I2C_clearInterruptStatus(hi2c, 0xFFFFFFFF);
-    oled_tx_state = OLED_TX_IDLE;
-}
-
-/**
- * @brief  等待 I2C 发送完成（轮询控制器状态）
- * @param  无
- * @retval 无
- */
-static void oled_wait_tx_done(void)
-{
-    while (!(DL_I2C_getControllerStatus(oled_i2c) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
-        /* 等待 I2C 控制器空闲 */
-    }
-}
-
-/**
- * @brief  刷新一页到 OLED
- * @param  page  页号（0~7）
- * @retval 无
- */
-static void oled_update_page(uint8_t page)
-{
-    uint8_t cmds[3];
-
-    cmds[0] = 0xB0 | page;
-    cmds[1] = 0x00;
-    cmds[2] = 0x10;
-
-    oled_tx_start(0x00, cmds, 3);
-    oled_wait_tx_done();
-
-    oled_tx_start(0x40, oled_buffer[page], OLED_WIDTH);
-    oled_wait_tx_done();
 }
 
 /**
@@ -161,17 +151,16 @@ void oled_clear(void)
 }
 
 /**
- * @brief  将显存刷新到 OLED
+ * @brief  请求刷新显存到 OLED（非阻塞）
+ * @note   仅标记刷新请求，实际 I2C 传输由 oled_task 逐页完成
  * @param  无
  * @retval 无
  */
 void oled_update(void)
 {
-    uint8_t page;
-
-    for (page = 0; page < OLED_PAGES; page++) {
-        oled_update_page(page);
-    }
+    oled_update_pending = true;
+    oled_page = 0;
+    oled_sub_state = OLED_SUB_SEND_CMD;
 }
 
 /**
@@ -305,47 +294,63 @@ void oled_show_signed_num(
 }
 
 /**
- * @brief  发送初始化命令
- * @param  无
- * @retval 无
- */
-static void oled_run_init(void)
-{
-    uint8_t i;
-
-    /* 逐字节发送初始化命令 */
-    for (i = 0; i < sizeof(oled_init_cmds); i++) {
-        oled_tx_byte_start(0x00, oled_init_cmds[i]);
-        oled_wait_tx_done();
-    }
-
-    oled_run_state = OLED_RUN_UPDATE;
-}
-
-/**
  * @brief  OLED 周期性任务（主循环中调用）
- * @note   由 oled_tick_flag 驱动，非阻塞
+ * @note   由 oled_tick_flag 驱动，每 tick 推进一个 I2C 操作，非阻塞
  * @param  无
  * @retval 无
  */
 void oled_task(void)
 {
+    uint8_t cmds[3];
+
     if (!oled_tick_flag) {
         return;
     }
     oled_tick_flag = 0;
 
+    /* 检查上一次 I2C 发送是否完成 */
+    if (!oled_i2c_is_idle()) {
+        return;
+    }
+
     switch (oled_run_state) {
         case OLED_RUN_IDLE:
             oled_run_state = OLED_RUN_INIT;
+            oled_init_index = 0;
             break;
 
         case OLED_RUN_INIT:
-            oled_run_init();
+            if (oled_init_index < sizeof(oled_init_cmds)) {
+                oled_tx_byte_start(0x00, oled_init_cmds[oled_init_index]);
+                oled_init_index++;
+            } else {
+                oled_run_state = OLED_RUN_UPDATE;
+                oled_page = 0;
+                oled_sub_state = OLED_SUB_SEND_CMD;
+                oled_update_pending = true;
+            }
             break;
 
         case OLED_RUN_UPDATE:
-            oled_update();
+            if (!oled_update_pending) {
+                break;
+            }
+
+            if (oled_sub_state == OLED_SUB_SEND_CMD) {
+                cmds[0] = 0xB0 | oled_page;
+                cmds[1] = 0x00;
+                cmds[2] = 0x10;
+                oled_tx_start(0x00, cmds, 3);
+                oled_sub_state = OLED_SUB_SEND_DATA;
+            } else {
+                oled_tx_start(0x40, oled_buffer[oled_page], OLED_WIDTH);
+                oled_page++;
+                oled_sub_state = OLED_SUB_SEND_CMD;
+                if (oled_page >= OLED_PAGES) {
+                    oled_page = 0;
+                    oled_update_pending = false;
+                }
+            }
             break;
 
         default:
