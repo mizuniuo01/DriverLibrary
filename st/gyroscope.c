@@ -38,7 +38,6 @@
  */
 
 #include "gyroscope.h"
-
 #include <string.h>
 
 static gyro_handle_t gyro_inst;
@@ -74,9 +73,8 @@ void gyro_init(UART_HandleTypeDef *huart)
     gyro_last_yaw = 0.0f;
     gyro_delta_initialized = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
-                                 gyro_inst.dma_rx_buffer,
-                                 GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        gyro_inst.huart, gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -103,17 +101,15 @@ void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 
             next = (gyro_inst.rx_write_pos + 1) % GYRO_RX_FIFO_SIZE;
             if (next != gyro_inst.rx_read_pos) {
-                gyro_inst.rx_fifo[gyro_inst.rx_write_pos] =
-                    gyro_inst.dma_rx_buffer[i];
+                gyro_inst.rx_fifo[gyro_inst.rx_write_pos] = gyro_inst.dma_rx_buffer[i];
                 gyro_inst.rx_write_pos = next;
             }
         }
     }
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
-                                 gyro_inst.dma_rx_buffer,
-                                 GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        gyro_inst.huart, gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -140,9 +136,8 @@ void gyro_error_callback(UART_HandleTypeDef *huart)
     gyro_frame_delta_yaw = 0.0f;
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart,
-                                 gyro_inst.dma_rx_buffer,
-                                 GYRO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        gyro_inst.huart, gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -196,8 +191,7 @@ static void parse_frames(void)
 
     while (gyro_inst.rx_read_pos != gyro_inst.rx_write_pos) {
         byte = gyro_inst.rx_fifo[gyro_inst.rx_read_pos];
-        gyro_inst.rx_read_pos =
-            (gyro_inst.rx_read_pos + 1) % GYRO_RX_FIFO_SIZE;
+        gyro_inst.rx_read_pos = (gyro_inst.rx_read_pos + 1) % GYRO_RX_FIFO_SIZE;
 
         switch (gyro_inst.rx_state) {
             case GYRO_STATE_WAIT_HEADER:
@@ -222,12 +216,10 @@ static void parse_frames(void)
                 break;
 
             case GYRO_STATE_RECEIVING_DATA:
-                gyro_inst
-                    .frame_buffer[gyro_inst.frame_index++] = byte;
+                gyro_inst.frame_buffer[gyro_inst.frame_index++] = byte;
 
                 if (gyro_inst.frame_index >= GYRO_FRAME_LEN) {
-                    if (verify_checksum(gyro_inst.frame_buffer,
-                                        GYRO_FRAME_LEN)) {
+                    if (verify_checksum(gyro_inst.frame_buffer, GYRO_FRAME_LEN)) {
                         parse_angle_frame(gyro_inst.frame_buffer);
                     }
 

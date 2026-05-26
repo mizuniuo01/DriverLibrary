@@ -4,7 +4,7 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 
-#define KEY_MAX_COUNT 8 /* 单句柄最大按键数 */
+#define KEY_MAX_COUNT 8       /* 单句柄最大按键数 */
 #define KEY_TASK_PERIOD_MS 10 /* key_task 调度周期(ms) */
 
 /* key_task 调度标志位（ISR 置1，task 清0） */
@@ -30,9 +30,7 @@ typedef enum {
 typedef struct key_handle_t key_handle_t;
 
 /* 按键事件回调函数类型 */
-typedef void (*key_callback_t)(key_handle_t *handle,
-                              uint8_t key_id,
-                              key_event_t event);
+typedef void (*key_callback_t)(key_handle_t *handle, uint8_t key_id, key_event_t event);
 
 struct key_handle_t {
     GPIO_Regs *port;

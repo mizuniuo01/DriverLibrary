@@ -10,7 +10,7 @@
  * 例：SysConfig 中定时器时钟 40MHz → CC = 40000000 / 20000 = 2000
  * 若在 SysConfig 中修改了定时器时钟源，必须同步更新 PWM_MAX_COMPARE。
  */
-#define PWM_FREQ_HZ 20000 /* PWM 载波频率 */
+#define PWM_FREQ_HZ 20000    /* PWM 载波频率 */
 #define PWM_MAX_COMPARE 2000 /* 占空比最大比较值 = TimerClock / 20000 */
 
 void pwm_init(GPTIMER_Regs *htim);

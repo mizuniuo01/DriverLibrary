@@ -17,8 +17,7 @@
 
 #include "pid.h"
 
-void pid_init(pid_t *pid, float p, float i, float d,
-              float out_max, float integral_max)
+void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
 {
     if (!pid) {
         return;
@@ -63,9 +62,8 @@ float pid_calc(pid_t *pid, float target, float actual)
     }
 
     /* 标准位置式 PID */
-    pid->out = pid->kp * pid->error
-               + pid->ki * pid->integral
-               + pid->kd * (pid->error - pid->error_last);
+    pid->out = pid->kp * pid->error + pid->ki * pid->integral +
+               pid->kd * (pid->error - pid->error_last);
 
     pid->error_last = pid->error;
 

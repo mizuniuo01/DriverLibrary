@@ -1,8 +1,8 @@
 #ifndef PWM_H
 #define PWM_H
 
-#include <stm32f4xx_hal.h>
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
 
 /*
  * PWM_MAX_COMPARE 对应 CubeMX 中定时器的 ARR 值（自动重装载）。

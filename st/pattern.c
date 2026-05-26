@@ -21,28 +21,18 @@
 pattern_state_t pattern_lookup(uint8_t sensor_data)
 {
     /* 直线（中间传感器触发） */
-    if (sensor_data == 0b00011000
-        || sensor_data == 0b00001000
-        || sensor_data == 0b00010000) {
+    if (sensor_data == 0b00011000 || sensor_data == 0b00001000 ||
+        sensor_data == 0b00010000) {
         return PATTERN_STRAIGHT;
     }
 
     /* 直线过滤（抗噪与杂散点兼容） */
-    if (sensor_data == 0b10011001
-        || sensor_data == 0b00011001
-        || sensor_data == 0b10011000
-        || sensor_data == 0b10001000
-        || sensor_data == 0b00001001
-        || sensor_data == 0b00010001
-        || sensor_data == 0b10001001
-        || sensor_data == 0x98
-        || sensor_data == 0xD8
-        || sensor_data == 0x78
-        || sensor_data == 0x38
-        || sensor_data == 0x19
-        || sensor_data == 0x1B
-        || sensor_data == 0x1E
-        || sensor_data == 0x1C) {
+    if (sensor_data == 0b10011001 || sensor_data == 0b00011001 ||
+        sensor_data == 0b10011000 || sensor_data == 0b10001000 ||
+        sensor_data == 0b00001001 || sensor_data == 0b00010001 ||
+        sensor_data == 0b10001001 || sensor_data == 0x98 || sensor_data == 0xD8 ||
+        sensor_data == 0x78 || sensor_data == 0x38 || sensor_data == 0x19 ||
+        sensor_data == 0x1B || sensor_data == 0x1E || sensor_data == 0x1C) {
         return PATTERN_STRAIGHT;
     }
 
@@ -77,14 +67,12 @@ pattern_state_t pattern_lookup(uint8_t sensor_data)
     }
 
     /* 大偏左 */
-    if (sensor_data == 0b00000001
-        || sensor_data == 0b00000011) {
+    if (sensor_data == 0b00000001 || sensor_data == 0b00000011) {
         return PATTERN_BIG_LEFT;
     }
 
     /* 大偏右 */
-    if (sensor_data == 0b10000000
-        || sensor_data == 0b11000000) {
+    if (sensor_data == 0b10000000 || sensor_data == 0b11000000) {
         return PATTERN_BIG_RIGHT;
     }
 

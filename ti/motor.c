@@ -111,9 +111,7 @@ void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_left(motor_handle_t *handle,
-                          GPTIMER_Regs *htim,
-                          int16_t speed)
+void motor_set_speed_left(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed)
 {
     if (!handle || !htim) {
         return;
@@ -155,9 +153,7 @@ void motor_set_speed_left(motor_handle_t *handle,
  * @param  speed   PWM 比较值（-PWM_MAX_COMPARE ~ +PWM_MAX_COMPARE）
  * @retval 无
  */
-void motor_set_speed_right(motor_handle_t *handle,
-                           GPTIMER_Regs *htim,
-                           int16_t speed)
+void motor_set_speed_right(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed)
 {
     if (!handle || !htim) {
         return;

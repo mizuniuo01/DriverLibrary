@@ -5,10 +5,10 @@
 #include <stdint.h>
 
 #define GYRO_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
-#define GYRO_RX_FIFO_SIZE    512 /* 接收环形队列容量 */
-#define GYRO_FRAME_HEADER    0x55 /* 帧头标识 */
-#define GYRO_TYPE_ANGLE      0x53 /* 角度数据类型 */
-#define GYRO_FRAME_LEN       11 /* 角度数据帧长度（含校验） */
+#define GYRO_RX_FIFO_SIZE 512    /* 接收环形队列容量 */
+#define GYRO_FRAME_HEADER 0x55   /* 帧头标识 */
+#define GYRO_TYPE_ANGLE 0x53     /* 角度数据类型 */
+#define GYRO_FRAME_LEN 11        /* 角度数据帧长度（含校验） */
 
 typedef enum {
     GYRO_STATE_WAIT_HEADER = 0,

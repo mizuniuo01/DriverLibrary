@@ -4,15 +4,15 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 
-#define DISPLAY_LINE_1_Y  0   /* 第 1 行 */
-#define DISPLAY_LINE_2_Y  20  /* 第 2 行 */
-#define DISPLAY_LINE_3_Y  40  /* 第 3 行 */
-#define DISPLAY_LINE_4_Y  60  /* 第 4 行 */
-#define DISPLAY_LINE_5_Y  80  /* 第 5 行 */
-#define DISPLAY_LINE_6_Y  100 /* 第 6 行 */
-#define DISPLAY_LINE_7_Y  120 /* 第 7 行 */
-#define DISPLAY_LINE_8_Y  140 /* 第 8 行 */
-#define DISPLAY_LINE_9_Y  160 /* 第 9 行 */
+#define DISPLAY_LINE_1_Y 0    /* 第 1 行 */
+#define DISPLAY_LINE_2_Y 20   /* 第 2 行 */
+#define DISPLAY_LINE_3_Y 40   /* 第 3 行 */
+#define DISPLAY_LINE_4_Y 60   /* 第 4 行 */
+#define DISPLAY_LINE_5_Y 80   /* 第 5 行 */
+#define DISPLAY_LINE_6_Y 100  /* 第 6 行 */
+#define DISPLAY_LINE_7_Y 120  /* 第 7 行 */
+#define DISPLAY_LINE_8_Y 140  /* 第 8 行 */
+#define DISPLAY_LINE_9_Y 160  /* 第 9 行 */
 #define DISPLAY_LINE_10_Y 180 /* 第 10 行 */
 #define DISPLAY_LINE_11_Y 200 /* 第 11 行 */
 #define DISPLAY_LINE_12_Y 220 /* 第 12 行 */

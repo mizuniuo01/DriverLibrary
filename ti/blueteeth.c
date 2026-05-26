@@ -88,12 +88,11 @@
  * BLUETEETH_RX_FIFO_SIZE     1024  接收环形队列（高吞吐时加大）
  * BLUETEETH_TX_FIFO_SIZE     1024  发送环形队列
  * BLUETEETH_MAX_FRAME_LEN    128   单帧最大长度
- * FRAME_HEADER               '@'   帧头
- * FRAME_TAIL                 '#'   帧尾
+ * BLUETEETH_FRAME_HEADER               '@'   帧头
+ * BLUETEETH_FRAME_TAIL                 '#'   帧尾
  */
 
 #include "blueteeth.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -133,9 +132,8 @@ static void process_command(const char *cmd_string)
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(DMA,
-                      DMA_CH_BLUETEETH_RX_CHAN_ID,
-                      (uint32_t)(&UART_BLUETEETH_INST->RXDATA));
+    DL_DMA_setSrcAddr(
+        DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, (uint32_t)(&UART_BLUETEETH_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID);
@@ -151,9 +149,8 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID);
     DL_DMA_setSrcAddr(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, (uint32_t)buf);
-    DL_DMA_setDestAddr(DMA,
-                       DMA_CH_BLUETEETH_TX_CHAN_ID,
-                       (uint32_t)(&UART_BLUETEETH_INST->TXDATA));
+    DL_DMA_setDestAddr(
+        DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, (uint32_t)(&UART_BLUETEETH_INST->TXDATA));
     DL_DMA_setTransferSize(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID);
 }
@@ -178,7 +175,7 @@ void blueteeth_init(UART_Regs *huart)
     blueteeth_inst.tx_read_pos = 0;
     blueteeth_inst.tx_write_pos = 0;
     blueteeth_inst.is_tx_busy = 0;
-    blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+    blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 
     start_dma_rx(blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
@@ -386,7 +383,7 @@ void blueteeth_error_callback(UART_Regs *huart)
         return;
     }
 
-    blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+    blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 }
 
@@ -426,38 +423,35 @@ void blueteeth_task(void)
             (blueteeth_inst.rx_read_pos + 1) % BLUETEETH_RX_FIFO_SIZE;
 
         switch (blueteeth_inst.rx_state) {
-            case STATE_WAIT_HEADER:
-                if (byte == FRAME_HEADER) {
+            case BLUETEETH_STATE_WAIT_HEADER:
+                if (byte == BLUETEETH_FRAME_HEADER) {
                     blueteeth_inst.frame_index = 0;
-                    blueteeth_inst.rx_state = STATE_RECEIVING_DATA;
+                    blueteeth_inst.rx_state = BLUETEETH_STATE_RECEIVING_DATA;
                 }
                 break;
 
-            case STATE_RECEIVING_DATA:
-                if (byte == FRAME_TAIL) {
+            case BLUETEETH_STATE_RECEIVING_DATA:
+                if (byte == BLUETEETH_FRAME_TAIL) {
                     if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN) {
-                        blueteeth_inst
-                            .frame_buffer[blueteeth_inst.frame_index] = '\0';
+                        blueteeth_inst.frame_buffer[blueteeth_inst.frame_index] = '\0';
                     }
                     process_command((char *)blueteeth_inst.frame_buffer);
-                    blueteeth_inst.rx_state = STATE_WAIT_HEADER;
-                } else if (byte == FRAME_HEADER) {
+                    blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
+                } else if (byte == BLUETEETH_FRAME_HEADER) {
                     /* 帧内出现帧头，重置接收 */
                     blueteeth_inst.frame_index = 0;
                 } else {
-                    if (blueteeth_inst.frame_index <
-                        BLUETEETH_MAX_FRAME_LEN - 1) {
-                        blueteeth_inst
-                            .frame_buffer[blueteeth_inst.frame_index++] = byte;
+                    if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN - 1) {
+                        blueteeth_inst.frame_buffer[blueteeth_inst.frame_index++] = byte;
                     } else {
                         /* 帧超长，丢弃 */
-                        blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                        blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
                     }
                 }
                 break;
 
             default:
-                blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
                 break;
         }
     }

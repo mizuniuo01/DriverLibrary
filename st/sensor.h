@@ -1,12 +1,12 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-#include <stm32f4xx_hal.h>
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
 
-#define SENSOR_I2C_ADDR_7BIT 0x4C /* 感为科技八路灰度 I2C 7 位地址 */
+#define SENSOR_I2C_ADDR_7BIT 0x4C                   /* 感为科技八路灰度 I2C 7 位地址 */
 #define SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1) /* 左移 1 位地址 */
-#define SENSOR_CMD_READ_DIG 0xDD /* 读取数字量命令 */
+#define SENSOR_CMD_READ_DIG 0xDD                    /* 读取数字量命令 */
 
 typedef enum {
     SENSOR_STATE_IDLE = 0,

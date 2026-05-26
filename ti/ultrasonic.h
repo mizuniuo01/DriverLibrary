@@ -5,9 +5,9 @@
 #include <stdint.h>
 
 /* 超声波运行参数 */
-#define ULTRASONIC_MAX_TIME_US  65535  /* 超时阈值（us），超过判定为无效 */
-#define ULTRASONIC_PERIOD_MS    70     /* 轮询周期（ms），不能小于 60ms */
-#define ULTRASONIC_SOUND_SPEED  340.0f /* 声速（m/s） */
+#define ULTRASONIC_MAX_TIME_US 65535  /* 超时阈值（us），超过判定为无效 */
+#define ULTRASONIC_PERIOD_MS 70       /* 轮询周期（ms），不能小于 60ms */
+#define ULTRASONIC_SOUND_SPEED 340.0f /* 声速（m/s） */
 
 /* 超声波状态 */
 typedef enum {
@@ -51,8 +51,7 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
                      const ultrasonic_cfg_t *cfg,
                      GPTIMER_Regs *htim);
 void ultrasonic_task(ultrasonic_handle_t *handle);
-void ultrasonic_capture_callback(ultrasonic_handle_t *handle,
-                                 GPTIMER_Regs *htim);
+void ultrasonic_capture_callback(ultrasonic_handle_t *handle, GPTIMER_Regs *htim);
 ultrasonic_data_t ultrasonic_get_data(void);
 
 #endif

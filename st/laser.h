@@ -1,8 +1,8 @@
 #ifndef LASER_H
 #define LASER_H
 
-#include <stm32f4xx_hal.h>
 #include <stdint.h>
+#include <stm32f4xx_hal.h>
 
 /* 激光配置结构体 */
 typedef struct {

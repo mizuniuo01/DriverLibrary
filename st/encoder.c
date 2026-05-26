@@ -41,8 +41,7 @@ static int16_t encoder_right_val;
  * @param  htim_right  右编码器定时器句柄
  * @retval 无
  */
-void encoder_init(TIM_HandleTypeDef *htim_left,
-                  TIM_HandleTypeDef *htim_right)
+void encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
 {
     if (!htim_left || !htim_right) {
         return;

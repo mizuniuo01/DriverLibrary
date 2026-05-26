@@ -67,7 +67,7 @@
 #include "key.h"
 
 /* 按键消抖状态 */
-#define KEY_STATE_IDLE 0 /* 空闲 */
+#define KEY_STATE_IDLE 0    /* 空闲 */
 #define KEY_STATE_PRESSED 1 /* 已按下（消抖通过） */
 
 volatile uint8_t key_task_flag;
@@ -93,8 +93,7 @@ void key_init(key_handle_t *handle,
 {
     uint8_t i;
 
-    if (!handle || !port || !pin_cfgs || key_count == 0 ||
-        key_count > KEY_MAX_COUNT) {
+    if (!handle || !port || !pin_cfgs || key_count == 0 || key_count > KEY_MAX_COUNT) {
         return;
     }
 
@@ -209,8 +208,7 @@ void key_task(key_handle_t *handle)
             handle->event[i] = KEY_EVENT_PRESS;
 
             if (handle->callback) {
-                handle->callback(
-                    handle, handle->pin_cfgs[i].id, KEY_EVENT_PRESS);
+                handle->callback(handle, handle->pin_cfgs[i].id, KEY_EVENT_PRESS);
             }
             continue;
         }
@@ -232,8 +230,7 @@ void key_task(key_handle_t *handle)
                 handle->event[i] = KEY_EVENT_RELEASE;
 
                 if (handle->callback) {
-                    handle->callback(
-                        handle, handle->pin_cfgs[i].id, KEY_EVENT_RELEASE);
+                    handle->callback(handle, handle->pin_cfgs[i].id, KEY_EVENT_RELEASE);
                 }
             }
             continue;
@@ -245,8 +242,7 @@ void key_task(key_handle_t *handle)
 
             /* 长按判定（>= 防止 task 周期不整除时跳过） */
             if (handle->hold_cnt[i] >= handle->long_press_ms &&
-                handle->hold_cnt[i] - KEY_TASK_PERIOD_MS <
-                    handle->long_press_ms) {
+                handle->hold_cnt[i] - KEY_TASK_PERIOD_MS < handle->long_press_ms) {
                 handle->event[i] = KEY_EVENT_LONG_PRESS;
 
                 if (handle->callback) {
@@ -256,8 +252,7 @@ void key_task(key_handle_t *handle)
             }
 
             /* 连发判定（首次连发在长按后间隔 repeat_ms 才触发） */
-            if (handle->repeat_ms > 0 &&
-                handle->hold_cnt[i] > handle->long_press_ms) {
+            if (handle->repeat_ms > 0 && handle->hold_cnt[i] > handle->long_press_ms) {
                 uint16_t repeat_phase;
 
                 repeat_phase = handle->hold_cnt[i] - handle->long_press_ms;

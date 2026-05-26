@@ -2,22 +2,21 @@
 #define BLUETEETH_H
 
 #include "ti_msp_dl_config.h"
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
 
 #define BLUETEETH_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
 #define BLUETEETH_DMA_TX_BUF_SIZE 128 /* DMA 单次发送最大缓存量 */
-#define BLUETEETH_RX_FIFO_SIZE 1024 /* 接收环形队列容量 */
-#define BLUETEETH_TX_FIFO_SIZE 1024 /* 发送环形队列容量 */
-#define BLUETEETH_MAX_FRAME_LEN 128 /* 单帧协议最大长度 */
+#define BLUETEETH_RX_FIFO_SIZE 1024   /* 接收环形队列容量 */
+#define BLUETEETH_TX_FIFO_SIZE 1024   /* 发送环形队列容量 */
+#define BLUETEETH_MAX_FRAME_LEN 128   /* 单帧协议最大长度 */
 
-#define FRAME_HEADER '@' /* 帧头标识符 */
-#define FRAME_TAIL '#' /* 帧尾标识符 */
+#define BLUETEETH_FRAME_HEADER '@' /* 帧头标识符 */
+#define BLUETEETH_FRAME_TAIL '#'   /* 帧尾标识符 */
 
 typedef enum {
-    STATE_WAIT_HEADER = 0,
-    STATE_RECEIVING_DATA
+    BLUETEETH_STATE_WAIT_HEADER = 0,
+    BLUETEETH_STATE_RECEIVING_DATA,
 } blueteeth_frame_state_t;
 
 typedef struct {

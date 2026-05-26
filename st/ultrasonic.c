@@ -84,8 +84,7 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
  * @param  htim    触发中断的定时器句柄
  * @retval 无
  */
-void ultrasonic_capture_callback(ultrasonic_handle_t *handle,
-                                 TIM_HandleTypeDef *htim)
+void ultrasonic_capture_callback(ultrasonic_handle_t *handle, TIM_HandleTypeDef *htim)
 {
     if (!handle || !htim) {
         return;
@@ -96,19 +95,15 @@ void ultrasonic_capture_callback(ultrasonic_handle_t *handle,
     }
 
     if (handle->capture_flag == 0) {
-        handle->start_time =
-            HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+        handle->start_time = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
         handle->capture_flag = 1;
-        __HAL_TIM_SET_CAPTUREPOLARITY(htim,
-                                      TIM_CHANNEL_1,
-                                      TIM_INPUTCHANNELPOLARITY_FALLING);
+        __HAL_TIM_SET_CAPTUREPOLARITY(
+            htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
     } else if (handle->capture_flag == 1) {
-        handle->end_time =
-            HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
+        handle->end_time = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
         handle->capture_flag = 2;
-        __HAL_TIM_SET_CAPTUREPOLARITY(htim,
-                                      TIM_CHANNEL_1,
-                                      TIM_INPUTCHANNELPOLARITY_RISING);
+        __HAL_TIM_SET_CAPTUREPOLARITY(
+            htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
     }
 }
 
@@ -130,18 +125,13 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
     switch (handle->state) {
         case ULTRASONIC_STATE_IDLE:
-            if (current_tick - handle->last_trigger_tick
-                >= ULTRASONIC_PERIOD_MS) {
-                HAL_GPIO_WritePin(handle->trig_port,
-                                  handle->trig_pin,
-                                  GPIO_PIN_SET);
+            if (current_tick - handle->last_trigger_tick >= ULTRASONIC_PERIOD_MS) {
+                HAL_GPIO_WritePin(handle->trig_port, handle->trig_pin, GPIO_PIN_SET);
                 handle->last_trigger_tick = current_tick;
 
                 /* 强制重置捕获极性为上升沿 */
                 __HAL_TIM_SET_CAPTUREPOLARITY(
-                    handle->htim,
-                    TIM_CHANNEL_1,
-                    TIM_INPUTCHANNELPOLARITY_RISING);
+                    handle->htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
                 handle->capture_flag = 0;
 
                 handle->state = ULTRASONIC_STATE_WAIT_TRIGGER_END;
@@ -151,9 +141,7 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
         case ULTRASONIC_STATE_WAIT_TRIGGER_END:
             /* TRIG 脉冲维持 >10us 后拉低 */
             if (current_tick - handle->last_trigger_tick >= 1) {
-                HAL_GPIO_WritePin(handle->trig_port,
-                                  handle->trig_pin,
-                                  GPIO_PIN_RESET);
+                HAL_GPIO_WritePin(handle->trig_port, handle->trig_pin, GPIO_PIN_RESET);
                 handle->state = ULTRASONIC_STATE_WAIT_ECHO;
             }
             break;
@@ -164,36 +152,28 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
                 /* 处理定时器向上计数溢出的差值计算 */
                 if (handle->end_time >= handle->start_time) {
-                    duration = handle->end_time
-                               - handle->start_time;
+                    duration = handle->end_time - handle->start_time;
                 } else {
                     /* 32 位计数器溢出回绕 */
-                    duration = (0xFFFFFFFF - handle->start_time)
-                               + handle->end_time + 1;
+                    duration = (0xFFFFFFFF - handle->start_time) + handle->end_time + 1;
                 }
 
-                if (duration > 0
-                    && duration < ULTRASONIC_MAX_TIME_US) {
+                if (duration > 0 && duration < ULTRASONIC_MAX_TIME_US) {
                     ultra_data.distance_mm =
-                        (float)duration
-                        * (ULTRASONIC_SOUND_SPEED / 1000.0f)
-                        / 2.0f;
+                        (float)duration * (ULTRASONIC_SOUND_SPEED / 1000.0f) / 2.0f;
                     ultra_data.is_valid = 1;
                 } else {
                     ultra_data.is_valid = 0;
                 }
 
                 handle->state = ULTRASONIC_STATE_IDLE;
-            } else if (current_tick - handle->last_trigger_tick
-                       >= ULTRASONIC_PERIOD_MS) {
+            } else if (current_tick - handle->last_trigger_tick >= ULTRASONIC_PERIOD_MS) {
                 /* 超时无回波，复位 */
                 ultra_data.is_valid = 0;
                 handle->state = ULTRASONIC_STATE_IDLE;
                 handle->capture_flag = 0;
                 __HAL_TIM_SET_CAPTUREPOLARITY(
-                    handle->htim,
-                    TIM_CHANNEL_1,
-                    TIM_INPUTCHANNELPOLARITY_RISING);
+                    handle->htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
             }
             break;
 

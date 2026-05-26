@@ -5,14 +5,14 @@
 #include <stdint.h>
 
 /* 缓冲区与系统参数 */
-#define STEPMOTOR_DMA_RX_BUF_SIZE   128  /* DMA 接收单次最大量 */
-#define STEPMOTOR_DMA_TX_BUF_SIZE   128  /* DMA 发送单次最大量 */
-#define STEPMOTOR_RX_FIFO_SIZE      512  /* 接收环形队列容量 */
-#define STEPMOTOR_TX_FIFO_SIZE      512  /* 发送环形队列容量 */
-#define STEPMOTOR_MAX_FRAME_LEN     64   /* 单帧协议最大长度 */
-#define STEPMOTOR_POWER_ON_DELAY_MS 50   /* 上电等待稳定延时 */
-#define STEPMOTOR_MAX_SPEED_LIMIT   30000 /* 最大速度限制（手册：0~3000.0RPM） */
-#define STEPMOTOR_REACH_TOLERANCE   0.1f /* 判定到达的容差角度 */
+#define STEPMOTOR_DMA_RX_BUF_SIZE 128   /* DMA 接收单次最大量 */
+#define STEPMOTOR_DMA_TX_BUF_SIZE 128   /* DMA 发送单次最大量 */
+#define STEPMOTOR_RX_FIFO_SIZE 512      /* 接收环形队列容量 */
+#define STEPMOTOR_TX_FIFO_SIZE 512      /* 发送环形队列容量 */
+#define STEPMOTOR_MAX_FRAME_LEN 64      /* 单帧协议最大长度 */
+#define STEPMOTOR_POWER_ON_DELAY_MS 50  /* 上电等待稳定延时 */
+#define STEPMOTOR_MAX_SPEED_LIMIT 30000 /* 最大速度限制（手册：0~3000.0RPM） */
+#define STEPMOTOR_REACH_TOLERANCE 0.1f  /* 判定到达的容差角度 */
 
 /* 电机 ID */
 /*
@@ -32,42 +32,42 @@
  * 检测帧结束（与 blueteeth/gyroscope 相同策略）。
  */
 
-#define MOTOR_ID_X    0x01 /* X 轴地址 */
-#define MOTOR_ID_Y    0x02 /* Y 轴地址 */
+#define MOTOR_ID_X 0x01    /* X 轴地址 */
+#define MOTOR_ID_Y 0x02    /* Y 轴地址 */
 #define MOTOR_ID_SYNC 0x00 /* 广播地址（§5.3.14） */
 
 /* 命令码（§5.2~§5.5） */
-#define MOTOR_CHECKSUM     0x6B /* 固定校验字节（§4.1.1） */
-#define MOTOR_CMD_MOVE_ACC 0xFD /* 梯形加减速位置模式（X 固件 §5.3.10） */
-#define MOTOR_CMD_STOP     0xFE /* 立即停止（§5.3.13） */
-#define MOTOR_CMD_SYNC_TRIG 0xFF /* 触发多机同步运动（§5.3.14） */
-#define MOTOR_CMD_READ_POS 0x36 /* 读取实时位置角度（§5.5.13） */
+#define MOTOR_CHECKSUM 0x6B       /* 固定校验字节（§4.1.1） */
+#define MOTOR_CMD_MOVE_ACC 0xFD   /* 梯形加减速位置模式（X 固件 §5.3.10） */
+#define MOTOR_CMD_STOP 0xFE       /* 立即停止（§5.3.13） */
+#define MOTOR_CMD_SYNC_TRIG 0xFF  /* 触发多机同步运动（§5.3.14） */
+#define MOTOR_CMD_READ_POS 0x36   /* 读取实时位置角度（§5.5.13） */
 #define MOTOR_CMD_CLEAR_ZERO 0x0A /* 清除当前位置零点（§5.2.3） */
 
 /* 命令辅助参数 */
 #define MOTOR_PARAM_STOP_1 0x98 /* 停止辅助码（§5.3.13） */
 #define MOTOR_PARAM_STOP_2 0x00 /* 同步标志：立即执行 */
-#define MOTOR_PARAM_CLEAR  0x6D /* 清零辅助码（§5.2.3） */
-#define MOTOR_PARAM_SYNC   0x66 /* 同步触发辅助码（§5.3.14） */
+#define MOTOR_PARAM_CLEAR 0x6D  /* 清零辅助码（§5.2.3） */
+#define MOTOR_PARAM_SYNC 0x66   /* 同步触发辅助码（§5.3.14） */
 
 /* 应答状态码（§4.1.2） */
 #define MOTOR_STATUS_REACHED 0x9F /* 操作执行完成 */
-#define MOTOR_STATUS_ERR1    0xE2 /* 参数超限/堵转/过流/过热保护触发 */
-#define MOTOR_STATUS_ERR2    0xEE /* 格式错误 */
+#define MOTOR_STATUS_ERR1 0xE2    /* 参数超限/堵转/过流/过热保护触发 */
+#define MOTOR_STATUS_ERR2 0xEE    /* 格式错误 */
 
 /* 角度换算 */
-#define ANGLE_SEND_MULTIPLIER 100.0f /* 发送放大 100 倍（0.1° 分辨率） */
-#define ANGLE_READ_DIVIDER    100.0f /* 接收缩小 100 倍 */
+#define STEPMOTOR_ANGLE_SEND_MULTIPLIER 100.0f /* 发送放大 100 倍（0.1° 分辨率） */
+#define STEPMOTOR_ANGLE_READ_DIVIDER 100.0f    /* 接收缩小 100 倍 */
 
 /* 心跳参数 */
-#define HEARTBEAT_TIMEOUT_MS 1000 /* 超时判定离线（ms） */
-#define HEARTBEAT_PING_MS    100  /* 轮询间隔（ms） */
+#define STEPMOTOR_HEARTBEAT_TIMEOUT_MS 1000 /* 超时判定离线（ms） */
+#define STEPMOTOR_HEARTBEAT_PING_MS 100     /* 轮询间隔（ms） */
 
 /* 默认速度与加速度（RPM / RPM/s） */
-#define TRACKING_DEFAULT_SPEED 800  /* 默认转速 */
-#define TRACKING_DEFAULT_ACC   300  /* 默认加速度 */
-#define TRACKING_SYNC_FLAG_ON  1    /* 同步开启（先缓存，等 FF 触发） */
-#define TRACKING_SYNC_FLAG_OFF 0    /* 同步关闭（立即执行） */
+#define STEPMOTOR_TRACKING_DEFAULT_SPEED 800 /* 默认转速 */
+#define STEPMOTOR_TRACKING_DEFAULT_ACC 300   /* 默认加速度 */
+#define STEPMOTOR_TRACKING_SYNC_FLAG_ON 1    /* 同步开启（先缓存，等 FF 触发） */
+#define STEPMOTOR_TRACKING_SYNC_FLAG_OFF 0   /* 同步关闭（立即执行） */
 
 /* 软件 IDLE 检测标志位（定时器 ISR 周期性置 1） */
 extern volatile uint8_t step_motor_check_idle_flag;
@@ -82,7 +82,7 @@ typedef enum {
 /* 运动模式（§5.3.10） */
 typedef enum {
     MOTOR_MODE_REL_PREV = 0x00,
-    MOTOR_MODE_ABS      = 0x01,
+    MOTOR_MODE_ABS = 0x01,
     MOTOR_MODE_REL_CURR = 0x02,
 } motor_move_mode_t;
 
@@ -131,9 +131,12 @@ void step_motor_rx_callback(UART_Regs *huart, uint16_t size);
 void step_motor_tx_callback(UART_Regs *huart);
 void step_motor_error_callback(UART_Regs *huart);
 
-uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode,
-                             float angle, uint16_t speed,
-                             uint16_t accel, uint8_t sync_flag);
+uint8_t step_motor_set_angle(uint8_t id,
+                             motor_move_mode_t mode,
+                             float angle,
+                             uint16_t speed,
+                             uint16_t accel,
+                             uint8_t sync_flag);
 void step_motor_sync_trigger(void);
 void step_motor_stop(uint8_t id);
 void step_motor_clear_zero(uint8_t id);

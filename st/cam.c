@@ -35,7 +35,6 @@
  */
 
 #include "cam.h"
-
 #include <string.h>
 
 static cam_handle_t cam_inst;
@@ -59,9 +58,8 @@ void cam_init(UART_HandleTypeDef *huart)
     cam_inst.frame_index = 0;
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart,
-                                 cam_inst.dma_rx_buffer,
-                                 CAM_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        cam_inst.huart, cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -88,17 +86,15 @@ void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 
             next = (cam_inst.rx_write_pos + 1) % CAM_RX_FIFO_SIZE;
             if (next != cam_inst.rx_read_pos) {
-                cam_inst.rx_fifo[cam_inst.rx_write_pos] =
-                    cam_inst.dma_rx_buffer[i];
+                cam_inst.rx_fifo[cam_inst.rx_write_pos] = cam_inst.dma_rx_buffer[i];
                 cam_inst.rx_write_pos = next;
             }
         }
     }
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart,
-                                 cam_inst.dma_rx_buffer,
-                                 CAM_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        cam_inst.huart, cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -113,8 +109,7 @@ void cam_task(void)
 
     while (cam_inst.rx_read_pos != cam_inst.rx_write_pos) {
         byte = cam_inst.rx_fifo[cam_inst.rx_read_pos];
-        cam_inst.rx_read_pos =
-            (cam_inst.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
+        cam_inst.rx_read_pos = (cam_inst.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
 
         switch (cam_inst.rx_state) {
             case CAM_STATE_WAIT_HEADER:
@@ -127,8 +122,7 @@ void cam_task(void)
             case CAM_STATE_RECEIVING_DATA:
                 if (byte == CAM_FRAME_TAIL) {
                     if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
-                        cam_inst
-                            .frame_buffer[cam_inst.frame_index] = '\0';
+                        cam_inst.frame_buffer[cam_inst.frame_index] = '\0';
                     }
 
                     /* 数据解析：根据实际数据格式填充 cam_data */
@@ -138,8 +132,7 @@ void cam_task(void)
                     cam_inst.frame_index = 0;
                 } else {
                     if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
-                        cam_inst
-                            .frame_buffer[cam_inst.frame_index++] = byte;
+                        cam_inst.frame_buffer[cam_inst.frame_index++] = byte;
                     } else {
                         cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
                     }

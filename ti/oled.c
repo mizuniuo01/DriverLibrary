@@ -43,11 +43,9 @@ static oled_run_state_t oled_run_state = OLED_RUN_IDLE;
 volatile uint8_t oled_tick_flag;
 
 /* SSD1306 初始化命令序列 */
-static const uint8_t oled_init_cmds[] = {
-    0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40,
-    0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
-    0xDB, 0x30, 0xA4, 0xA6, 0x8D, 0x14, 0xAF
-};
+static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40,
+                                         0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
+                                         0xDB, 0x30, 0xA4, 0xA6, 0x8D, 0x14, 0xAF};
 
 /* 当前 I2C 发送的单字节缓冲 */
 static uint8_t oled_tx_byte;
@@ -59,15 +57,14 @@ static uint8_t oled_tx_byte;
  * @param  count 数据长度
  * @retval 无
  */
-static void oled_tx_start(uint8_t ctrl, const uint8_t *data,
-                          uint16_t count)
+static void oled_tx_start(uint8_t ctrl, const uint8_t *data, uint16_t count)
 {
     DL_I2C_fillControllerTXFIFO(oled_i2c, &ctrl, 1);
     if (count > 0) {
         DL_I2C_fillControllerTXFIFO(oled_i2c, data, count);
     }
-    DL_I2C_startControllerTransfer(oled_i2c, OLED_I2C_ADDR,
-        DL_I2C_CONTROLLER_DIRECTION_TX, 1 + count);
+    DL_I2C_startControllerTransfer(
+        oled_i2c, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, 1 + count);
     oled_tx_state = OLED_TX_BUSY;
 }
 
@@ -128,8 +125,7 @@ void oled_error_callback(I2C_Regs *hi2c)
  */
 static void oled_wait_tx_done(void)
 {
-    while (!(DL_I2C_getControllerStatus(oled_i2c)
-             & DL_I2C_CONTROLLER_STATUS_IDLE)) {
+    while (!(DL_I2C_getControllerStatus(oled_i2c) & DL_I2C_CONTROLLER_STATUS_IDLE)) {
         /* 等待 I2C 控制器空闲 */
     }
 }
@@ -221,8 +217,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
                     oled_draw_point(x + j, y + i);
                 } else {
                     if (x + j < OLED_WIDTH && y + i < OLED_HEIGHT) {
-                        oled_buffer[(y + i) / 8][x + j] &=
-                            ~(1 << ((y + i) % 8));
+                        oled_buffer[(y + i) / 8][x + j] &= ~(1 << ((y + i) % 8));
                     }
                 }
             }
@@ -235,8 +230,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
                     oled_draw_point(x + j, y + i);
                 } else {
                     if (x + j < OLED_WIDTH && y + i < OLED_HEIGHT) {
-                        oled_buffer[(y + i) / 8][x + j] &=
-                            ~(1 << ((y + i) % 8));
+                        oled_buffer[(y + i) / 8][x + j] &= ~(1 << ((y + i) % 8));
                     }
                 }
             }
@@ -252,8 +246,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
  * @param  font_size 字体大小
  * @retval 无
  */
-void oled_show_string(int16_t x, int16_t y, const char *str,
-                      uint8_t font_size)
+void oled_show_string(int16_t x, int16_t y, const char *str, uint8_t font_size)
 {
     if (!str) {
         return;
@@ -279,16 +272,14 @@ void oled_show_string(int16_t x, int16_t y, const char *str,
  * @param  font_size 字体大小
  * @retval 无
  */
-void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len,
-                   uint8_t font_size)
+void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len, uint8_t font_size)
 {
     uint8_t i;
     uint8_t digit;
 
     for (i = 0; i < len; i++) {
         digit = num % 10;
-        oled_show_char(x + (len - 1 - i) * font_size, y,
-                       '0' + digit, font_size);
+        oled_show_char(x + (len - 1 - i) * font_size, y, '0' + digit, font_size);
         num /= 10;
     }
 }
@@ -302,8 +293,8 @@ void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len,
  * @param  font_size 字体大小
  * @retval 无
  */
-void oled_show_signed_num(int16_t x, int16_t y, int32_t num,
-                          uint8_t len, uint8_t font_size)
+void oled_show_signed_num(
+    int16_t x, int16_t y, int32_t num, uint8_t len, uint8_t font_size)
 {
     if (num < 0) {
         oled_show_char(x, y, '-', font_size);

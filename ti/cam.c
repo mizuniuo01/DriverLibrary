@@ -33,7 +33,6 @@
  */
 
 #include "cam.h"
-
 #include <string.h>
 
 static cam_handle_t cam_inst;
@@ -48,9 +47,7 @@ static cam_data_t cam_data;
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CAM_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(DMA,
-                      DMA_CAM_RX_CHAN_ID,
-                      (uint32_t)(&UART_CAM_INST->RXDATA));
+    DL_DMA_setSrcAddr(DMA, DMA_CAM_RX_CHAN_ID, (uint32_t)(&UART_CAM_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CAM_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CAM_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CAM_RX_CHAN_ID);
@@ -104,8 +101,7 @@ void cam_rx_callback(UART_Regs *huart, uint16_t size)
 
             next = (cam_inst.rx_write_pos + 1) % CAM_RX_FIFO_SIZE;
             if (next != cam_inst.rx_read_pos) {
-                cam_inst.rx_fifo[cam_inst.rx_write_pos] =
-                    cam_inst.dma_rx_buffer[i];
+                cam_inst.rx_fifo[cam_inst.rx_write_pos] = cam_inst.dma_rx_buffer[i];
                 cam_inst.rx_write_pos = next;
             }
         }
@@ -142,8 +138,7 @@ void cam_task(void)
 
     while (cam_inst.rx_read_pos != cam_inst.rx_write_pos) {
         byte = cam_inst.rx_fifo[cam_inst.rx_read_pos];
-        cam_inst.rx_read_pos =
-            (cam_inst.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
+        cam_inst.rx_read_pos = (cam_inst.rx_read_pos + 1) % CAM_RX_FIFO_SIZE;
 
         switch (cam_inst.rx_state) {
             case CAM_STATE_WAIT_HEADER:
@@ -156,8 +151,7 @@ void cam_task(void)
             case CAM_STATE_RECEIVING_DATA:
                 if (byte == CAM_FRAME_TAIL) {
                     if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
-                        cam_inst
-                            .frame_buffer[cam_inst.frame_index] = '\0';
+                        cam_inst.frame_buffer[cam_inst.frame_index] = '\0';
                     }
 
                     /* 数据解析：根据实际数据格式填充 cam_data */
@@ -168,8 +162,7 @@ void cam_task(void)
                     cam_inst.frame_index = 0;
                 } else {
                     if (cam_inst.frame_index < CAM_MAX_FRAME_LEN) {
-                        cam_inst
-                            .frame_buffer[cam_inst.frame_index++] = byte;
+                        cam_inst.frame_buffer[cam_inst.frame_index++] = byte;
                     } else {
                         cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
                     }

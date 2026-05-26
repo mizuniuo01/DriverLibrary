@@ -75,8 +75,8 @@
  * BLUETEETH_RX_FIFO_SIZE     512   接收环形队列
  * BLUETEETH_TX_FIFO_SIZE     512   发送环形队列
  * BLUETEETH_MAX_FRAME_LEN    128   单帧最大长度
- * FRAME_HEADER               '@'   帧头
- * FRAME_TAIL                 '#'   帧尾
+ * BLUETEETH_FRAME_HEADER               '@'   帧头
+ * BLUETEETH_FRAME_TAIL                 '#'   帧尾
  *
  * ── TI / STM32 差异 ──
  *
@@ -86,7 +86,6 @@
  */
 
 #include "blueteeth.h"
-
 #include <stdio.h>
 #include <string.h>
 
@@ -133,12 +132,11 @@ void blueteeth_init(UART_HandleTypeDef *huart)
     blueteeth_inst.tx_read_pos = 0;
     blueteeth_inst.tx_write_pos = 0;
     blueteeth_inst.is_tx_busy = 0;
-    blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+    blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart,
-                                 blueteeth_inst.dma_rx_buffer,
-                                 BLUETEETH_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(
+        blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -184,8 +182,7 @@ static void data_transmit(void)
         send_len = len_to_copy;
     }
 
-    HAL_UART_Transmit_DMA(
-        blueteeth_inst.huart, blueteeth_inst.dma_tx_buffer, send_len);
+    HAL_UART_Transmit_DMA(blueteeth_inst.huart, blueteeth_inst.dma_tx_buffer, send_len);
 }
 
 /**
@@ -357,38 +354,35 @@ void blueteeth_task(void)
             (blueteeth_inst.rx_read_pos + 1) % BLUETEETH_RX_FIFO_SIZE;
 
         switch (blueteeth_inst.rx_state) {
-            case STATE_WAIT_HEADER:
-                if (byte == FRAME_HEADER) {
+            case BLUETEETH_STATE_WAIT_HEADER:
+                if (byte == BLUETEETH_FRAME_HEADER) {
                     blueteeth_inst.frame_index = 0;
-                    blueteeth_inst.rx_state = STATE_RECEIVING_DATA;
+                    blueteeth_inst.rx_state = BLUETEETH_STATE_RECEIVING_DATA;
                 }
                 break;
 
-            case STATE_RECEIVING_DATA:
-                if (byte == FRAME_TAIL) {
+            case BLUETEETH_STATE_RECEIVING_DATA:
+                if (byte == BLUETEETH_FRAME_TAIL) {
                     if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN) {
-                        blueteeth_inst
-                            .frame_buffer[blueteeth_inst.frame_index] = '\0';
+                        blueteeth_inst.frame_buffer[blueteeth_inst.frame_index] = '\0';
                     }
                     process_command((char *)blueteeth_inst.frame_buffer);
-                    blueteeth_inst.rx_state = STATE_WAIT_HEADER;
-                } else if (byte == FRAME_HEADER) {
+                    blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
+                } else if (byte == BLUETEETH_FRAME_HEADER) {
                     /* 帧内出现帧头，重置接收 */
                     blueteeth_inst.frame_index = 0;
                 } else {
-                    if (blueteeth_inst.frame_index <
-                        BLUETEETH_MAX_FRAME_LEN - 1) {
-                        blueteeth_inst
-                            .frame_buffer[blueteeth_inst.frame_index++] = byte;
+                    if (blueteeth_inst.frame_index < BLUETEETH_MAX_FRAME_LEN - 1) {
+                        blueteeth_inst.frame_buffer[blueteeth_inst.frame_index++] = byte;
                     } else {
                         /* 帧超长，丢弃 */
-                        blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                        blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
                     }
                 }
                 break;
 
             default:
-                blueteeth_inst.rx_state = STATE_WAIT_HEADER;
+                blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
                 break;
         }
     }

@@ -65,9 +65,8 @@ extern uint32_t get_system_tick(void);
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(DMA,
-                      DMA_CH_STEPMOTOR_RX_CHAN_ID,
-                      (uint32_t)(&UART_STEPMOTOR_INST->RXDATA));
+    DL_DMA_setSrcAddr(
+        DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, (uint32_t)(&UART_STEPMOTOR_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID);
@@ -83,9 +82,8 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID);
     DL_DMA_setSrcAddr(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, (uint32_t)buf);
-    DL_DMA_setDestAddr(DMA,
-                       DMA_CH_STEPMOTOR_TX_CHAN_ID,
-                       (uint32_t)(&UART_STEPMOTOR_INST->TXDATA));
+    DL_DMA_setDestAddr(
+        DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, (uint32_t)(&UART_STEPMOTOR_INST->TXDATA));
     DL_DMA_setTransferSize(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID);
 }
@@ -199,29 +197,25 @@ static void process_reply(uint8_t *frame, uint8_t length)
         uint8_t sign_flag = frame[2];
         uint32_t raw_position;
 
-        raw_position = (frame[3] << 24) | (frame[4] << 16)
-                       | (frame[5] << 8) | frame[6];
+        raw_position = (frame[3] << 24) | (frame[4] << 16) | (frame[5] << 8) | frame[6];
 
-        motor->current_angle = (float)raw_position
-                               / ANGLE_READ_DIVIDER;
+        motor->current_angle = (float)raw_position / STEPMOTOR_ANGLE_READ_DIVIDER;
 
         if (sign_flag == 0x01) {
             motor->current_angle = -motor->current_angle;
         }
 
-        if (fabs(motor->target_angle - motor->current_angle)
-            <= STEPMOTOR_REACH_TOLERANCE) {
+        if (fabs(motor->target_angle - motor->current_angle) <=
+            STEPMOTOR_REACH_TOLERANCE) {
             motor->is_reached = 1;
         }
-    } else if (command_val == MOTOR_CMD_MOVE_ACC
-               || command_val == MOTOR_CMD_STOP
-               || command_val == MOTOR_CMD_SYNC_TRIG) {
+    } else if (command_val == MOTOR_CMD_MOVE_ACC || command_val == MOTOR_CMD_STOP ||
+               command_val == MOTOR_CMD_SYNC_TRIG) {
         uint8_t status_val = frame[2];
 
         if (status_val == MOTOR_STATUS_REACHED) {
             motor->is_reached = 1;
-        } else if (status_val == MOTOR_STATUS_ERR1
-                   || status_val == MOTOR_STATUS_ERR2) {
+        } else if (status_val == MOTOR_STATUS_ERR1 || status_val == MOTOR_STATUS_ERR2) {
             motor->is_error = 1;
         }
     }
@@ -236,8 +230,7 @@ static void heartbeat_check(void)
 {
     uint32_t current_tick = get_system_tick();
 
-    if (current_tick - motor_comm.last_ping_time
-        > HEARTBEAT_PING_MS) {
+    if (current_tick - motor_comm.last_ping_time > STEPMOTOR_HEARTBEAT_PING_MS) {
         uint8_t tx_buffer[3];
 
         tx_buffer[0] = motor_comm.ping_target_id;
@@ -247,18 +240,15 @@ static void heartbeat_check(void)
         push_tx_data(tx_buffer, 3);
 
         motor_comm.ping_target_id =
-            (motor_comm.ping_target_id == MOTOR_ID_X)
-            ? MOTOR_ID_Y : MOTOR_ID_X;
+            (motor_comm.ping_target_id == MOTOR_ID_X) ? MOTOR_ID_Y : MOTOR_ID_X;
         motor_comm.last_ping_time = current_tick;
     }
 
-    if (current_tick - motor_x.last_ack_time
-        > HEARTBEAT_TIMEOUT_MS) {
+    if (current_tick - motor_x.last_ack_time > STEPMOTOR_HEARTBEAT_TIMEOUT_MS) {
         motor_x.is_online = 0;
     }
 
-    if (current_tick - motor_y.last_ack_time
-        > HEARTBEAT_TIMEOUT_MS) {
+    if (current_tick - motor_y.last_ack_time > STEPMOTOR_HEARTBEAT_TIMEOUT_MS) {
         motor_y.is_online = 0;
     }
 }
@@ -335,12 +325,10 @@ void step_motor_rx_callback(UART_Regs *huart, uint16_t size)
         for (i = 0; i < size; i++) {
             uint16_t next;
 
-            next = (motor_comm.rx_write_pos + 1)
-                   % STEPMOTOR_RX_FIFO_SIZE;
+            next = (motor_comm.rx_write_pos + 1) % STEPMOTOR_RX_FIFO_SIZE;
 
             if (next != motor_comm.rx_read_pos) {
-                motor_comm.rx_fifo[motor_comm.rx_write_pos] =
-                    motor_comm.dma_rx_buffer[i];
+                motor_comm.rx_fifo[motor_comm.rx_write_pos] = motor_comm.dma_rx_buffer[i];
                 motor_comm.rx_write_pos = next;
             }
         }
@@ -381,9 +369,12 @@ void step_motor_error_callback(UART_Regs *huart)
  * @param  sync_flag  同步标志
  * @retval 0=成功，1=触发限位，2=异常拒执
  */
-uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode,
-                             float angle, uint16_t speed,
-                             uint16_t accel, uint8_t sync_flag)
+uint8_t step_motor_set_angle(uint8_t id,
+                             motor_move_mode_t mode,
+                             float angle,
+                             uint16_t speed,
+                             uint16_t accel,
+                             uint8_t sync_flag)
 {
     step_motor_t *motor;
     float final_target;
@@ -418,14 +409,13 @@ uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode,
 
     limit_triggered = 0;
 
-    if (final_target > motor->max_angle
-        || final_target < motor->min_angle) {
+    if (final_target > motor->max_angle || final_target < motor->min_angle) {
         limit_triggered = 1;
         {
             float boundary;
 
-            boundary = (final_target > motor->max_angle)
-                       ? motor->max_angle : motor->min_angle;
+            boundary =
+                (final_target > motor->max_angle) ? motor->max_angle : motor->min_angle;
 
             if (mode == MOTOR_MODE_ABS) {
                 angle = boundary;
@@ -443,7 +433,7 @@ uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode,
     motor->is_reached = 0;
 
     direction = (angle >= 0) ? 0x00 : 0x01;
-    abs_angle = fabs(angle) * ANGLE_SEND_MULTIPLIER;
+    abs_angle = fabs(angle) * STEPMOTOR_ANGLE_SEND_MULTIPLIER;
 
     if (abs_angle < 0.5f) {
         return limit_triggered;
@@ -541,8 +531,7 @@ void step_motor_data_task(void)
 
         step_motor_check_idle_flag = 0;
 
-        remain = DL_DMA_getTransferSize(DMA,
-                                        DMA_CH_STEPMOTOR_RX_CHAN_ID);
+        remain = DL_DMA_getTransferSize(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID);
         if (remain < STEPMOTOR_DMA_RX_BUF_SIZE) {
             if (remain == last_remain) {
                 uint16_t rx_len;
@@ -560,37 +549,28 @@ void step_motor_data_task(void)
 
     while (motor_comm.rx_read_pos != motor_comm.rx_write_pos) {
         read_byte = motor_comm.rx_fifo[motor_comm.rx_read_pos];
-        motor_comm.rx_read_pos =
-            (motor_comm.rx_read_pos + 1) % STEPMOTOR_RX_FIFO_SIZE;
+        motor_comm.rx_read_pos = (motor_comm.rx_read_pos + 1) % STEPMOTOR_RX_FIFO_SIZE;
 
         switch (motor_comm.rx_state) {
             case MOTOR_STATE_WAIT_ADDR:
-                if (read_byte == MOTOR_ID_X
-                    || read_byte == MOTOR_ID_Y
-                    || read_byte == MOTOR_ID_SYNC) {
+                if (read_byte == MOTOR_ID_X || read_byte == MOTOR_ID_Y ||
+                    read_byte == MOTOR_ID_SYNC) {
                     motor_comm.frame_index = 0;
-                    motor_comm
-                        .frame_buffer[motor_comm.frame_index++] =
-                        read_byte;
+                    motor_comm.frame_buffer[motor_comm.frame_index++] = read_byte;
                     motor_comm.rx_state = MOTOR_STATE_WAIT_CMD;
                 }
                 break;
 
             case MOTOR_STATE_WAIT_CMD:
-                motor_comm
-                    .frame_buffer[motor_comm.frame_index++] =
-                    read_byte;
+                motor_comm.frame_buffer[motor_comm.frame_index++] = read_byte;
 
-                if (read_byte == MOTOR_CMD_MOVE_ACC
-                    || read_byte == MOTOR_CMD_STOP
-                    || read_byte == MOTOR_CMD_SYNC_TRIG) {
+                if (read_byte == MOTOR_CMD_MOVE_ACC || read_byte == MOTOR_CMD_STOP ||
+                    read_byte == MOTOR_CMD_SYNC_TRIG) {
                     motor_comm.expected_frame_len = 4;
-                    motor_comm.rx_state =
-                        MOTOR_STATE_RECEIVING_DATA;
+                    motor_comm.rx_state = MOTOR_STATE_RECEIVING_DATA;
                 } else if (read_byte == MOTOR_CMD_READ_POS) {
                     motor_comm.expected_frame_len = 8;
-                    motor_comm.rx_state =
-                        MOTOR_STATE_RECEIVING_DATA;
+                    motor_comm.rx_state = MOTOR_STATE_RECEIVING_DATA;
                 } else {
                     motor_comm.rx_state = MOTOR_STATE_WAIT_ADDR;
                     motor_comm.frame_index = 0;
@@ -598,18 +578,12 @@ void step_motor_data_task(void)
                 break;
 
             case MOTOR_STATE_RECEIVING_DATA:
-                motor_comm
-                    .frame_buffer[motor_comm.frame_index++] =
-                    read_byte;
+                motor_comm.frame_buffer[motor_comm.frame_index++] = read_byte;
 
-                if (motor_comm.frame_index
-                    == motor_comm.expected_frame_len) {
-                    if (motor_comm
-                            .frame_buffer[motor_comm.frame_index
-                                          - 1]
-                        == MOTOR_CHECKSUM) {
-                        process_reply(motor_comm.frame_buffer,
-                                      motor_comm.frame_index);
+                if (motor_comm.frame_index == motor_comm.expected_frame_len) {
+                    if (motor_comm.frame_buffer[motor_comm.frame_index - 1] ==
+                        MOTOR_CHECKSUM) {
+                        process_reply(motor_comm.frame_buffer, motor_comm.frame_index);
                     }
 
                     motor_comm.rx_state = MOTOR_STATE_WAIT_ADDR;
@@ -631,11 +605,12 @@ void step_motor_data_task(void)
  */
 void step_motor_move_delta(uint8_t id, float delta_angle)
 {
-    step_motor_set_angle(id, MOTOR_MODE_REL_CURR,
+    step_motor_set_angle(id,
+                         MOTOR_MODE_REL_CURR,
                          delta_angle,
-                         TRACKING_DEFAULT_SPEED,
-                         TRACKING_DEFAULT_ACC,
-                         TRACKING_SYNC_FLAG_OFF);
+                         STEPMOTOR_TRACKING_DEFAULT_SPEED,
+                         STEPMOTOR_TRACKING_DEFAULT_ACC,
+                         STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
 }
 
 /**
@@ -649,18 +624,20 @@ void step_motor_move_delta_sync(float delta_x, float delta_y)
     static uint8_t axis_toggle;
 
     if (axis_toggle == 0) {
-        step_motor_set_angle(MOTOR_ID_X, MOTOR_MODE_REL_CURR,
+        step_motor_set_angle(MOTOR_ID_X,
+                             MOTOR_MODE_REL_CURR,
                              delta_x,
-                             TRACKING_DEFAULT_SPEED,
-                             TRACKING_DEFAULT_ACC,
-                             TRACKING_SYNC_FLAG_OFF);
+                             STEPMOTOR_TRACKING_DEFAULT_SPEED,
+                             STEPMOTOR_TRACKING_DEFAULT_ACC,
+                             STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
         axis_toggle = 1;
     } else {
-        step_motor_set_angle(MOTOR_ID_Y, MOTOR_MODE_REL_CURR,
+        step_motor_set_angle(MOTOR_ID_Y,
+                             MOTOR_MODE_REL_CURR,
                              delta_y,
-                             TRACKING_DEFAULT_SPEED,
-                             TRACKING_DEFAULT_ACC,
-                             TRACKING_SYNC_FLAG_OFF);
+                             STEPMOTOR_TRACKING_DEFAULT_SPEED,
+                             STEPMOTOR_TRACKING_DEFAULT_ACC,
+                             STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
         axis_toggle = 0;
     }
 }

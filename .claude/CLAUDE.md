@@ -19,9 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 所有代码遵循 `CODING_STANDARD.md`（参照 BARR-C:2018 + Linux 内核编码规范）。关键约定：
 
 - **命名**：函数 `snake_case`，类型 `snake_case_t`（BARR-C 规则 1.5），宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
-- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），100 列宽，指针 `*` 靠右
+- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），90 列宽，指针 `*` 靠右
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
-- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 80 列时注释放上一行
+- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 100 列时注释放上一行
 - **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`
 - **禁止**：动态内存、递归、VLA、阻塞延时、条件中赋值
 
@@ -33,7 +33,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.3 串口**：DMA + IDLE 中断 + 环形缓冲区（保留一个空位判别空/满）。TI 平台用 DMA 余量不变判定法替代硬件 IDLE。发送侧对称使用 TX FIFO + DMA
 - **12.4 ISR**：只做读寄存器→置标志位→搬数据→清中断。中断优先级：控制类（高）> 通信类（中）> 系统 tick（低）
 - **12.5 状态机**：每个有状态模块一个主状态枚举 + `xxx_task()` 中 switch 推进，每个等待状态必须有超时兜底
-- **12.6 模块接口**：`init()` → `task()` / 回调 的标准函数模式，返回值 0 成功 / 负值错误码（`DRV_ERR_PARAM`/`DRV_ERR_BUSY`/`DRV_ERR_TIMEOUT`/`DRV_ERR_IO`/`DRV_ERR_STATE`）
+- **12.6 模块接口**：`init()` → `task()` / 回调 的标准函数模式，返回 `drv_err_t` 枚举值（`DRV_OK` 成功，`DRV_ERR_PARAM`/`DRV_ERR_BUSY`/`DRV_ERR_TIMEOUT`/`DRV_ERR_IO`/`DRV_ERR_STATE` 等负值错误码）
 - **12.7 数据共享**：`static` 私有变量 + getter 函数暴露。模块间通信三种方式按场景选用：直接函数调用（一对一）、getter 函数（一写多读）、回调函数（异步事件）
 - **12.8 单/多实例**：默认多实例（句柄注入），客观上唯一的硬件允许单实例
 - **12.9 错误处理**：公开接口完整校验，内部函数轻量校验，ISR 最简校验。错误恢复：错误上报→复位外设→自动重试（限次数）→仍失败则上报故障

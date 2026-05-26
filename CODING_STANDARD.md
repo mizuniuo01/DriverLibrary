@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v4.0)
+# 嵌入式 C / Python 软件设计规范 (v4.2)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard）
 和 **Linux 内核编码规范**（CodingStyle），Python 部分参照 **PEP 8**。
@@ -154,13 +154,13 @@ if (condition) do_something();
 
 ### 3.3 列宽
 
-**100 字符**。超长的函数声明、运算符表达式在合理位置换行。
+**90 字符**。超长的函数声明、运算符表达式在合理位置换行。
 
 ### 3.4 换行
 
 #### 原则
 
-- 超过列宽（100）的行必须换行。
+- 超过列宽（90）的行必须换行。
 - 换行后的续行缩进一层（4 空格），与当前上下文对齐，不是随意缩进。
 - 在**运算符之后**换行，不在运算符之前。
 
@@ -278,7 +278,7 @@ void function(void)
 - 函数与函数之间：一个空行。
 - 逻辑关联度低的不同代码块之间：一个空行。
 - 函数体内的逻辑段落之间：一个空行。
-- 文件末尾：**必须且仅有一个**空行。
+- 文件末尾：有且仅有一个换行符。
 - 禁止连续多个空行。
 
 ### 3.9 对齐
@@ -377,7 +377,7 @@ void motor_move_to(motor_controller_t *motor, int32_t target)
 
 ### 4.3 宏注释
 
-每个宏定义必须添加行注释。
+每个宏定义必须添加行注释。宏定义+行尾注释的总长度允许放宽到 100 字符（普通代码列宽为 90）。超过 100 时注释放上一行。
 
 ```c
 #define MAX_PWM_VALUE       2000    /* PWM 最大占空比值（对应 20ms 周期） */
@@ -1448,7 +1448,7 @@ def detect_circle(image, min_radius=10, max_radius=100):
 |------|-------------------|
 | Linux 风格花括号（控制流 K&R，函数 Allman） | `BreakBeforeBraces: Linux` |
 | 4 空格缩进 | `IndentWidth: 4` / `UseTab: Never` |
-| 列宽 100 | `ColumnLimit: 100` |
+| 列宽 90 | `ColumnLimit: 90` |
 | 指针靠右 | `PointerAlignment: Right` |
 | 控制语句后空格 | `SpaceBeforeParens: ControlStatements` |
 | 函数名后不加空格 | 此为默认，不设置 |
@@ -1470,4 +1470,4 @@ def detect_circle(image, min_radius=10, max_radius=100):
 | 花括号 | K&R | K&R | K&R | K&R |
 | 缩进 | 4 空格 | 8 空格 | 2 空格 | 2/4 空格 |
 | 指针 `*` | 靠右 | 靠右 | 靠左 | 靠右 |
-| 列宽 | 100 | 80 | 80 | 无明确 |
+| 列宽 | 90 | 80 | 80 | 无明确 |

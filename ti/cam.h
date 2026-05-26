@@ -5,11 +5,11 @@
 #include <stdint.h>
 
 #define CAM_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
-#define CAM_RX_FIFO_SIZE    512 /* 接收环形队列容量 */
-#define CAM_MAX_FRAME_LEN   128 /* 单帧最大长度 */
+#define CAM_RX_FIFO_SIZE 512    /* 接收环形队列容量 */
+#define CAM_MAX_FRAME_LEN 128   /* 单帧最大长度 */
 
 #define CAM_FRAME_HEADER 0xFF /* 帧头标识 */
-#define CAM_FRAME_TAIL   0xFE /* 帧尾标识 */
+#define CAM_FRAME_TAIL 0xFE   /* 帧尾标识 */
 
 typedef enum {
     CAM_STATE_WAIT_HEADER = 0,

@@ -85,10 +85,11 @@ void sensor_request_dma(void)
     }
 
     status = HAL_I2C_Mem_Read_DMA(sensor_hi2c,
-                                   SENSOR_I2C_ADDR,
-                                   SENSOR_CMD_READ_DIG,
-                                   I2C_MEMADD_SIZE_8BIT,
-                                   sensor_rx_buffer, 1);
+                                  SENSOR_I2C_ADDR,
+                                  SENSOR_CMD_READ_DIG,
+                                  I2C_MEMADD_SIZE_8BIT,
+                                  sensor_rx_buffer,
+                                  1);
 
     if (status == HAL_OK) {
         dma_busy = 1;
@@ -141,8 +142,7 @@ void sensor_rx_callback(I2C_HandleTypeDef *hi2c)
  */
 void sensor_error_callback(I2C_HandleTypeDef *hi2c)
 {
-    if (sensor_hi2c
-        && hi2c->Instance == sensor_hi2c->Instance) {
+    if (sensor_hi2c && hi2c->Instance == sensor_hi2c->Instance) {
         dma_busy = 0;
     }
 }

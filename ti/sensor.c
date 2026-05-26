@@ -57,9 +57,8 @@ void sensor_init(I2C_Regs *hi2c)
     DL_I2C_setTimeoutACount(I2C_SENSOR_INST, 0xFFFFF);
     DL_I2C_enableTimeoutA(I2C_SENSOR_INST);
     DL_I2C_enableInterrupt(I2C_SENSOR_INST,
-                           DL_I2C_INTERRUPT_TIMEOUT_A
-                           | DL_I2C_INTERRUPT_CONTROLLER_NACK
-                           | DL_I2C_INTERRUPT_CONTROLLER_ARBITRATION_LOST);
+                           DL_I2C_INTERRUPT_TIMEOUT_A | DL_I2C_INTERRUPT_CONTROLLER_NACK |
+                               DL_I2C_INTERRUPT_CONTROLLER_ARBITRATION_LOST);
     NVIC_SetPriority(I2C_SENSOR_INST_INT_IRQN, 3);
 
     sensor_hi2c = hi2c;
@@ -73,8 +72,7 @@ void sensor_init(I2C_Regs *hi2c)
  */
 sensor_state_t sensor_get_state(void)
 {
-    return (pol_state == MODE_IDLE)
-           ? SENSOR_STATE_IDLE : SENSOR_STATE_BUSY;
+    return (pol_state == MODE_IDLE) ? SENSOR_STATE_IDLE : SENSOR_STATE_BUSY;
 }
 
 /**
@@ -89,56 +87,51 @@ void sensor_request(void)
         return;
     }
 
-    if (DL_I2C_getControllerStatus(sensor_hi2c)
-        & DL_I2C_CONTROLLER_STATUS_ERROR) {
+    if (DL_I2C_getControllerStatus(sensor_hi2c) & DL_I2C_CONTROLLER_STATUS_ERROR) {
         sensor_error_callback(sensor_hi2c);
         return;
     }
 
     switch (pol_state) {
         case MODE_IDLE:
-            if (DL_I2C_getControllerStatus(sensor_hi2c)
-                & DL_I2C_CONTROLLER_STATUS_IDLE) {
+            if (DL_I2C_getControllerStatus(sensor_hi2c) & DL_I2C_CONTROLLER_STATUS_IDLE) {
                 DL_I2C_clearInterruptStatus(sensor_hi2c, 0xFFFFFFFF);
 
-                DL_I2C_fillControllerTXFIFO(sensor_hi2c,
-                    &((uint8_t){SENSOR_CMD_READ_DIG}), 1);
+                DL_I2C_fillControllerTXFIFO(
+                    sensor_hi2c, &((uint8_t){SENSOR_CMD_READ_DIG}), 1);
 
-                DL_I2C_startControllerTransfer(sensor_hi2c,
-                    SENSOR_I2C_ADDR_7BIT,
-                    DL_I2C_CONTROLLER_DIRECTION_TX, 1);
+                DL_I2C_startControllerTransfer(
+                    sensor_hi2c, SENSOR_I2C_ADDR_7BIT, DL_I2C_CONTROLLER_DIRECTION_TX, 1);
 
                 pol_state = MODE_SEND_CMD;
             }
             break;
 
         case MODE_SEND_CMD:
-            if (DL_I2C_getControllerStatus(sensor_hi2c)
-                & DL_I2C_CONTROLLER_STATUS_BUSY_BUS) {
-                if (DL_I2C_getControllerStatus(sensor_hi2c)
-                    & DL_I2C_CONTROLLER_STATUS_ERROR) {
+            if (DL_I2C_getControllerStatus(sensor_hi2c) &
+                DL_I2C_CONTROLLER_STATUS_BUSY_BUS) {
+                if (DL_I2C_getControllerStatus(sensor_hi2c) &
+                    DL_I2C_CONTROLLER_STATUS_ERROR) {
                     sensor_error_callback(sensor_hi2c);
                 }
                 return;
             }
 
-            DL_I2C_startControllerTransfer(sensor_hi2c,
-                SENSOR_I2C_ADDR_7BIT,
-                DL_I2C_CONTROLLER_DIRECTION_RX, 1);
+            DL_I2C_startControllerTransfer(
+                sensor_hi2c, SENSOR_I2C_ADDR_7BIT, DL_I2C_CONTROLLER_DIRECTION_RX, 1);
             pol_state = MODE_WAIT_READ;
             break;
 
         case MODE_WAIT_READ:
             if (DL_I2C_isControllerRXFIFOEmpty(sensor_hi2c)) {
-                if (DL_I2C_getControllerStatus(sensor_hi2c)
-                    & DL_I2C_CONTROLLER_STATUS_ERROR) {
+                if (DL_I2C_getControllerStatus(sensor_hi2c) &
+                    DL_I2C_CONTROLLER_STATUS_ERROR) {
                     sensor_error_callback(sensor_hi2c);
                 }
                 return;
             }
 
-            sensor_rx_buffer[0] =
-                DL_I2C_receiveControllerData(sensor_hi2c);
+            sensor_rx_buffer[0] = DL_I2C_receiveControllerData(sensor_hi2c);
 
             {
                 uint8_t raw_data = sensor_rx_buffer[0];

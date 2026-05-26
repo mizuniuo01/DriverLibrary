@@ -47,7 +47,7 @@
 
 /* TRIG 脉冲延时参数 */
 #define ULTRASONIC_TRIG_DELAY_CYCLES 320 /* ~10us @ 32MHz */
-#define ULTRASONIC_DISTANCE_FACTOR   0.17f /* 距离系数 = 340m/s / 2 / 1000 */
+#define ULTRASONIC_DISTANCE_FACTOR 0.17f /* 距离系数 = 340m/s / 2 / 1000 */
 
 static ultrasonic_data_t ultra_data;
 
@@ -97,8 +97,7 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
  * @param  htim    触发中断的定时器句柄
  * @retval 无
  */
-void ultrasonic_capture_callback(ultrasonic_handle_t *handle,
-                                 GPTIMER_Regs *htim)
+void ultrasonic_capture_callback(ultrasonic_handle_t *handle, GPTIMER_Regs *htim)
 {
     uint32_t val;
 
@@ -144,8 +143,7 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
     switch (handle->state) {
         case ULTRASONIC_STATE_IDLE:
-            if (current_tick - handle->last_trigger_tick
-                >= ULTRASONIC_PERIOD_MS) {
+            if (current_tick - handle->last_trigger_tick >= ULTRASONIC_PERIOD_MS) {
                 handle->last_trigger_tick = current_tick;
                 handle->capture_flag = 0;
 
@@ -164,30 +162,26 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
                 /* 处理定时器向上计数溢出的差值计算 */
                 if (handle->end_time >= handle->start_time) {
-                    duration = handle->end_time
-                               - handle->start_time;
+                    duration = handle->end_time - handle->start_time;
                 } else {
                     /* 定时器溢出回绕 */
-                    duration = (CAPTURE_ULTRASONIC_ECHO_INST_LOAD_VALUE
-                                - handle->start_time)
-                               + handle->end_time + 1;
+                    duration =
+                        (CAPTURE_ULTRASONIC_ECHO_INST_LOAD_VALUE - handle->start_time) +
+                        handle->end_time + 1;
                 }
 
                 /* 有效范围判定 */
-                if (duration > 0
-                    && duration < ULTRASONIC_MAX_TIME_US) {
+                if (duration > 0 && duration < ULTRASONIC_MAX_TIME_US) {
                     /* 距离(mm) = 持续时间(us) × 340m/s / 2 */
                     /* 1us × 0.34mm/us / 2 = 0.17mm/us */
-                    ultra_data.distance_mm = (float)duration
-                                             * ULTRASONIC_DISTANCE_FACTOR;
+                    ultra_data.distance_mm = (float)duration * ULTRASONIC_DISTANCE_FACTOR;
                     ultra_data.is_valid = 1;
                 } else {
                     ultra_data.is_valid = 0;
                 }
 
                 handle->state = ULTRASONIC_STATE_IDLE;
-            } else if (current_tick - handle->last_trigger_tick
-                       >= ULTRASONIC_PERIOD_MS) {
+            } else if (current_tick - handle->last_trigger_tick >= ULTRASONIC_PERIOD_MS) {
                 /* 超时无回波，复位 */
                 ultra_data.is_valid = 0;
                 handle->state = ULTRASONIC_STATE_IDLE;
