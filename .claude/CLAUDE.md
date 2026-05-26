@@ -79,6 +79,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - TI：非阻塞 I2C 状态机（`oled_task` 每 tick 推进一个 I2C 操作，`oled_update` 仅置 pending 标志位）
   - STM32：HAL_I2C_Mem_Write 同步发送，超时 `OLED_I2C_TIMEOUT_MS=100ms`（128 字节/页约 4ms，100ms 留有充足余量应对时钟拉伸）
 - `st/step_motor`、`ti/step_motor` — 张大头 ZDT X42S 步进电机（UART DMA+FIFO+二进制协议，TI 用软件 IDLE）
+- `st/servo` — FashionStar RA8-U25-M 串口舵机（UART DMA+FIFO+官方 SDK 封装，句柄注入+角度限幅）
 
 ## 电机闭环链路（encoder + pwm + motor）
 

@@ -40,6 +40,7 @@ DriverLibrary/
 | gyroscope | ✓ | ✓ | 姿态传感器（DMA+FIFO+三态帧解析+校验，TI 用软件 IDLE） |
 | display | ✓ | ✓ | 蓝牙调试仪表盘（数据汇总屏显，错误上报） |
 | step_motor | ✓ | ✓ | 张大头 ZDT X42S 步进电机（UART 二进制协议，X 固件，TI 用软件 IDLE） |
+| servo | ✓ | - | FashionStar RA8-U25-M 串口舵机（UART DMA+FIFO+官方 SDK 封装） |
 
 ### 驱动层
 
@@ -81,6 +82,7 @@ DriverLibrary/
 | gyroscope | 未测 | 未测 | |
 | display | 未测 | 未测 | |
 | step_motor | 未测 | 未测 |  |
+| servo | 未测 | - | 需配合 FashionStar RA8-U25-M 硬件实测 |
 | motor | 未测 | 未测 | |
 | encoder | 未测 | 未测 | |
 | pwm | 未测 | 未测 | |
