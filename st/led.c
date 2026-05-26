@@ -5,6 +5,7 @@
  * @date    2026-05-25
  * @version 1.0.0
  * @note    依赖：GPIO 已在 CubeMX 中配置
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * 驱动层模块，负责单一 GPIO 的亮灭控制。多实例设计，每个 LED

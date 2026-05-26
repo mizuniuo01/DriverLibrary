@@ -7,7 +7,7 @@
  * @note    依赖 FashionStar 官方 SDK（fashion_star_uart_servo.h、ring_buffer.h）
  * @note    通信层：DMA + IDLE 中断 + 环形缓冲区（§12.3）
  * @note    控制层：封装官方 FSUS_* API，增加角度限幅
- * @warning 调用 servo_tx_task 前需先置 servo_tx_busy 为 0
+ * @note    错误码：DRV_ERR_PARAM（init 判空）、DRV_ERR_IO（FSUS 通信失败）
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -236,10 +236,20 @@ drv_err_t servo_set_sync_angle(servo_handle_t *handle,
     safe_x = constrain_angle(&handle->cfg, handle->cfg.servo_id_x, angle_x);
     safe_y = constrain_angle(&handle->cfg, handle->cfg.servo_id_y, angle_y);
 
-    FSUS_SetServoAngle(
+    FSUS_STATUS status_x;
+    FSUS_STATUS status_y;
+
+    status_x = FSUS_SetServoAngle(
         &handle->usart, handle->cfg.servo_id_x, safe_x, interval_ms, 0);
-    FSUS_SetServoAngle(
+    status_y = FSUS_SetServoAngle(
         &handle->usart, handle->cfg.servo_id_y, safe_y, interval_ms, 0);
+
+    if (status_x != FSUS_STATUS_SUCCESS) {
+        return DRV_ERR_IO;
+    }
+    if (status_y != FSUS_STATUS_SUCCESS) {
+        return DRV_ERR_IO;
+    }
 
     return DRV_OK;
 }

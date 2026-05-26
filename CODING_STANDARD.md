@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v1.0 Release)
+# 嵌入式 C / Python 软件设计规范 (v1.1 Release)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard）
 和 **Linux 内核编码规范**（CodingStyle），Python 部分参照 **PEP 8**。
@@ -658,20 +658,15 @@ void motor_set_speed(motor_controller_t *motor, uint16_t speed)
 }
 ```
 
-### 8.4 返回类型
-
-- 可能失败的函数返回错误码（`drv_err_t`，0 表示成功，负值表示错误）。
-- 简单的 setter/getter 用 `void`。
-
-### 8.5 递归
+### 8.4 递归
 
 **嵌入式系统中严格禁止使用递归**（BARR-C 规则 6.4）。递归导致栈占用不可预测，在栈空间有限的 MCU 上极易引发栈溢出。
 
-### 8.6 动态内存
+### 8.5 动态内存
 
 **嵌入式系统中严禁使用 `malloc`、`free`、`calloc`、`realloc`**（BARR-C 规则 1.4）。动态分配导致内存碎片、分配时间不可预测、分配失败难以恢复。所有内存需求必须在编译期确定。
 
-### 8.7 变长数组
+### 8.6 变长数组
 
 **禁止使用变长数组（VLA）**。`int32_t arr[n]` 中 `n` 为变量时，同样在栈上动态分配，风险与递归相同。C11 已将 VLA 改为可选特性。
 
@@ -1088,15 +1083,15 @@ void xxx_task(void)
 
 ```c
 /* === 生命周期 === */
-void xxx_init(xxx_handle_t *h, xxx_cfg_t *cfg);   /* 初始化：绑定硬件、设置默认参数 */
+void xxx_init(xxx_handle_t *h, xxx_cfg_t *cfg);   /* 初始化：绑定硬件、设置默认参数。*/
 void xxx_deinit(xxx_handle_t *h);                  /* 反初始化：安全停机（按需） */
 
 /* === 周期性任务 === */
 void xxx_task(void);                               /* 状态机推进，主循环调用 */
 
 /* === 控制与查询接口 === */
-drv_err_t xxx_set_xxx(xxx_handle_t *h, ...);       /* 设置参数，返回 DRV_OK / 负值错误码 */
-drv_err_t xxx_get_xxx(xxx_handle_t *h, ...);       /* 获取数据 */
+void xxx_set_xxx(xxx_handle_t *h, ...);            /* 设置参数 */
+int16_t xxx_get_xxx(xxx_handle_t *h);              /* 获取数据，简单 getter 直接返回值；无效时返回 0 或设 is_valid */
 
 /* === 中断回调（ISR 调用，不对外暴露） === */
 void xxx_rx_callback(xxx_handle_t *h, ...);        /* 接收完成回调 */
@@ -1105,23 +1100,6 @@ void xxx_error_callback(xxx_handle_t *h);          /* 硬件错误回调 */
 ```
 
 不需要每个模块都实现全部函数——按实际需要取舍。
-
-**返回值约定**：
-
-```c
-typedef enum {
-    DRV_OK         =  0, /* 成功 */
-    DRV_ERR_PARAM  = -1, /* 参数非法（含空指针、越界） */
-    DRV_ERR_BUSY   = -2, /* 设备忙 */
-    DRV_ERR_TIMEOUT = -3, /* 操作超时 */
-    DRV_ERR_IO     = -4, /* 硬件通信错误 */
-    DRV_ERR_STATE  = -5, /* 状态机状态非法 */
-} drv_err_t;
-```
-
-- 简单 setter/getter：返回 `void`
-- 可能失败的操作：返回 `drv_err_t`，0 成功，负值对应错误码
-- 数据获取需区分有效/无效时，在数据结构中设 `is_valid` 字段
 
 ### 12.7 模块间数据共享
 
@@ -1186,30 +1164,134 @@ motor_set_speed(&motor_left, 500);
 - 板级设计客观上只有一个（唯一的蜂鸣器、唯一的板载 LED）
 - 纯算法模块无内部状态（函数式，输入→计算→输出）
 
-### 12.9 错误处理策略
+### 12.9 错误处理框架
 
-**错误分类**：
-
-| 类别 | 检测方式 | 处理策略 |
-|------|----------|----------|
-| 参数错误（空指针、越界） | 函数入口处同步检查 | 立即返回错误码 |
-| 硬件通信错误（I2C NACK、UART Frame Error） | ISR 中检测，调 error_callback | 回调置错误标志位 + 复位外设 |
-| 超时错误（DMA 等待超时、传感器无应答） | Task 中 tick 比较 | 状态机超时恢复 + 上报 |
-| 逻辑错误（状态机非法状态） | `switch` 的 `default` 分支 | 强制复位到 IDLE + 错误上报 |
-
-**错误恢复流程**：
+全部错误处理逻辑集中在 `error_handler` 模块，分三层：**传输、上报、处理**。
 
 ```
-检测错误 → 置错误标志位 → 错误上报（蓝牙屏显） → 复位外设 → 自动重试（限次数）→ 仍失败则上报故障
+驱动层                  error_handler 模块
+───────                ──────────────────
+xxx_init() 出错          error_handler_task()
+  ↓                        ↓
+error_report(h, code) → 记录到静态表
+                          ↓
+                     error_report_display() → display_show_error()
+                     error_process()       → 重试/故障升级/停机
 ```
 
-**参数校验深度**：
+`drv_err_t` 定义在 `error_handler.h` 中：
+
+```c
+typedef enum {
+    DRV_OK         =  0,
+    DRV_ERR_PARAM  = -1, /* 参数非法（含空指针、越界） */
+    DRV_ERR_BUSY   = -2, /* 设备忙 */
+    DRV_ERR_TIMEOUT = -3, /* 操作超时 */
+    DRV_ERR_IO     = -4, /* 硬件通信错误 */
+    DRV_ERR_STATE  = -5, /* 状态机状态非法 */
+} drv_err_t;
+```
+
+#### 12.9.1 传输层 — `error_report()`
+
+驱动在出错时调用，只做一件事：把"哪个句柄、什么错误"记录到 `error_handler` 模块的静态变量中。不依赖 display、不做决定。
+
+```c
+/* error_handler.h */
+void error_report(void *handle, drv_err_t code);
+void error_clear(void *handle);
+```
+
+```c
+/* 驱动侧 */
+void xxx_init(xxx_handle_t *h, const xxx_cfg_t *cfg)
+{
+    if (!h || !cfg) {
+        error_report(h, DRV_ERR_PARAM);
+        return;
+    }
+    /* ... 正常初始化 */
+}
+```
+
+#### 12.9.2 上报层 — `error_report_display()`
+
+`error_handler` 模块内部的 `static` 函数，由 `error_handler_task()` 调用。将错误码转为 `"模块名: 错误描述"` 格式的消息，调用 `display_show_error()` 输出。
+
+```c
+static void error_report_display(void)
+{
+    for (遍历所有已记录的 handle) {
+        if (handle 有错误) {
+            display_show_error("%s: %s", handle_name, error_msg);
+        }
+    }
+    if (无任何错误) {
+        display_show_error("");  /* display 内部输出 "Working..." */
+    }
+}
+```
+
+原则：
+- 只上报错误，不记录一般信息和调试信息
+- 一个时刻通常只有一个错误源，一条屏显行足够
+- 蓝牙串口软件：江协科技蓝牙串口小程序
+
+#### 12.9.3 处理层 — `error_process()`
+
+`error_process()` 是 error_handler 内部的 `static` 函数，由 `error_handler_task()` 调用。负责**全部**错误处理逻辑：重试、故障升级、停机——应用层不介入。
+
+```c
+static void error_process(void)
+{
+    for (遍历所有记录在案的 handle) {
+        if (handle 无错误) {
+            continue;
+        }
+
+        handle->retry_count++;
+        if (handle->retry_count > MAX_RETRY) {
+            /* 重复出错超过阈值：标记永久故障，停机 */
+            led_flash_error();
+            while (1) {
+            }
+        }
+        /* 未超限：保持错误记录，等待恢复 */
+    }
+}
+```
+
+具体分级策略和停机条件由项目自行修改 `error_process()` 内部逻辑。
+
+#### 12.9.4 Task 调度
+
+`error_handler_task()` 集成上报和处理，由定时器 tick 驱动，遵循统一调度模式（§12.2）：
+
+```c
+/* error_handler.h */
+extern volatile uint8_t error_handler_tick_flag;
+void error_handler_task(void);
+
+/* error_handler.c */
+void error_handler_task(void)
+{
+    if (!error_handler_tick_flag) {
+        return;
+    }
+    error_handler_tick_flag = 0;
+
+    error_report_display();
+    error_process();
+}
+```
+
+#### 12.9.5 参数校验深度
 
 | 接口层级 | 校验深度 | 方式 |
 |----------|----------|------|
-| 公开接口（`.h` 声明的函数） | 完整校验 | 判空指针、判参数范围，返回错误码 |
+| 公开接口（`.h` 声明的函数） | 完整校验 | 判空指针、判参数范围，失败调 `error_report()` + early return |
 | 模块内部函数（`static`） | 轻量校验 | 仅在关键路径判空，其余用前置条件注释说明 |
-| ISR 回调 | 最小校验 | 仅判句柄匹配（Instance 比较） |
+| ISR 回调 | 最小校验 | 仅判句柄匹配（Instance 比较），可调 `error_report()` |
 
 ### 12.10 初始化依赖链
 
@@ -1236,37 +1318,7 @@ SYSCFG / 时钟
 void motor_init(motor_t *motor, const motor_cfg_t *cfg);
 ```
 
-**初始化失败处理（参考示例）**：
-
-`system_init()` 中若某模块初始化失败，可根据模块重要性分级处理，而非一律停机。以下为一种做法：
-
-```c
-drv_err_t system_init(void)
-{
-    drv_err_t ret;
-
-    /* 关键外设：失败则停机 + LED 快闪错误码 */
-    ret = motor_init(&motor, &motor_cfg);
-    if (ret != DRV_OK) {
-        led_flash_error(1); /* 1 长闪 = 电机初始化失败 */
-        return ret;
-    }
-
-    /* 非关键外设：失败则标记故障，继续运行（降级模式） */
-    ret = sensor_init(&sensor, &sensor_cfg);
-    if (ret != DRV_OK) {
-        sensor.fault = 1;
-        display_show_error("sensor: init fail");
-        /* 不 return，系统以无传感器模式继续 */
-    }
-
-    return DRV_OK;
-}
-```
-
-若降级运行后关键功能不可用，在首次 task 循环中检测并停机。具体分级策略和停机条件由项目自行决定。
-
-### 12.11 看门狗与错误上报
+### 12.11 看门狗
 
 **硬件看门狗**：
 
@@ -1276,66 +1328,7 @@ drv_err_t system_init(void)
 
 **软件看门狗（任务心跳监控，按需启用）**：
 
-为关键 task 维护心跳计数器，在低频监控 task 中检测。若某 task 的心跳计数在两个检测周期之间未变化，则判定该 task 已卡死，触发错误上报。
-
-**错误上报**：
-
-采用蓝牙屏显输出，通过 `Display` 模块统一管理。`Display` 模块内部维护一个错误字符串，对外提供修改接口，在 `display_task()` 刷新周期中通过 `blueteeth_display()` 打印到指定的错误行。
-
-```c
-/* === display.h === */
-#define DISPLAY_LINE_ERROR_Y 260 /* 错误信息专用行 */
-
-void display_show_error(const char *format, ...);
-
-/* === display.c === */
-static char error_msg[64];
-
-void display_show_error(const char *format, ...)
-{
-    va_list args;
-    va_start(args, format);
-    vsnprintf(error_msg, sizeof(error_msg), format, args);
-    va_end(args);
-}
-
-void display_task(void)
-{
-    if (!display_refresh_flag) {
-        return;
-    }
-    display_refresh_flag = 0;
-
-    /* ... 其他数据行 ... */
-
-    /* 错误行：有错则显示，无错则显示正常信息 */
-    blueteeth_display(0, DISPLAY_LINE_ERROR_Y,
-                      (error_msg[0] != '\0') ? "Err: %s" : "Working...",
-                      error_msg);
-}
-
-/* === 各模块中触发错误上报 === */
-void motor_task(void)
-{
-    if (motor.error_flag) {
-        motor.error_flag = 0;
-        motor.retry_count++;
-
-        if (motor.retry_count > MAX_RETRY) {
-            display_show_error("motor: stuck");
-            motor.fault = 1;
-        }
-    }
-}
-```
-
-原则：
-
-- 蓝牙串口软件：江协科技蓝牙串口小程序
-- 只上报错误，不记录一般信息和调试信息
-- 一个时刻通常只有一个错误源，一条屏显行足够
-- 错误格式：模块名 + 错误简述，如 `"motor: init fail"`、`"sensor: i2c nack"`
-- `display_task` 中无错误时该行输出 `"Working..."` 表示系统正常运行
+为关键 task 维护心跳计数器，在低频监控 task 中检测。若某 task 的心跳计数在两个检测周期之间未变化，则判定该 task 已卡死，触发 `error_report()`。
 
 ### 12.12 句柄传递
 

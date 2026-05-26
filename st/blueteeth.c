@@ -9,6 +9,7 @@
  * @note    STM32 使用硬件 IDLE 中断检测帧结束，无需软件轮询
  * @note    若使用非 F4 系列 MCU，将头文件中的 <stm32f4xx_hal.h> 替换为对应系列
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@
  * @note    TRIG 脉冲约 10us，由 delay_cycles 实现（~320 cycles @ 32MHz）
  * @note    依赖：应用层提供 get_system_tick() 获取毫秒 tick
  * @warning capture_callback 在 ISR 中调用，仅做时间戳记录
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

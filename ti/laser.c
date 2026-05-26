@@ -5,6 +5,7 @@
  * @date    2026-05-25
  * @version 1.0.0
  * @note    依赖：GPIO 已在 SysConfig 中配置
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * static laser_handle_t laser;

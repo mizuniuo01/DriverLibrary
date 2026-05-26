@@ -8,6 +8,7 @@
  * @note    key_scan_task 为 B 类操作，在 ISR 1ms tick 中直接调用
  * @note    key_task 为 A 类操作，由 key_task_flag 触发，调度周期 KEY_TASK_PERIOD_MS
  * @warning key_scan_task 中禁止浮点运算、循环等待和 HAL_Delay
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * 按键模块采用两层 task 架构：

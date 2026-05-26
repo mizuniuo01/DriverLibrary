@@ -7,6 +7,7 @@
  * @note    左右轮均使用 STM32 硬件 QEI 模式，方向由硬件自动判定
  * @note    encoder_scan_left / encoder_scan_right 为 B 类操作，ISR 中直接调用
  * @note    与 TI 版不同：无需 motor 模块提供方向标志位，无需捕获 ISR
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

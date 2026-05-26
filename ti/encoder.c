@@ -9,6 +9,7 @@
  * @note    encoder_scan_left / encoder_scan_right 为 B 类操作，ISR 中直接调用
  * @note    依赖：motor 模块（右轮方向标志位）
  * @warning 右轮捕获 ISR 中仅更新计数，增量计算由 encoder_scan_right 在 ISR 对应时间槽完成
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

@@ -8,7 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
-- `CODING_STANDARD.md` — 唯一的权威规范文档（v1.0 Release），包含代码风格和软件设计模式
+- `CODING_STANDARD.md` — 唯一的权威规范文档（v1.1 Release），包含代码风格和软件设计模式
+  - **注意**：§12.9 错误处理框架已更新为三层架构（传输/上报/处理），**方案待确认，尚未落实到代码中**。当前代码仍使用旧的 `drv_err_t` 返回值模式，与规范不一致
 
 ## 无构建系统
 
@@ -34,11 +35,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.3 串口**：DMA + IDLE 中断 + 环形缓冲区（保留一个空位判别空/满）。TI 平台用 DMA 余量不变判定法替代硬件 IDLE。发送侧对称使用 TX FIFO + DMA
 - **12.4 ISR**：只做读寄存器→置标志位→搬数据→清中断。中断优先级：控制类（高）> 通信类（中）> 系统 tick（低）
 - **12.5 状态机**：每个有状态模块一个主状态枚举 + `xxx_task()` 中 switch 推进，每个等待状态必须有超时兜底
-- **12.6 模块接口**：`init()` → `task()` / 回调 的标准函数模式，返回 `drv_err_t` 枚举值（`DRV_OK` 成功，`DRV_ERR_PARAM`/`DRV_ERR_BUSY`/`DRV_ERR_TIMEOUT`/`DRV_ERR_IO`/`DRV_ERR_STATE` 等负值错误码）
+- **12.6 模块接口**：`init()` → `task()` / 回调 的标准函数模式。驱动函数统一返回 `void` 或具体数据类型，错误通过 `error_report(handle, code)` 报告。`drv_err_t` 定义在 `error_handler.h`，由 error_handler 模块统一管理
 - **12.7 数据共享**：`static` 私有变量 + getter 函数暴露。模块间通信三种方式按场景选用：直接函数调用（一对一）、getter 函数（一写多读）、回调函数（异步事件）
 - **12.8 单/多实例**：默认多实例（句柄注入），客观上唯一的硬件允许单实例
-- **12.9 错误处理**：公开接口完整校验，内部函数轻量校验，ISR 最简校验。错误恢复：错误上报→复位外设→自动重试（限次数）→仍失败则上报故障
-- **12.11 错误上报**：`Display` 模块内部维护 `error_msg[64]` 字符串，对外提供 `display_show_error(format, ...)` 接口。`display_task()` 刷新时通过 `blueteeth_display()` 打印到 `DISPLAY_LINE_ERROR_Y` 行（当前值为 `0`，即屏显第 1 行），有错显示 `"Err: xxx"`，无错显示 `"Working..."`。蓝牙串口软件使用江协科技蓝牙串口小程序
+- **12.9 错误处理**：三层分离，全部逻辑集中在 `error_handler` 模块——传输（`error_report(handle, code)` 记录）、上报（`error_report_display` → `display_show_error`）、处理（`error_process` 重试/故障升级/停机）。驱动层不调 display，应用层不介入错误决策
+- **12.11 看门狗**：硬件 IWDG，喂狗在 main() 循环统一位置。软件任务心跳监控按需启用
 
 ## 旧代码 → 新代码迁移要点（历史参考）
 
@@ -80,6 +81,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - STM32：HAL_I2C_Mem_Write 同步发送，超时 `OLED_I2C_TIMEOUT_MS=100ms`（128 字节/页约 4ms，100ms 留有充足余量应对时钟拉伸）
 - `st/step_motor`、`ti/step_motor` — 张大头 ZDT X42S 步进电机（UART DMA+FIFO+二进制协议，TI 用软件 IDLE）
 - `st/servo` — FashionStar RA8-U25-M 串口舵机（UART DMA+FIFO+官方 SDK 封装，句柄注入+角度限幅）
+- `error_handler` — 应用层错误处理模块（三层框架：传输/上报/处理，含 `drv_err_t` 定义，tick 驱动 task）
 
 ## 电机闭环链路（encoder + pwm + motor）
 

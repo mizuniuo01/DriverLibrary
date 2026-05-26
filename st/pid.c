@@ -7,6 +7,7 @@
  * @note    纯算法模块，无硬件依赖
  * @note    微分项作用在误差上（标准位置式 PID）
  * @note    含积分饱和限幅和输出限幅
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * pid_t pid;

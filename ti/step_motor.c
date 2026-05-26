@@ -11,6 +11,7 @@
  * @note    协议细节以官方用户手册 V1.0.3 为准
  * @warning 上电初始化阶段使用 delay_cycles 等待底板稳定
  * @warning 软件 IDLE 依赖 step_motor_check_idle_flag，需定时器 ISR 周期性置位
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * step_motor_init(UART_STEPMOTOR_INST);

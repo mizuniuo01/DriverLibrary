@@ -8,6 +8,7 @@
  * @note    TI MSPM0 无硬件 IDLE 中断，需在 task 中做软件 IDLE 检测
  * @note    帧协议：0xFF 帧头 + 数据 + 0xFE 帧尾
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 cam_task 中处理
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

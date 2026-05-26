@@ -10,6 +10,7 @@
  * @note    含心跳检测、软限位、梯形加减速控制
  * @note    协议细节以官方用户手册 V1.0.3 为准
  * @warning 上电初始化阶段使用 HAL_Delay 等待底板稳定（38.4ms）
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * step_motor_init(&huart1);

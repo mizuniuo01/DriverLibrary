@@ -8,6 +8,7 @@
  * @note    使用双边沿输入捕获测量回波脉宽
  * @note    三态非阻塞触发：IDLE → WAIT_TRIGGER_END → WAIT_ECHO
  * @warning capture_callback 在 ISR 中调用，仅做时间戳记录和极性切换
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

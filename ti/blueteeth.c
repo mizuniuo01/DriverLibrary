@@ -8,6 +8,7 @@
  * @note    依赖：UART + DMA 外设已在 SysConfig 中配置并生成 ti_msp_dl_config.h
  * @note    TI MSPM0 无硬件 IDLE 中断，使用 DMA 余量不变判定法检测帧结束
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

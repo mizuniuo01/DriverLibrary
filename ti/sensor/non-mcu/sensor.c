@@ -6,6 +6,7 @@
  * @version 1.0.0
  * @note    适配任何无 MCU 的灰度传感器模块，通道数和有效电平通过 cfg 配置
  * @note    sensor_task 由 sensor_tick_flag 触发，非阻塞
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

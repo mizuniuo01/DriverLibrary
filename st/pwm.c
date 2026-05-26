@@ -7,6 +7,7 @@
  * @note    依赖：PWM 定时器已在 CubeMX 中配置
  * @note    使用 CH3/CH4 通道，适配 STM32 通用/高级定时器
  * @note    高级定时器（TIM1/TIM8）额外使能 MOE 主输出
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

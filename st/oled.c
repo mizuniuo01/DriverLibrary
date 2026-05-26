@@ -8,6 +8,7 @@
  * @note    依赖：I2C 外设已在 CubeMX 中配置
  * @note    使用 HAL_I2C_Mem_Write 发送命令和数据
  * @note    此模块仅包含基础的字符显示功能，未实现图形绘制等高级功能
+ * @note    错误码：DRV_ERR_PARAM（init 判空）、DRV_ERR_IO（I2C 通信失败）
  *
  * @usage
  * oled_init(&hi2c1);

@@ -9,6 +9,7 @@
  * @note    右电机方向标志位供 encoder 模块获取编码器方向
  * @note    依赖：PWM 模块（pwm_set_compare_ch0/ch1）
  * @warning 参数 speed 为直接 PWM 比较值，非物理速度
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────

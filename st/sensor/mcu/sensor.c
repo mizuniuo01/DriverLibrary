@@ -8,6 +8,7 @@
  * @note    I2C 协议，7 位地址 0x4C，通过 DMA 发送 0xDD 命令读取数字量
  * @note    数据位序：低电平(0)=黑线，高电平(1)=白底，模块内部取反
  * @note    sensor_task 由 sensor_tick_flag 触发
+ * @note    错误码：init 判空返回 DRV_ERR_PARAM
  *
  * @usage
  * ─────────────────────────────────────────────────────────
