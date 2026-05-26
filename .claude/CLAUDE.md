@@ -72,7 +72,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/display`、`st/display` — 蓝牙调试仪表盘（数据汇总屏显，错误上报）
 - `ti/pattern`、`st/pattern` — 循迹图案识别（查表法，纯算法）
 - `ti/pid`、`st/pid` — PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差）
-- `ti/sensor`、`st/sensor` — 感为科技八路灰度传感器（I2C，TI: 轮询状态机，STM32: DMA）
+- `ti/sensor`、`st/sensor` — 感为科技灰度传感器
+  - mcu/：I2C 通信版（八路，TI: 轮询状态机，STM32: DMA）
+  - non-mcu/：GPIO 直读版（通用，通道数和有效电平可配置，默认最大 8 路）
 - `ti/oled`、`st/oled` + `oled_data` — SSD1306 OLED（0.96 寸 I2C 128×64，ASCII 字模）
   - TI：非阻塞 I2C 状态机（`oled_task` 每 tick 推进一个 I2C 操作，`oled_update` 仅置 pending 标志位）
   - STM32：HAL_I2C_Mem_Write 同步发送，超时 `OLED_I2C_TIMEOUT_MS=100ms`（128 字节/页约 4ms，100ms 留有充足余量应对时钟拉伸）

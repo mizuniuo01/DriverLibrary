@@ -49,7 +49,7 @@ DriverLibrary/
 | encoder | ✓ | ✓ | 编码器（TI: 左QEI+右捕获，STM32: 双QEI） |
 | pwm | ✓ | ✓ | PWM 输出（TI: CH0+CH1/20kHz，STM32: CH3+CH4/ARR=8400） |
 | ultrasonic | ✓ | ✓ | 超声波测距 HC-SR04（定时器捕获，STM32: 三态非阻塞触发） |
-| sensor | ✓ | ✓ | 感为科技八路灰度传感器 I2C（TI: 轮询状态机，STM32: DMA） |
+| sensor | ✓ | ✓ | 灰度传感器（mcu: 感为科技 I2C，non-mcu: 通用 GPIO 直读） |
 | oled | ✓ | ✓ | OLED 0.96 寸 SSD1306 I2C 128×64（ASCII 字模 6×8 + 8×16） |
 
 ### GPIO 控制
@@ -77,22 +77,22 @@ DriverLibrary/
 | 模块 | STM32 | TI | 备注 |
 |------|:--:|:--:|------|
 | blueteeth | 未测 | 未测 | |
-| cam | 未测 | 未测 | 数据解析逻辑待项目补充 |
+| cam | 未测 | 未测 |  |
 | gyroscope | 未测 | 未测 | |
 | display | 未测 | 未测 | |
-| step_motor | 未测 | 未测 | 需配合 ZDT X42S 硬件实测 |
+| step_motor | 未测 | 未测 |  |
 | motor | 未测 | 未测 | |
 | encoder | 未测 | 未测 | |
 | pwm | 未测 | 未测 | |
 | ultrasonic | 未测 | 未测 | |
-| sensor | 未测 | 未测 | 需配合感为科技八路灰度硬件 |
-| oled | 未测 | 未测 | TI 版 I2C 忙等需验证 |
+| sensor | 未测 | 未测 |  |
+| oled | 未测 | 未测 |  |
 | buzzer | 未测 | 未测 | |
 | led | 未测 | 未测 | |
 | laser | 未测 | 未测 | |
 | key | 未测 | 未测 | |
 | pid | 未测 | 未测 | |
-| pattern | 未测 | 未测 | 查表逻辑需配合实际传感器验证 |
+| pattern | 未测 | 未测 |  |
 
 ## 规范
 
