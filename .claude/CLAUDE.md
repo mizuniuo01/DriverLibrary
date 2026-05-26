@@ -62,6 +62,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/pwm`、`st/pwm` — PWM 输出（TI: 20kHz/CH0+CH1，STM32: ARR=8400/CH3+CH4）
 - `ti/motor`、`st/motor` — 直流有刷电机，适配 DRV8874（IN/IN 模式，直接 PWM 比较值，左右方向引脚反相；引脚 cfg 注入）
 - `ti/cam`、`st/cam` — 摄像头串口通信（UART DMA + FIFO + 帧解析）
+  - st/cam：`cam_frame_ready`（`extern volatile uint8_t`），收到完整帧时置 1，外部轮询并手动清零
 - `ti/gyroscope`、`st/gyroscope` — 姿态传感器（UART DMA + FIFO + 三态帧解析，STM32 额外含 yaw 增量追踪）
 - `ti/ultrasonic`、`st/ultrasonic` — 超声波测距（HC-SR04，定时器捕获 + GPIO 触发 + 状态机）
 - `ti/laser`、`st/laser` — 激光 GPIO 控制（多实例句柄注入）
@@ -70,6 +71,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `ti/pid`、`st/pid` — PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差）
 - `ti/sensor`、`st/sensor` — 感为科技八路灰度传感器（I2C，TI: 轮询状态机，STM32: DMA）
 - `ti/oled`、`st/oled` + `oled_data` — SSD1306 OLED（0.96 寸 I2C 128×64，ASCII 字模）
+  - TI：非阻塞 I2C 状态机（`oled_task` 每 tick 推进一个 I2C 操作，`oled_update` 仅置 pending 标志位）
+  - STM32：HAL_I2C_Mem_Write 同步发送，超时 `OLED_I2C_TIMEOUT_MS=100ms`（128 字节/页约 4ms，100ms 留有充足余量应对时钟拉伸）
 - `st/step_motor`、`ti/step_motor` — 张大头 ZDT X42S 步进电机（UART DMA+FIFO+二进制协议，TI 用软件 IDLE）
 
 ## 电机闭环链路（encoder + pwm + motor）
