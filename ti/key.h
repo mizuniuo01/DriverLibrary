@@ -4,8 +4,11 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 
-#define KEY_MAX_COUNT 8       /* 单句柄最大按键数 */
-#define KEY_TASK_PERIOD_MS 10 /* key_task 调度周期(ms) */
+/* 按键模块配置参数 */
+typedef enum {
+    KEY_MAX_COUNT = 8,       /* 单句柄最大按键数 */
+    KEY_TASK_PERIOD_MS = 10, /* key_task 调度周期(ms) */
+} key_cfg_param_t;
 
 /* key_task 调度标志位（ISR 置1，task 清0） */
 extern volatile uint8_t key_task_flag;

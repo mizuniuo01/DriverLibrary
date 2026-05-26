@@ -5,14 +5,20 @@
 #include <stdint.h>
 #include <stdarg.h>
 
-#define BLUETEETH_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
-#define BLUETEETH_DMA_TX_BUF_SIZE 128 /* DMA 单次发送最大缓存量 */
-#define BLUETEETH_RX_FIFO_SIZE 1024   /* 接收环形队列容量 */
-#define BLUETEETH_TX_FIFO_SIZE 1024   /* 发送环形队列容量 */
-#define BLUETEETH_MAX_FRAME_LEN 128   /* 单帧协议最大长度 */
+/* 缓冲区与帧参数 */
+typedef enum {
+    BLUETEETH_DMA_RX_BUF_SIZE = 128, /* DMA 单次接收最大缓存量 */
+    BLUETEETH_DMA_TX_BUF_SIZE = 128, /* DMA 单次发送最大缓存量 */
+    BLUETEETH_RX_FIFO_SIZE = 1024,   /* 接收环形队列容量 */
+    BLUETEETH_TX_FIFO_SIZE = 1024,   /* 发送环形队列容量 */
+    BLUETEETH_MAX_FRAME_LEN = 128,   /* 单帧协议最大长度 */
+} blueteeth_buf_size_t;
 
-#define BLUETEETH_FRAME_HEADER '@' /* 帧头标识符 */
-#define BLUETEETH_FRAME_TAIL '#'   /* 帧尾标识符 */
+/* 帧定界字节 */
+typedef enum {
+    BLUETEETH_FRAME_TAIL = '#',
+    BLUETEETH_FRAME_HEADER = '@',
+} blueteeth_frame_byte_t;
 
 /* 帧解析状态 */
 typedef enum {

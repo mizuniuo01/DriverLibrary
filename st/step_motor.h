@@ -4,12 +4,15 @@
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
 
-/* 缓冲区与系统参数 */
-#define STEPMOTOR_DMA_RX_BUF_SIZE 128  /* DMA 接收单次最大量 */
-#define STEPMOTOR_DMA_TX_BUF_SIZE 128  /* DMA 发送单次最大量 */
-#define STEPMOTOR_RX_FIFO_SIZE 512     /* 接收环形队列容量 */
-#define STEPMOTOR_TX_FIFO_SIZE 512     /* 发送环形队列容量 */
-#define STEPMOTOR_MAX_FRAME_LEN 64     /* 单帧协议最大长度 */
+/* 缓冲区与帧参数 */
+typedef enum {
+    STEPMOTOR_DMA_RX_BUF_SIZE = 128, /* DMA 接收单次最大量 */
+    STEPMOTOR_DMA_TX_BUF_SIZE = 128, /* DMA 发送单次最大量 */
+    STEPMOTOR_RX_FIFO_SIZE = 512,    /* 接收环形队列容量 */
+    STEPMOTOR_TX_FIFO_SIZE = 512,    /* 发送环形队列容量 */
+    STEPMOTOR_MAX_FRAME_LEN = 64,    /* 单帧协议最大长度 */
+} stepmotor_buf_size_t;
+
 #define STEPMOTOR_POWER_ON_DELAY_MS 50 /* 上电等待稳定延时 */
 #define STEPMOTOR_MAX_SPEED_LIMIT \
     30000 /* 最大速度限制（手册：0~3000.0RPM，保留一位小数） */
@@ -31,28 +34,39 @@
  *   本驱动将加减速加速度设为相同值以简化参数。
  */
 
-#define MOTOR_ID_X 0x01    /* X 轴地址 */
-#define MOTOR_ID_Y 0x02    /* Y 轴地址 */
-#define MOTOR_ID_SYNC 0x00 /* 广播地址，触发多机同步（§5.3.14） */
+/* 电机设备 ID */
+typedef enum {
+    MOTOR_ID_SYNC = 0x00, /* 广播地址，触发多机同步（§5.3.14） */
+    MOTOR_ID_X = 0x01,    /* X 轴地址 */
+    MOTOR_ID_Y = 0x02,    /* Y 轴地址 */
+} motor_id_t;
+
+/* 固定校验字节（§4.1.1） */
+#define MOTOR_CHECKSUM 0x6B
 
 /* 命令码（§5.2~§5.5） */
-#define MOTOR_CHECKSUM 0x6B       /* 固定校验字节（§4.1.1） */
-#define MOTOR_CMD_MOVE_ACC 0xFD   /* 梯形加减速位置模式（X 固件 §5.3.10） */
-#define MOTOR_CMD_STOP 0xFE       /* 立即停止（§5.3.13） */
-#define MOTOR_CMD_SYNC_TRIG 0xFF  /* 触发多机同步运动（§5.3.14） */
-#define MOTOR_CMD_READ_POS 0x36   /* 读取实时位置角度（§5.5.13） */
-#define MOTOR_CMD_CLEAR_ZERO 0x0A /* 清除当前位置零点（§5.2.3） */
+typedef enum {
+    MOTOR_CMD_CLEAR_ZERO = 0x0A, /* 清除当前位置零点（§5.2.3） */
+    MOTOR_CMD_READ_POS = 0x36,   /* 读取实时位置角度（§5.5.13） */
+    MOTOR_CMD_MOVE_ACC = 0xFD,   /* 梯形加减速位置模式（X 固件 §5.3.10） */
+    MOTOR_CMD_STOP = 0xFE,       /* 立即停止（§5.3.13） */
+    MOTOR_CMD_SYNC_TRIG = 0xFF,  /* 触发多机同步运动（§5.3.14） */
+} motor_cmd_t;
 
 /* 命令辅助参数 */
-#define MOTOR_PARAM_STOP_1 0x98 /* 停止辅助码（§5.3.13） */
-#define MOTOR_PARAM_STOP_2 0x00 /* 同步标志：立即执行 */
-#define MOTOR_PARAM_CLEAR 0x6D  /* 清零辅助码（§5.2.3） */
-#define MOTOR_PARAM_SYNC 0x66   /* 同步触发辅助码（§5.3.14） */
+typedef enum {
+    MOTOR_PARAM_STOP_2 = 0x00, /* 同步标志：立即执行 */
+    MOTOR_PARAM_SYNC = 0x66,   /* 同步触发辅助码（§5.3.14） */
+    MOTOR_PARAM_CLEAR = 0x6D,  /* 清零辅助码（§5.2.3） */
+    MOTOR_PARAM_STOP_1 = 0x98, /* 停止辅助码（§5.3.13） */
+} motor_param_t;
 
 /* 应答状态码（§4.1.2） */
-#define MOTOR_STATUS_REACHED 0x9F /* 操作执行完成 */
-#define MOTOR_STATUS_ERR1 0xE2    /* 参数超限/堵转/过流/过热保护触发 */
-#define MOTOR_STATUS_ERR2 0xEE    /* 格式错误 */
+typedef enum {
+    MOTOR_STATUS_REACHED = 0x9F, /* 操作执行完成 */
+    MOTOR_STATUS_ERR1 = 0xE2,    /* 参数超限/堵转/过流/过热保护触发 */
+    MOTOR_STATUS_ERR2 = 0xEE,    /* 格式错误 */
+} motor_status_t;
 
 /* 角度换算 */
 #define STEPMOTOR_ANGLE_SEND_MULTIPLIER 100.0f /* 发送放大 100 倍（0.1° 分辨率） */
@@ -65,8 +79,12 @@
 /* 默认速度与加速度（RPM / RPM/s） */
 #define STEPMOTOR_TRACKING_DEFAULT_SPEED 800 /* 默认转速 */
 #define STEPMOTOR_TRACKING_DEFAULT_ACC 300   /* 默认加速度 */
-#define STEPMOTOR_TRACKING_SYNC_FLAG_ON 1    /* 同步开启（先缓存，等 FF 触发） */
-#define STEPMOTOR_TRACKING_SYNC_FLAG_OFF 0   /* 同步关闭（立即执行） */
+
+/* 同步标志 */
+typedef enum {
+    STEPMOTOR_TRACKING_SYNC_FLAG_OFF = 0, /* 同步关闭（立即执行） */
+    STEPMOTOR_TRACKING_SYNC_FLAG_ON = 1,  /* 同步开启（先缓存，等 FF 触发） */
+} stepmotor_sync_flag_t;
 
 /* 接收解析状态 */
 typedef enum {

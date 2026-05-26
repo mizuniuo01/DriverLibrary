@@ -4,11 +4,18 @@
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
 
-#define CAM_DMA_RX_BUF_SIZE 128 /* DMA 单次接收最大缓存量 */
-#define CAM_RX_FIFO_SIZE 512    /* 接收环形队列容量 */
-#define CAM_MAX_FRAME_LEN 128   /* 单帧最大长度 */
-#define CAM_FRAME_HEADER 0xFF /* 帧头标识 */
-#define CAM_FRAME_TAIL 0xFE   /* 帧尾标识 */
+/* 缓冲区与帧参数 */
+typedef enum {
+    CAM_DMA_RX_BUF_SIZE = 128, /* DMA 单次接收最大缓存量 */
+    CAM_RX_FIFO_SIZE = 512,    /* 接收环形队列容量 */
+    CAM_MAX_FRAME_LEN = 128,   /* 单帧最大长度 */
+} cam_buf_size_t;
+
+/* 帧定界字节 */
+typedef enum {
+    CAM_FRAME_TAIL = 0xFE,
+    CAM_FRAME_HEADER = 0xFF,
+} cam_frame_byte_t;
 
 /* 帧解析状态 */
 typedef enum {

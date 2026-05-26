@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
 - **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 100 列时注释放上一行
 - **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`
+- **枚举 vs 宏**：逻辑相关的整数常量用 `typedef enum`（命令码、状态码、设备 ID、帧标记、速度限值、缓冲区/帧大小、硬件参数等），孤立的配置常量（单个 timeout、校验值）和浮点常量用 `#define`。运算宏（如 `SENSOR_I2C_ADDR (ADDR_7BIT << 1)`）因预处理器无法识别 enum 成员，也必须保留 `#define`。BARR-C:2018 规则 1.8：相关常量放入枚举，与数量无关——2 个也该用 enum
 - **禁止**：动态内存、递归、VLA、阻塞延时、条件中赋值
 
 ## 软件设计模式（CODING_STANDARD.md §12）
@@ -51,6 +52,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 6. `HAL_Delay()` 阻塞 → 状态机 + tick 比较
 7. 注释掉的 dead code → 删除
 8. 缺少文件头注释 → 按 Doxygen 模板补全
+9. 相关常量 `#define` 散落 → 按逻辑组归入 `typedef enum`（`motor_cmd_t`、`motor_param_t`、`motor_status_t`、`motor_id_t`、`motor_speed_limit_t`、`display_line_y_t`、`cam_frame_byte_t`、`blueteeth_frame_byte_t`、`gyro_frame_byte_t`、`oled_font_size_t`、`stepmotor_sync_flag_t`、`blueteeth_buf_size_t`、`cam_buf_size_t`、`gyro_buf_size_t`、`stepmotor_buf_size_t`、`ultrasonic_cfg_param_t`、`key_cfg_param_t`、`oled_hw_param_t`、`pwm_cfg_t`）
+   - 例外：浮点常量（`100.0f`）、运算宏（`(X << 1)`）、孤立单值保留 `#define`
 
 ## 已重写模块
 

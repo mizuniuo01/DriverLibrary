@@ -10,9 +10,11 @@
  *   MOTOR_EFFECTIVE_MIN_SPEED = 252（3% 占空比，死区阈值）
  *   PWM_MAX_COMPARE 变更时需同步调整 MOTOR_MAX_SPEED。
  */
-#define MOTOR_MAX_SPEED 8400          /* = PWM_MAX_COMPARE */
-#define MOTOR_MIN_SPEED 0             /* 零速 */
-#define MOTOR_EFFECTIVE_MIN_SPEED 252 /* 死区阈值，低于此值按 0 输出 */
+typedef enum {
+    MOTOR_MIN_SPEED = 0,             /* 零速 */
+    MOTOR_EFFECTIVE_MIN_SPEED = 252, /* 死区阈值，低于此值按 0 输出 */
+    MOTOR_MAX_SPEED = 8400,          /* = PWM_MAX_COMPARE */
+} motor_speed_limit_t;
 
 /* 电机配置结构体 */
 typedef struct {

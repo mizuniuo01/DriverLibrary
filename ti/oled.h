@@ -4,13 +4,19 @@
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
 
-#define OLED_I2C_ADDR 0x78 /* SSD1306 I2C 地址 */
-#define OLED_WIDTH 128     /* 显示宽度（像素） */
-#define OLED_HEIGHT 64     /* 显示高度（像素） */
-#define OLED_PAGES 8       /* 页数（高度/8） */
+/* SSD1306 硬件参数 */
+typedef enum {
+    OLED_I2C_ADDR = 0x78, /* SSD1306 I2C 地址 */
+    OLED_WIDTH = 128,     /* 显示宽度（像素） */
+    OLED_HEIGHT = 64,     /* 显示高度（像素） */
+    OLED_PAGES = 8,       /* 页数（高度/8） */
+} oled_hw_param_t;
 
-#define OLED_FONT_6X8 6  /* 6×8 字体 */
-#define OLED_FONT_8X16 8 /* 8×16 字体 */
+/* 字体尺寸 */
+typedef enum {
+    OLED_FONT_6X8 = 6,
+    OLED_FONT_8X16 = 8,
+} oled_font_size_t;
 
 /* OLED 定时刷新标志位（ISR 置1，task 清0） */
 extern volatile uint8_t oled_tick_flag;

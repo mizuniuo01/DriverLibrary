@@ -5,8 +5,11 @@
 #include <stdint.h>
 
 /* 超声波运行参数 */
-#define ULTRASONIC_MAX_TIME_US 65535  /* 超时阈值（us），超过判定为无效 */
-#define ULTRASONIC_PERIOD_MS 70       /* 轮询周期（ms），不能小于 60ms */
+typedef enum {
+    ULTRASONIC_MAX_TIME_US = 65535, /* 超时阈值（us），超过判定为无效 */
+    ULTRASONIC_PERIOD_MS = 70,      /* 轮询周期（ms），不能小于 60ms */
+} ultrasonic_cfg_param_t;
+
 #define ULTRASONIC_SOUND_SPEED 340.0f /* 声速（m/s） */
 
 /* 超声波状态 */
