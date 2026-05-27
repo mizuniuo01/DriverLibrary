@@ -62,8 +62,7 @@ void sensor_init(const sensor_cfg_t *cfg)
 {
     uint8_t i;
 
-    if (!cfg || cfg->channel_count == 0
-        || cfg->channel_count > SENSOR_MAX_CHANNELS) {
+    if (!cfg || cfg->channel_count == 0 || cfg->channel_count > SENSOR_MAX_CHANNELS) {
         error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
@@ -77,7 +76,6 @@ void sensor_init(const sensor_cfg_t *cfg)
     }
 
     sensor_data = 0;
-
 }
 
 /**
@@ -101,8 +99,7 @@ void sensor_task(void)
     result = 0;
 
     for (i = 0; i < sensor_cfg.channel_count; i++) {
-        level = HAL_GPIO_ReadPin(
-            sensor_cfg.channels[i].port, sensor_cfg.channels[i].pin);
+        level = HAL_GPIO_ReadPin(sensor_cfg.channels[i].port, sensor_cfg.channels[i].pin);
 
         if (sensor_cfg.active_level == 0) {
             /* 低电平=黑线：读到 RESET(0) → bit 置 1 */

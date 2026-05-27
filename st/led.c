@@ -58,7 +58,6 @@ void led_init(led_handle_t *handle, const led_cfg_t *cfg)
 
     /* 初始状态：关闭 */
     led_off(handle);
-
 }
 
 /**

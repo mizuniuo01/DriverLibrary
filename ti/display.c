@@ -81,6 +81,6 @@ void display_task(void)
     */
 
     /* 错误行：有错则显示，无错则显示正常信息 */
-    blueteeth_display(
-        0, DISPLAY_LINE_ERROR_Y, (error_msg[0] != '\0') ? "Err: %s" : "Working...", error_msg);
+    blueteeth_display(0, DISPLAY_LINE_ERROR_Y,
+        (error_msg[0] != '\0') ? "Err: %s" : "Working...", error_msg);
 }

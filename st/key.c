@@ -88,13 +88,8 @@ volatile uint8_t key_task_flag;
  * @param  repeat_ms      连发间隔（ms，0 表示禁用连发）
  * @retval 无
  */
-void key_init(key_handle_t *handle,
-              GPIO_TypeDef *port,
-              const key_pin_cfg_t *pin_cfgs,
-              uint8_t key_count,
-              uint16_t debounce_ms,
-              uint16_t long_press_ms,
-              uint16_t repeat_ms)
+void key_init(key_handle_t *handle, GPIO_TypeDef *port, const key_pin_cfg_t *pin_cfgs,
+    uint8_t key_count, uint16_t debounce_ms, uint16_t long_press_ms, uint16_t repeat_ms)
 {
     uint8_t i;
 
@@ -149,8 +144,8 @@ void key_set_callback(key_handle_t *handle, key_callback_t callback)
 void key_scan_task(key_handle_t *handle)
 {
     GPIO_PinState pin_state;
-    uint16_t      pin;
-    uint8_t       i;
+    uint16_t pin;
+    uint8_t i;
 
     if (!handle) {
         error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
@@ -197,7 +192,7 @@ void key_scan_task(key_handle_t *handle)
 void key_task(key_handle_t *handle)
 {
     uint16_t repeat_phase;
-    uint8_t  i;
+    uint8_t i;
 
     if (!handle) {
         error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
@@ -227,8 +222,8 @@ void key_task(key_handle_t *handle)
                 handle->event[i] = KEY_EVENT_SHORT_PRESS;
 
                 if (handle->callback) {
-                    handle->callback(
-                        handle, handle->pin_cfgs[i].id, KEY_EVENT_SHORT_PRESS);
+                    handle->callback(handle, handle->pin_cfgs[i].id,
+                        KEY_EVENT_SHORT_PRESS);
                 }
             } else {
                 /* 长按后释放 → 发 RELEASE */
@@ -247,8 +242,8 @@ void key_task(key_handle_t *handle)
                 handle->event[i] = KEY_EVENT_LONG_PRESS;
 
                 if (handle->callback) {
-                    handle->callback(
-                        handle, handle->pin_cfgs[i].id, KEY_EVENT_LONG_PRESS);
+                    handle->callback(handle, handle->pin_cfgs[i].id,
+                        KEY_EVENT_LONG_PRESS);
                 }
             }
 
@@ -259,8 +254,8 @@ void key_task(key_handle_t *handle)
                     handle->event[i] = KEY_EVENT_REPEAT;
 
                     if (handle->callback) {
-                        handle->callback(
-                            handle, handle->pin_cfgs[i].id, KEY_EVENT_REPEAT);
+                        handle->callback(handle, handle->pin_cfgs[i].id,
+                            KEY_EVENT_REPEAT);
                     }
                 }
             }
@@ -276,9 +271,9 @@ void key_task(key_handle_t *handle)
  */
 key_event_t key_get_event(key_handle_t *handle, uint8_t key_id)
 {
-    uint32_t    primask;
+    uint32_t primask;
     key_event_t evt;
-    uint8_t     i;
+    uint8_t i;
 
     if (!handle || key_id >= handle->key_count) {
         error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);

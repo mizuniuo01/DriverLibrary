@@ -140,9 +140,8 @@ void blueteeth_init(UART_HandleTypeDef *huart)
     blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(
-        blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
-
+    HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer,
+        BLUETEETH_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -168,8 +167,7 @@ static void data_transmit(void)
                           ? sizeof(blueteeth_inst.dma_tx_buffer)
                           : send_len;
         memcpy(blueteeth_inst.dma_tx_buffer,
-               &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos],
-               len_to_copy);
+            &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos], len_to_copy);
         blueteeth_inst.tx_read_pos += len_to_copy;
         send_len = len_to_copy;
     } else {
@@ -178,8 +176,7 @@ static void data_transmit(void)
                           ? sizeof(blueteeth_inst.dma_tx_buffer)
                           : send_len;
         memcpy(blueteeth_inst.dma_tx_buffer,
-               &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos],
-               len_to_copy);
+            &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos], len_to_copy);
 
         blueteeth_inst.tx_read_pos += len_to_copy;
         if (blueteeth_inst.tx_read_pos >= BLUETEETH_TX_FIFO_SIZE) {
@@ -341,9 +338,8 @@ void blueteeth_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
         }
 
         memset(blueteeth_inst.dma_rx_buffer, 0, BLUETEETH_DMA_RX_BUF_SIZE);
-        HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart,
-                                     blueteeth_inst.dma_rx_buffer,
-                                     BLUETEETH_DMA_RX_BUF_SIZE);
+        HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer,
+            BLUETEETH_DMA_RX_BUF_SIZE);
     }
 }
 

@@ -5,12 +5,12 @@
 
 /* 错误码 */
 typedef enum {
-    DRV_OK          = 0,
-    DRV_ERR_PARAM   = -1,
-    DRV_ERR_BUSY    = -2,
+    DRV_OK = 0,
+    DRV_ERR_PARAM = -1,
+    DRV_ERR_BUSY = -2,
     DRV_ERR_TIMEOUT = -3,
-    DRV_ERR_IO      = -4,
-    DRV_ERR_STATE   = -5,
+    DRV_ERR_IO = -4,
+    DRV_ERR_STATE = -5,
 } drv_err_t;
 
 /* 错误来源 */

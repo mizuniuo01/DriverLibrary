@@ -65,9 +65,8 @@ void cam_init(UART_HandleTypeDef *huart)
     cam_frame_ready = 0;
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(
-        cam_inst.huart, cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
-
+    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
+        CAM_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -102,8 +101,8 @@ void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
     }
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(
-        cam_inst.huart, cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
+        CAM_DMA_RX_BUF_SIZE);
 }
 
 /**

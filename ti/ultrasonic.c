@@ -72,9 +72,8 @@ static void delay_10us(void)
  * @param  htim    捕获定时器句柄
  * @retval 无
  */
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                          const ultrasonic_cfg_t *cfg,
-                          GPTIMER_Regs *htim)
+void ultrasonic_init(ultrasonic_handle_t *handle, const ultrasonic_cfg_t *cfg,
+    GPTIMER_Regs *htim)
 {
     if (!handle || !cfg || !htim) {
         error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
@@ -91,7 +90,6 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
     handle->last_trigger_tick = get_system_tick();
 
     DL_Timer_startCounter(handle->htim);
-
 }
 
 /**

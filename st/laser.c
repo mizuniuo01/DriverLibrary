@@ -37,7 +37,6 @@ void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
     handle->pin = cfg->pin;
 
     HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
-
 }
 
 /**

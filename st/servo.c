@@ -127,9 +127,7 @@ void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
     handle->usart.recvBuf = &handle->rx_ring;
     handle->usart.sendBuf = &handle->tx_ring;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(
-        cfg->huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
-
+    HAL_UARTEx_ReceiveToIdle_DMA(cfg->huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -139,9 +137,7 @@ void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
  * @param  size    接收数据长度
  * @retval 无
  */
-void servo_rx_callback(servo_handle_t *handle,
-                       UART_HandleTypeDef *huart,
-                       uint16_t size)
+void servo_rx_callback(servo_handle_t *handle, UART_HandleTypeDef *huart, uint16_t size)
 {
     uint16_t i;
 
@@ -162,8 +158,8 @@ void servo_rx_callback(servo_handle_t *handle,
     }
 
     memset(handle->dma_rx_buf, 0, SERVO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(
-        handle->cfg.huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
+    HAL_UARTEx_ReceiveToIdle_DMA(handle->cfg.huart, handle->dma_rx_buf,
+        SERVO_DMA_RX_BUF_SIZE);
 }
 
 /**
@@ -188,8 +184,8 @@ void servo_tx_task(servo_handle_t *handle)
     }
 
     RingBuffer_ReadByteArray(&handle->tx_ring, temp_buf, num_to_send);
-    HAL_UART_Transmit(
-        handle->cfg.huart, temp_buf, num_to_send, SERVO_DEFAULT_INTERVAL_MS);
+    HAL_UART_Transmit(handle->cfg.huart, temp_buf, num_to_send,
+        SERVO_DEFAULT_INTERVAL_MS);
 }
 
 /**
@@ -200,10 +196,8 @@ void servo_tx_task(servo_handle_t *handle)
  * @param  interval_ms  到达时间（ms）
  * @retval 无
  */
-void servo_set_angle(servo_handle_t *handle,
-                     uint8_t servo_id,
-                     float angle,
-                     uint16_t interval_ms)
+void servo_set_angle(servo_handle_t *handle, uint8_t servo_id, float angle,
+    uint16_t interval_ms)
 {
     FSUS_STATUS status;
     float safe_angle;
@@ -214,8 +208,7 @@ void servo_set_angle(servo_handle_t *handle,
     }
 
     safe_angle = constrain_angle(&handle->cfg, servo_id, angle);
-    status = FSUS_SetServoAngle(
-        &handle->usart, servo_id, safe_angle, interval_ms, 0);
+    status = FSUS_SetServoAngle(&handle->usart, servo_id, safe_angle, interval_ms, 0);
     report_fsus_status(status);
 }
 
@@ -227,15 +220,13 @@ void servo_set_angle(servo_handle_t *handle,
  * @param  interval_ms  到达时间（ms）
  * @retval 无
  */
-void servo_set_sync_angle(servo_handle_t *handle,
-                          float angle_x,
-                          float angle_y,
-                          uint16_t interval_ms)
+void servo_set_sync_angle(servo_handle_t *handle, float angle_x, float angle_y,
+    uint16_t interval_ms)
 {
     FSUS_STATUS status_x;
     FSUS_STATUS status_y;
-    float       safe_x;
-    float       safe_y;
+    float safe_x;
+    float safe_y;
 
     if (!handle) {
         error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
@@ -245,10 +236,10 @@ void servo_set_sync_angle(servo_handle_t *handle,
     safe_x = constrain_angle(&handle->cfg, handle->cfg.servo_id_x, angle_x);
     safe_y = constrain_angle(&handle->cfg, handle->cfg.servo_id_y, angle_y);
 
-    status_x = FSUS_SetServoAngle(
-        &handle->usart, handle->cfg.servo_id_x, safe_x, interval_ms, 0);
-    status_y = FSUS_SetServoAngle(
-        &handle->usart, handle->cfg.servo_id_y, safe_y, interval_ms, 0);
+    status_x = FSUS_SetServoAngle(&handle->usart, handle->cfg.servo_id_x, safe_x,
+        interval_ms, 0);
+    status_y = FSUS_SetServoAngle(&handle->usart, handle->cfg.servo_id_y, safe_y,
+        interval_ms, 0);
 
     if (status_x != FSUS_STATUS_SUCCESS) {
         error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
@@ -258,7 +249,6 @@ void servo_set_sync_angle(servo_handle_t *handle,
         error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
         return;
     }
-
 }
 
 /**
@@ -268,9 +258,7 @@ void servo_set_sync_angle(servo_handle_t *handle,
  * @param  angle     输出参数，当前角度（度）
  * @retval 无
  */
-void servo_get_angle(servo_handle_t *handle,
-                     uint8_t servo_id,
-                     float *angle)
+void servo_get_angle(servo_handle_t *handle, uint8_t servo_id, float *angle)
 {
     FSUS_STATUS status;
 
@@ -295,10 +283,8 @@ void servo_reset_center(servo_handle_t *handle)
         return;
     }
 
-    servo_set_sync_angle(handle,
-                         handle->cfg.center_angle_x,
-                         handle->cfg.center_angle_y,
-                         handle->cfg.default_interval_ms);
+    servo_set_sync_angle(handle, handle->cfg.center_angle_x, handle->cfg.center_angle_y,
+        handle->cfg.default_interval_ms);
 }
 
 /**

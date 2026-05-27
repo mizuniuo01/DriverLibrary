@@ -60,9 +60,8 @@ static ultrasonic_data_t ultra_data;
  * @param  htim    输入捕获定时器句柄
  * @retval 无
  */
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                          const ultrasonic_cfg_t *cfg,
-                          TIM_HandleTypeDef *htim)
+void ultrasonic_init(ultrasonic_handle_t *handle, const ultrasonic_cfg_t *cfg,
+    TIM_HandleTypeDef *htim)
 {
     if (!handle || !cfg || !htim) {
         error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
@@ -78,7 +77,6 @@ void ultrasonic_init(ultrasonic_handle_t *handle,
 
     /* 启动上升沿输入捕获中断 */
     HAL_TIM_IC_Start_IT(handle->htim, TIM_CHANNEL_1);
-
 }
 
 /**
@@ -103,13 +101,13 @@ void ultrasonic_capture_callback(ultrasonic_handle_t *handle, TIM_HandleTypeDef 
     if (handle->capture_flag == 0) {
         handle->start_time = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
         handle->capture_flag = 1;
-        __HAL_TIM_SET_CAPTUREPOLARITY(
-            htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_FALLING);
+        __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1,
+            TIM_INPUTCHANNELPOLARITY_FALLING);
     } else if (handle->capture_flag == 1) {
         handle->end_time = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
         handle->capture_flag = 2;
-        __HAL_TIM_SET_CAPTUREPOLARITY(
-            htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+        __HAL_TIM_SET_CAPTUREPOLARITY(htim, TIM_CHANNEL_1,
+            TIM_INPUTCHANNELPOLARITY_RISING);
     }
 }
 
@@ -138,8 +136,8 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
                 handle->last_trigger_tick = current_tick;
 
                 /* 强制重置捕获极性为上升沿 */
-                __HAL_TIM_SET_CAPTUREPOLARITY(
-                    handle->htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+                __HAL_TIM_SET_CAPTUREPOLARITY(handle->htim, TIM_CHANNEL_1,
+                    TIM_INPUTCHANNELPOLARITY_RISING);
                 handle->capture_flag = 0;
 
                 handle->state = ULTRASONIC_STATE_WAIT_TRIGGER_END;
@@ -178,8 +176,8 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
                 ultra_data.is_valid = 0;
                 handle->state = ULTRASONIC_STATE_IDLE;
                 handle->capture_flag = 0;
-                __HAL_TIM_SET_CAPTUREPOLARITY(
-                    handle->htim, TIM_CHANNEL_1, TIM_INPUTCHANNELPOLARITY_RISING);
+                __HAL_TIM_SET_CAPTUREPOLARITY(handle->htim, TIM_CHANNEL_1,
+                    TIM_INPUTCHANNELPOLARITY_RISING);
             }
             break;
 

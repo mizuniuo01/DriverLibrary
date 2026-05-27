@@ -24,8 +24,8 @@ void oled_update(void);
 void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size);
 void oled_show_string(int16_t x, int16_t y, const char *str, uint8_t font_size);
 void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len, uint8_t font_size);
-void oled_show_signed_num(
-    int16_t x, int16_t y, int32_t num, uint8_t len, uint8_t font_size);
+void oled_show_signed_num(int16_t x, int16_t y, int32_t num, uint8_t len,
+    uint8_t font_size);
 void oled_draw_point(int16_t x, int16_t y);
 
 #endif

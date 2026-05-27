@@ -67,8 +67,8 @@ extern uint32_t get_system_tick(void);
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(
-        DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, (uint32_t)(&UART_STEPMOTOR_INST->RXDATA));
+    DL_DMA_setSrcAddr(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID,
+        (uint32_t)(&UART_STEPMOTOR_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_STEPMOTOR_RX_CHAN_ID);
@@ -84,8 +84,8 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID);
     DL_DMA_setSrcAddr(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, (uint32_t)buf);
-    DL_DMA_setDestAddr(
-        DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, (uint32_t)(&UART_STEPMOTOR_INST->TXDATA));
+    DL_DMA_setDestAddr(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID,
+        (uint32_t)(&UART_STEPMOTOR_INST->TXDATA));
     DL_DMA_setTransferSize(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_STEPMOTOR_TX_CHAN_ID);
 }
@@ -113,9 +113,8 @@ static void data_transmit(void)
             send_len = STEPMOTOR_DMA_TX_BUF_SIZE;
         }
 
-        memcpy(motor_comm.dma_tx_buffer,
-               &motor_comm.tx_fifo[motor_comm.tx_read_pos],
-               send_len);
+        memcpy(motor_comm.dma_tx_buffer, &motor_comm.tx_fifo[motor_comm.tx_read_pos],
+            send_len);
         motor_comm.tx_read_pos += send_len;
     } else {
         send_len = STEPMOTOR_TX_FIFO_SIZE - motor_comm.tx_read_pos;
@@ -124,9 +123,8 @@ static void data_transmit(void)
             send_len = STEPMOTOR_DMA_TX_BUF_SIZE;
         }
 
-        memcpy(motor_comm.dma_tx_buffer,
-               &motor_comm.tx_fifo[motor_comm.tx_read_pos],
-               send_len);
+        memcpy(motor_comm.dma_tx_buffer, &motor_comm.tx_fifo[motor_comm.tx_read_pos],
+            send_len);
         motor_comm.tx_read_pos += send_len;
 
         if (motor_comm.tx_read_pos >= STEPMOTOR_TX_FIFO_SIZE) {
@@ -180,10 +178,10 @@ static void process_reply(uint8_t *frame, uint8_t length)
 {
     step_motor_t *motor;
     uint32_t raw_position;
-    uint8_t  receive_id;
-    uint8_t  command_val;
-    uint8_t  sign_flag;
-    uint8_t  status_val;
+    uint8_t receive_id;
+    uint8_t command_val;
+    uint8_t sign_flag;
+    uint8_t status_val;
 
     receive_id = frame[0];
     command_val = frame[1];
@@ -231,7 +229,7 @@ static void process_reply(uint8_t *frame, uint8_t length)
  */
 static void heartbeat_check(void)
 {
-    uint8_t  tx_buffer[3];
+    uint8_t tx_buffer[3];
     uint32_t current_tick;
 
     current_tick = get_system_tick();
@@ -375,12 +373,8 @@ void step_motor_error_callback(UART_Regs *huart)
  * @param  sync_flag  同步标志
  * @retval 0=成功，1=触发限位，2=异常拒执
  */
-uint8_t step_motor_set_angle(uint8_t id,
-                             motor_move_mode_t mode,
-                             float angle,
-                             uint16_t speed,
-                             uint16_t accel,
-                             uint8_t sync_flag)
+uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode, float angle,
+    uint16_t speed, uint16_t accel, uint8_t sync_flag)
 {
     step_motor_t *motor;
     float final_target;
@@ -534,7 +528,7 @@ void step_motor_data_task(void)
 
     uint16_t remain;
     uint16_t rx_len;
-    uint8_t  read_byte;
+    uint8_t read_byte;
 
     /* 软件 IDLE：DMA 余量连续两次不变则判定帧结束（TI 平台特化） */
     if (step_motor_check_idle_flag) {
@@ -612,12 +606,9 @@ void step_motor_data_task(void)
  */
 void step_motor_move_delta(uint8_t id, float delta_angle)
 {
-    step_motor_set_angle(id,
-                         MOTOR_MODE_REL_CURR,
-                         delta_angle,
-                         STEPMOTOR_TRACKING_DEFAULT_SPEED,
-                         STEPMOTOR_TRACKING_DEFAULT_ACC,
-                         STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
+    step_motor_set_angle(id, MOTOR_MODE_REL_CURR, delta_angle,
+        STEPMOTOR_TRACKING_DEFAULT_SPEED, STEPMOTOR_TRACKING_DEFAULT_ACC,
+        STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
 }
 
 /**
@@ -631,20 +622,14 @@ void step_motor_move_delta_sync(float delta_x, float delta_y)
     static uint8_t axis_toggle;
 
     if (axis_toggle == 0) {
-        step_motor_set_angle(MOTOR_ID_X,
-                             MOTOR_MODE_REL_CURR,
-                             delta_x,
-                             STEPMOTOR_TRACKING_DEFAULT_SPEED,
-                             STEPMOTOR_TRACKING_DEFAULT_ACC,
-                             STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
+        step_motor_set_angle(MOTOR_ID_X, MOTOR_MODE_REL_CURR, delta_x,
+            STEPMOTOR_TRACKING_DEFAULT_SPEED, STEPMOTOR_TRACKING_DEFAULT_ACC,
+            STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
         axis_toggle = 1;
     } else {
-        step_motor_set_angle(MOTOR_ID_Y,
-                             MOTOR_MODE_REL_CURR,
-                             delta_y,
-                             STEPMOTOR_TRACKING_DEFAULT_SPEED,
-                             STEPMOTOR_TRACKING_DEFAULT_ACC,
-                             STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
+        step_motor_set_angle(MOTOR_ID_Y, MOTOR_MODE_REL_CURR, delta_y,
+            STEPMOTOR_TRACKING_DEFAULT_SPEED, STEPMOTOR_TRACKING_DEFAULT_ACC,
+            STEPMOTOR_TRACKING_SYNC_FLAG_OFF);
         axis_toggle = 0;
     }
 }

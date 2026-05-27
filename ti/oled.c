@@ -54,11 +54,12 @@ static bool oled_update_pending;
 
 volatile uint8_t oled_tick_flag;
 
+// clang-format off
 /* SSD1306 初始化命令序列 */
 static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40,
                                          0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
                                          0xDB, 0x30, 0xA4, 0xA6, 0x8D, 0x14, 0xAF};
-
+// clang-format on
 /* 当前 I2C 发送的单字节缓冲（供 oled_tx_byte_start 使用） */
 static uint8_t oled_tx_byte;
 
@@ -75,8 +76,8 @@ static void oled_tx_start(uint8_t ctrl, const uint8_t *data, uint16_t count)
     if (count > 0) {
         DL_I2C_fillControllerTXFIFO(oled_i2c, data, count);
     }
-    DL_I2C_startControllerTransfer(
-        oled_i2c, OLED_I2C_ADDR, DL_I2C_CONTROLLER_DIRECTION_TX, 1 + count);
+    DL_I2C_startControllerTransfer(oled_i2c, OLED_I2C_ADDR,
+        DL_I2C_CONTROLLER_DIRECTION_TX, 1 + count);
 }
 
 /**
@@ -99,8 +100,7 @@ static void oled_tx_byte_start(uint8_t ctrl, uint8_t byte)
  */
 static bool oled_i2c_is_idle(void)
 {
-    return (DL_I2C_getControllerStatus(oled_i2c)
-            & DL_I2C_CONTROLLER_STATUS_IDLE) != 0;
+    return (DL_I2C_getControllerStatus(oled_i2c) & DL_I2C_CONTROLLER_STATUS_IDLE) != 0;
 }
 
 /**
@@ -127,7 +127,6 @@ void oled_init(I2C_Regs *hi2c)
     oled_update_pending = false;
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
-
 }
 
 /**
@@ -291,8 +290,8 @@ void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len, uint8_t font
  * @param  font_size 字体大小
  * @retval 无
  */
-void oled_show_signed_num(
-    int16_t x, int16_t y, int32_t num, uint8_t len, uint8_t font_size)
+void oled_show_signed_num(int16_t x, int16_t y, int32_t num, uint8_t len,
+    uint8_t font_size)
 {
     if (num < 0) {
         oled_show_char(x, y, '-', font_size);

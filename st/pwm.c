@@ -51,7 +51,6 @@ void pwm_init(TIM_HandleTypeDef *htim)
         HAL_TIMEx_PWMN_Start(htim, TIM_CHANNEL_3);
         __HAL_TIM_MOE_ENABLE(htim);
     }
-
 }
 
 /**

@@ -50,9 +50,8 @@ typedef struct {
 /* 获取系统 tick（ms），需由应用层提供实现 */
 extern uint32_t get_system_tick(void);
 
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                          const ultrasonic_cfg_t *cfg,
-                          GPTIMER_Regs *htim);
+void ultrasonic_init(ultrasonic_handle_t *handle, const ultrasonic_cfg_t *cfg,
+    GPTIMER_Regs *htim);
 void ultrasonic_task(ultrasonic_handle_t *handle);
 void ultrasonic_capture_callback(ultrasonic_handle_t *handle, GPTIMER_Regs *htim);
 ultrasonic_data_t ultrasonic_get_data(void);

@@ -145,12 +145,8 @@ void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size);
 void step_motor_tx_callback(UART_HandleTypeDef *huart);
 void step_motor_error_callback(UART_HandleTypeDef *huart);
 
-uint8_t step_motor_set_angle(uint8_t id,
-                             motor_move_mode_t mode,
-                             float angle,
-                             uint16_t speed,
-                             uint16_t accel,
-                             uint8_t sync_flag);
+uint8_t step_motor_set_angle(uint8_t id, motor_move_mode_t mode, float angle,
+    uint16_t speed, uint16_t accel, uint8_t sync_flag);
 void step_motor_sync_trigger(void);
 void step_motor_stop(uint8_t id);
 void step_motor_clear_zero(uint8_t id);

@@ -52,8 +52,8 @@ volatile uint8_t gyro_check_idle_flag;
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(
-        DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID, (uint32_t)(&UART_GYROSCOPE_INST->RXDATA));
+    DL_DMA_setSrcAddr(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID,
+        (uint32_t)(&UART_GYROSCOPE_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID);
@@ -191,7 +191,7 @@ void gyro_task(void)
 
     uint16_t remain;
     uint16_t rx_len;
-    uint8_t  byte;
+    uint8_t byte;
 
     /* 软件 IDLE：DMA 余量连续两次不变则判定帧结束 */
     if (gyro_check_idle_flag) {

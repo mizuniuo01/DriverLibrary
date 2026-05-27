@@ -68,9 +68,9 @@ static const char *error_code_names[DRV_ERR_CODE_COUNT] = {
 static uint8_t is_valid_source(error_source_t source)
 {
     return ((source >= 0) && (source < ERROR_SOURCE_COUNT) &&
-            (source < ERROR_SOURCE_BIT_LIMIT))
-        ? 1
-        : 0;
+               (source < ERROR_SOURCE_BIT_LIMIT))
+               ? 1
+               : 0;
 }
 
 /**
@@ -120,9 +120,7 @@ static void error_report_display(void)
         return;
     }
 
-    display_show_error(
-        "%s: %s",
-        error_get_source_name(source),
+    display_show_error("%s: %s", error_get_source_name(source),
         error_get_code_name(error_states[source]));
 }
 
@@ -275,8 +273,7 @@ const char *error_get_code_name(drv_err_t code)
     int32_t index;
 
     index = -(int32_t)code;
-    if ((index < 0) || (index >= DRV_ERR_CODE_COUNT) ||
-        (error_code_names[index] == 0)) {
+    if ((index < 0) || (index >= DRV_ERR_CODE_COUNT) || (error_code_names[index] == 0)) {
         return "UNKNOWN";
     }
 

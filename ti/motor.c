@@ -105,7 +105,6 @@ void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
 
     /* 拉高 nSLEEP 使驱动芯片脱离待机模式 */
     DL_GPIO_setPins(handle->port, handle->l_nsleep_pin | handle->r_nsleep_pin);
-
 }
 
 /**

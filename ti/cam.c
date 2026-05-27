@@ -78,7 +78,6 @@ void cam_init(UART_Regs *huart)
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
     start_dma_rx(cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
-
 }
 
 /**

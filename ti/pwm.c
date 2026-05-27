@@ -52,7 +52,6 @@ void pwm_init(GPTIMER_Regs *htim)
     }
 
     DL_Timer_startCounter(htim);
-
 }
 
 /**

@@ -136,8 +136,8 @@ static void process_command(const char *cmd_string)
 static void start_dma_rx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID);
-    DL_DMA_setSrcAddr(
-        DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, (uint32_t)(&UART_BLUETEETH_INST->RXDATA));
+    DL_DMA_setSrcAddr(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID,
+        (uint32_t)(&UART_BLUETEETH_INST->RXDATA));
     DL_DMA_setDestAddr(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, (uint32_t)buf);
     DL_DMA_setTransferSize(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_BLUETEETH_RX_CHAN_ID);
@@ -153,8 +153,8 @@ static void start_dma_tx(uint8_t *buf, uint16_t size)
 {
     DL_DMA_disableChannel(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID);
     DL_DMA_setSrcAddr(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, (uint32_t)buf);
-    DL_DMA_setDestAddr(
-        DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, (uint32_t)(&UART_BLUETEETH_INST->TXDATA));
+    DL_DMA_setDestAddr(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID,
+        (uint32_t)(&UART_BLUETEETH_INST->TXDATA));
     DL_DMA_setTransferSize(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID, size);
     DL_DMA_enableChannel(DMA, DMA_CH_BLUETEETH_TX_CHAN_ID);
 }
@@ -184,7 +184,6 @@ void blueteeth_init(UART_Regs *huart)
     blueteeth_inst.frame_index = 0;
 
     start_dma_rx(blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
-
 }
 
 /**
@@ -210,8 +209,7 @@ static void data_transmit(void)
                           ? sizeof(blueteeth_inst.dma_tx_buffer)
                           : send_len;
         memcpy(blueteeth_inst.dma_tx_buffer,
-               &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos],
-               len_to_copy);
+            &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos], len_to_copy);
         blueteeth_inst.tx_read_pos += len_to_copy;
         send_len = len_to_copy;
     } else {
@@ -220,8 +218,7 @@ static void data_transmit(void)
                           ? sizeof(blueteeth_inst.dma_tx_buffer)
                           : send_len;
         memcpy(blueteeth_inst.dma_tx_buffer,
-               &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos],
-               len_to_copy);
+            &blueteeth_inst.tx_fifo[blueteeth_inst.tx_read_pos], len_to_copy);
 
         blueteeth_inst.tx_read_pos += len_to_copy;
         if (blueteeth_inst.tx_read_pos >= BLUETEETH_TX_FIFO_SIZE) {

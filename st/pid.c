@@ -50,7 +50,6 @@ void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integr
     pid->out_max = out_max;
     pid->out_min = -out_max;
     pid->integral_max = integral_max;
-
 }
 
 /**

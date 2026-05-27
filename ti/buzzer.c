@@ -51,7 +51,6 @@ void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 
     /* 初始状态：关闭 */
     DL_GPIO_clearPins(handle->port, handle->pin);
-
 }
 
 /**

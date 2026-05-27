@@ -32,10 +32,12 @@ static I2C_HandleTypeDef *oled_i2c;
  */
 #define OLED_I2C_TIMEOUT_MS 100
 
+// clang-format off
 /* SSD1306 初始化命令序列 */
 static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x00, 0x40,
                                          0xA1, 0xC8, 0xDA, 0x12, 0x81, 0xCF, 0xD9, 0xF1,
                                          0xDB, 0x30, 0xA4, 0xA6, 0x8D, 0x14, 0xAF};
+// clang-format on
 
 /**
  * @brief  发送命令字节
@@ -44,8 +46,8 @@ static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x0
  */
 static void oled_write_cmd(uint8_t cmd)
 {
-    HAL_I2C_Mem_Write(
-        oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, &cmd, 1, OLED_I2C_TIMEOUT_MS);
+    HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, &cmd, 1,
+        OLED_I2C_TIMEOUT_MS);
 }
 
 /**
@@ -69,7 +71,6 @@ void oled_init(I2C_HandleTypeDef *hi2c)
     }
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
-
 }
 
 /**
@@ -98,15 +99,10 @@ void oled_update(void)
         cmds[1] = 0x00;
         cmds[2] = 0x10;
 
-        HAL_I2C_Mem_Write(
-            oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, cmds, 3, OLED_I2C_TIMEOUT_MS);
-        HAL_I2C_Mem_Write(oled_i2c,
-                          OLED_I2C_ADDR << 1,
-                          0x40,
-                          I2C_MEMADD_SIZE_8BIT,
-                          oled_buffer[page],
-                          OLED_WIDTH,
-                          OLED_I2C_TIMEOUT_MS);
+        HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, cmds,
+            3, OLED_I2C_TIMEOUT_MS);
+        HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x40, I2C_MEMADD_SIZE_8BIT,
+            oled_buffer[page], OLED_WIDTH, OLED_I2C_TIMEOUT_MS);
     }
 }
 
@@ -232,8 +228,8 @@ void oled_show_num(int16_t x, int16_t y, uint32_t num, uint8_t len, uint8_t font
  * @param  font_size 字体大小
  * @retval 无
  */
-void oled_show_signed_num(
-    int16_t x, int16_t y, int32_t num, uint8_t len, uint8_t font_size)
+void oled_show_signed_num(int16_t x, int16_t y, int32_t num, uint8_t len,
+    uint8_t font_size)
 {
     if (num < 0) {
         oled_show_char(x, y, '-', font_size);

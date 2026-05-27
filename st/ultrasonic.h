@@ -45,9 +45,8 @@ typedef struct {
     ultrasonic_state_t state;   /* 当前状态机状态 */
 } ultrasonic_handle_t;
 
-void ultrasonic_init(ultrasonic_handle_t *handle,
-                          const ultrasonic_cfg_t *cfg,
-                          TIM_HandleTypeDef *htim);
+void ultrasonic_init(ultrasonic_handle_t *handle, const ultrasonic_cfg_t *cfg,
+    TIM_HandleTypeDef *htim);
 void ultrasonic_task(ultrasonic_handle_t *handle);
 void ultrasonic_capture_callback(ultrasonic_handle_t *handle, TIM_HandleTypeDef *htim);
 ultrasonic_data_t ultrasonic_get_data(void);

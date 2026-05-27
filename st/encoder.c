@@ -55,7 +55,6 @@ void encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
 
     HAL_TIM_Encoder_Start(htim_left, TIM_CHANNEL_ALL);
     HAL_TIM_Encoder_Start(htim_right, TIM_CHANNEL_ALL);
-
 }
 
 /**

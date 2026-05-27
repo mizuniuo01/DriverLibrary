@@ -36,8 +36,7 @@ typedef struct {
 
 void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg);
 void motor_set_speed_left(motor_handle_t *handle, TIM_HandleTypeDef *htim, int16_t speed);
-void motor_set_speed_right(motor_handle_t *handle,
-                           TIM_HandleTypeDef *htim,
-                           int16_t speed);
+void motor_set_speed_right(motor_handle_t *handle, TIM_HandleTypeDef *htim,
+    int16_t speed);
 
 #endif
