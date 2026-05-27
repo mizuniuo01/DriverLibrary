@@ -1,4 +1,4 @@
-# 嵌入式 C / Python 软件设计规范 (v1.1 Release)
+# 嵌入式 C / Python 软件设计规范 (v1.3 Release)
 
 本规范 C 语言部分参照 **BARR-C:2018**（Embedded C Coding Standard）
 和 **Linux 内核编码规范**（CodingStyle），Python 部分参照 **PEP 8**。
@@ -15,6 +15,7 @@
 - **一致性**：整个项目必须风格统一，一个单词在一个项目中只能有一种写法。
 - **简洁性**：能用一行表达清楚的逻辑不要写三行，但不要为了省行数牺牲可读性。
 - **语言**：注释使用**中文**，简短到位，不啰嗦。
+- **禁用关键字**：不得使用 `auto`、`register`、`continue`（BARR-C 规则 1.7.a）。`goto` 仅限统一错误出口（见 §9.4）。
 
 ---
 
@@ -62,7 +63,7 @@ int32_t pid_compute(pid_controller_t *pid, float setpoint, float actual);
 
 ### 2.4 类型名
 
-`snake_case_t`，全小写，下划线分隔，**`_t` 后缀**（BARR-C:2018 规则 1.5）。
+`snake_case_t`，全小写，下划线分隔，**`_t` 后缀**（BARR-C:2018 规则 5.1.a）。
 
 ```c
 typedef struct {
@@ -99,6 +100,10 @@ pid_algorithm.c
 - 一对 `.c`/`.h` 的文件名必须完全相同。
 - 不用大写字母，不用连接符（`-`），不用空格。
 
+### 2.6 模块前缀
+
+模块内所有对外可见的标识符（函数、类型、全局变量）必须以模块名为前缀（BARR-C 规则 4.1.b），如 `motor_init()`、`motor_set_speed()`、`motor_state_t`。模块内部 `static` 函数无此前缀要求。
+
 ---
 
 ## 3. 代码格式
@@ -127,7 +132,7 @@ void function(void)
 ```
 
 **规则**：
-- 控制流必须始终使用花括号，即使只有一条语句（BARR-C 规则 8.8）。
+- 控制流必须始终使用花括号，即使只有一条语句（BARR-C 规则 1.3.a）。
 
 反例：
 ```c
@@ -249,7 +254,7 @@ int32_t *a, *b;  /* 每个变量单独声明，不要这样批量写在一行 */
 ### 3.6 变量声明
 
 - **一行只声明一个变量**。
-- 变量声明推迟到首次使用时，尽量在声明处直接初始化，缩小作用域，方便加 `const`。
+- 变量应在**代码块开头声明**（BARR-C 规则 8.1.a，与 Linux 内核一致），尽量在声明处直接初始化。
 
 ```c
 void function(void)
@@ -288,28 +293,19 @@ void function(void)
 
 ### 3.9 对齐
 
-**赋值和变量声明不进行人为对齐**。对齐会制造无意义的 diff，增加维护负担。
+**连续的变量声明和赋值应进行对齐**，提高可读性（BARR-C 规则 3.2.a）。注释同样允许对齐。
 
-注释允许对齐，提高可读性。
-
-反例（赋值对齐）：
 ```c
-/* 禁止：手动对齐赋值/声明产生无意义空白 diff */
-uint32_t count       = 0;
-uint8_t  small_flag  = 0;
-int32_t  i           = 0;
+/* 正例：连续声明对齐 */
+uint32_t count      = 0;
+uint8_t  small_flag = 0;
+int32_t  i          = 0;
+
+/* 注释对齐 */
+uint8_t dma_done;     /* DMA 完成标志，ISR 中置位 */
+uint8_t uart_busy;    /* UART 忙闲标志 */
+uint8_t sensor_ready; /* 传感器就绪标志 */
 ```
-
-正例：
-```c
-uint32_t count = 0;
-uint8_t small_flag = 0;
-int32_t i = 0;
-
-/* 注释对齐：允许 */
-uint8_t dma_done;    /* DMA 完成标志，ISR 中置位 */
-uint8_t uart_busy;   /* UART 忙闲标志 */
-uint8_t sensor_ready;/* 传感器就绪标志 */
 ```
 
 ### 3.10 禁止内容
@@ -318,6 +314,7 @@ uint8_t sensor_ready;/* 传感器就绪标志 */
 - 禁止省略任何控制流的花括号。
 - 禁止用 Tab 字符。
 - 禁止行尾有空白字符。
+- 源文件中不得包含任何不可打印字符（除换行符外），BARR-C 规则 3.6.a。
 
 ### 3.11 switch / case
 
@@ -541,6 +538,10 @@ uint16_t pwm_duty;   /* 16 位无符号 */
 bool is_ready;       /* 使用 <stdbool.h> */
 ```
 
+**`char` 使用限制**（BARR-C 规则 5.2.c）：`char` 仅用于 ASCII 字符或字符串，不得用于算术运算。8 位数值应使用 `uint8_t` 或 `int8_t`。
+
+**位操作**（BARR-C 规则 5.3.a）：位操作（`&`/`|`/`^`/`~`/`<<`/`>>`）必须使用无符号类型（`uint8_t`/`uint16_t`/`uint32_t`）。禁止对有符号类型进行位操作。
+
 ### 6.2 类型修饰符
 
 - 不变变量加 `const`。
@@ -596,6 +597,42 @@ typedef enum {
 - **运算宏**：如 `SENSOR_I2C_ADDR (SENSOR_I2C_ADDR_7BIT << 1)`，预处理器无法展开 enum 成员，必须保留 `#define`
 - **孤立单值**：与其他常量没有概念关联，如 `MOTOR_CHECKSUM 0x6B`，继续用 `#define`
 
+### 6.4 浮点数使用
+
+**无 FPU 的嵌入式系统应尽量避免浮点数**（BARR-C 规则 5.4.a）。浮点运算开销大（软件模拟时单次运算可耗时数百微秒），且占用大量代码空间。以下场景可例外：
+
+- PID 控制器等需要连续比例运算的模块（`float` 参数与计算）
+- 传感器融合算法（如陀螺仪角度积分）
+- 需要数学库函数（`sin`/`cos`/`sqrt`）的场景
+
+**如确实需要小数，优先使用定点数替代**（BARR-C 规则 5.4.b）。定点数以整数类型存储，运算快且精度确定。例如用 `uint16_t` 存储放大 100 倍的百分比值，实际值 = 存储值 / 100.0。
+
+### 6.5 结构体与联合体
+
+**联合体必须有判别字段**（BARR-C 规则 5.5.b），用枚举标记当前有效成员，禁止依赖隐式约定判断哪个成员有效。
+
+```c
+typedef enum { FRAME_TYPE_CMD, FRAME_TYPE_DATA } frame_type_t;
+
+typedef struct {
+    frame_type_t type;  /* 判别字段 */
+    union {
+        cmd_frame_t cmd;
+        data_frame_t data;
+    } payload;
+} frame_t;
+```
+
+**跨平台结构体注意填充与对齐**（BARR-C 规则 5.5.c）。直接映射硬件寄存器或通信协议的结构体应使用 `__attribute__((packed))` 或 `#pragma pack(1)` 消除填充字节，并显式标注。
+
+```c
+typedef struct __attribute__((packed)) {
+    uint8_t  header;
+    uint32_t value;
+    uint16_t checksum;
+} proto_frame_t;  /* 7 字节，无填充 */
+```
+
 ---
 
 ## 7. 预处理
@@ -635,10 +672,13 @@ typedef enum {
 
 一个函数只做一件事。行数没有硬性上限，但如果一个函数做的事开始分裂为多个独立逻辑，就该拆分。
 
+函数必须**显式声明返回类型**（BARR-C 规则 6.2.f），不允许依赖隐式 `int`。无返回值的函数使用 `void`。
+
 ### 8.2 参数
 
 - 参数过多时考虑用结构体封装。
 - 输出参数放最后。
+- 无参数的函数必须写 `(void)`（BARR-C 规则 6.2.d），禁止空括号 `()`。`int foo(void);` 是正确的，`int foo();` 是错误的。
 
 ### 8.3 防错处理
 
@@ -660,15 +700,38 @@ void motor_set_speed(motor_controller_t *motor, uint16_t speed)
 
 ### 8.4 递归
 
-**嵌入式系统中严格禁止使用递归**（BARR-C 规则 6.4）。递归导致栈占用不可预测，在栈空间有限的 MCU 上极易引发栈溢出。
+**嵌入式系统中严格禁止使用递归**。递归导致栈占用不可预测，在栈空间有限的 MCU 上极易引发栈溢出。
 
 ### 8.5 动态内存
 
-**嵌入式系统中严禁使用 `malloc`、`free`、`calloc`、`realloc`**（BARR-C 规则 1.4）。动态分配导致内存碎片、分配时间不可预测、分配失败难以恢复。所有内存需求必须在编译期确定。
+**嵌入式系统中严禁使用 `malloc`、`free`、`calloc`、`realloc`**。动态分配导致内存碎片、分配时间不可预测、分配失败难以恢复。所有内存需求必须在编译期确定。
 
 ### 8.6 变长数组
 
 **禁止使用变长数组（VLA）**。`int32_t arr[n]` 中 `n` 为变量时，同样在栈上动态分配，风险与递归相同。C11 已将 VLA 改为可选特性。
+
+### 8.7 循环体
+
+**不得有空循环体**（BARR-C 规则 8.4.b）。空循环必须用显式注释标记意图：
+
+```c
+/* 正例：显式标记空循环意图 */
+while (!dma_done) {
+    /* 等待 DMA 完成 */
+}
+
+/* 反例：空循环体意图不明 */
+while (!dma_done);
+```
+
+**不得在循环体内部修改循环变量**（BARR-C 规则 8.4.c）。循环变量的增减应统一在 `for` 头部完成。
+
+```c
+/* 反例：在循环体内修改 i */
+for (int32_t i = 0; i < n; i++) {
+    if (skip_condition) { i++; }  /* 禁止 */
+}
+```
 
 ---
 
@@ -677,6 +740,8 @@ void motor_set_speed(motor_controller_t *motor, uint16_t speed)
 ### 9.1 初始化
 
 所有局部变量必须在声明时或使用前初始化。
+
+不要为了消除编译器警告而做无意义的初始化（BARR-C 规则 7.2.b），这会掩盖真正的"未初始化即使用"bug。如果编译器报告"可能未初始化"警告，应追溯变量的所有执行路径确认是否真的存在未初始化路径，而非简单加一个初始值了事。
 
 ### 9.2 全局变量
 
@@ -797,6 +862,23 @@ uint32_t position;
 
 /* 正例：显式转换 */
 delta = (int32_t)(target - position);
+```
+
+### 10.6 类型转换
+
+应尽量避免不必要的强制类型转换（BARR-C 规则 1.6.b）。过多的显式转换降低可读性，且可能隐藏类型设计缺陷。仅在以下场景使用强制转换：
+
+- 有符号/无符号类型之间的赋值（见 §10.5）
+- 不同宽度整数之间的赋值（如 `uint32_t` 截断为 `uint16_t`）
+- 指针类型转换（如 `uint8_t *` 转 `uint32_t *` 用于内存对齐访问）
+
+```c
+/* 正例：必要的显式转换 */
+uint16_t truncated = (uint16_t)(large_value & 0xFFFF);
+
+/* 反例：不必要的转换 */
+uint32_t x = (uint32_t)some_uint32_var;
+void *p = (void *)buffer;  /* void * 转换是多余的 */
 ```
 
 ---
@@ -1168,20 +1250,26 @@ motor_set_speed(&motor_left, 500);
 
 全部错误处理逻辑集中在 `error_handler` 模块，分三层：**传输、上报、处理**。
 
+每个需要上报错误的模块/实例在 `error_source_t` 枚举中占一个条目，由项目自行维护。多实例模块（如左右电机）拆为独立条目。枚举和名称字符串数组一一对应，新增来源时二者同步维护。
+
 ```
 驱动层                  error_handler 模块
 ───────                ──────────────────
 xxx_init() 出错          error_handler_task()
   ↓                        ↓
-error_report(h, code) → 记录到静态表
-                          ↓
-                     error_report_display() → display_show_error()
-                     error_process()       → 重试/故障升级/停机
+error_report(source, code) → error_states[source] = code
+                             error_flags |= bit（供上报层用）
+                             error_queue[tail++] = source（供处理层用）
+                             error_queued_flags |= bit（防重复入队）
+                               ↓
+                        error_report_display() → display_show_error()
+                        error_process()         → switch(source) 分派处理
 ```
 
-`drv_err_t` 定义在 `error_handler.h` 中：
+`error_source_t` 和 `drv_err_t` 定义在 `error_handler.h` 中：
 
 ```c
+/* 错误码 */
 typedef enum {
     DRV_OK         =  0,
     DRV_ERR_PARAM  = -1, /* 参数非法（含空指针、越界） */
@@ -1190,45 +1278,119 @@ typedef enum {
     DRV_ERR_IO     = -4, /* 硬件通信错误 */
     DRV_ERR_STATE  = -5, /* 状态机状态非法 */
 } drv_err_t;
+
+/* 错误来源（项目自行维护） */
+typedef enum {
+    ERROR_SOURCE_MOTOR_LEFT,
+    ERROR_SOURCE_MOTOR_RIGHT,
+    ERROR_SOURCE_TRACE,
+    ERROR_SOURCE_CAM,
+    ERROR_SOURCE_GYRO,
+    ERROR_SOURCE_ULTRASONIC,
+    ERROR_SOURCE_COUNT              /* 哨兵值 */
+} error_source_t;
 ```
 
-#### 12.9.1 传输层 — `error_report()`
+内部存储：
 
-驱动在出错时调用，只做一件事：把"哪个句柄、什么错误"记录到 `error_handler` 模块的静态变量中。不依赖 display、不做决定。
+```c
+static drv_err_t error_states[ERROR_SOURCE_COUNT];         /* 每个来源的当前错误码 */
+static uint32_t error_flags;                                /* bit 位标示有无错误 */
+static error_source_t error_queue[ERROR_SOURCE_COUNT];      /* 处理队列 */
+static uint8_t error_queue_head;
+static uint8_t error_queue_tail;
+static uint32_t error_queued_flags;                         /* 防重复入队 */
+
+/* 与枚举并行的名称字符串数组，新增来源时同步维护 */
+static const char *error_source_names[ERROR_SOURCE_COUNT] = {
+    "Motor Left",
+    "Motor Right",
+    "Trace",
+    "Cam",
+    "Gyro",
+    "Ultrasonic",
+};
+
+/* 错误码→字符串，按下标 O(1) 直取 */
+static const char *error_code_names[] = {
+    [-DRV_ERR_PARAM]  = "PARAM",
+    [-DRV_ERR_BUSY]   = "BUSY",
+    [-DRV_ERR_TIMEOUT] = "TIMEOUT",
+    [-DRV_ERR_IO]     = "IO",
+    [-DRV_ERR_STATE]  = "STATE",
+};
+```
+
+#### 12.9.1 传输层 — `error_report()` / `error_clear()`
+
+驱动出错时调 `error_report(source, code)`：写错误码、置标志位、入队（防重复）。不依赖 display、不做决定。
 
 ```c
 /* error_handler.h */
-void error_report(void *handle, drv_err_t code);
-void error_clear(void *handle);
+void error_report(error_source_t source, drv_err_t code);
+void error_clear(error_source_t source);
+
+/* error_handler.c */
+void error_report(error_source_t source, drv_err_t code)
+{
+    error_states[source] = code;
+    error_flags |= (1u << source);
+
+    /* 防止重复入队 */
+    if ((error_queued_flags & (1u << source)) == 0) {
+        error_queued_flags |= (1u << source);
+        error_queue[error_queue_tail] = source;
+        error_queue_tail = (error_queue_tail + 1) % ERROR_SOURCE_COUNT;
+    }
+}
+
+void error_clear(error_source_t source)
+{
+    error_states[source] = DRV_OK;
+    error_flags &= ~(1u << source);
+}
 ```
 
+驱动侧调用：
+
 ```c
-/* 驱动侧 */
-void xxx_init(xxx_handle_t *h, const xxx_cfg_t *cfg)
+/* 多实例 — 每个实例一个枚举条目 */
+void motor_set_speed(motor_handle_t *h, uint16_t speed)
 {
-    if (!h || !cfg) {
-        error_report(h, DRV_ERR_PARAM);
+    if (!h) {
+        error_report(ERROR_SOURCE_MOTOR_LEFT, DRV_ERR_PARAM);
         return;
     }
-    /* ... 正常初始化 */
+    /* ... */
+}
+
+/* 单实例模块同样直接上报 */
+void buzzer_beep(uint16_t duration_ms)
+{
+    if (duration_ms == 0) {
+        error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM);
+        return;
+    }
+    /* ... */
 }
 ```
 
 #### 12.9.2 上报层 — `error_report_display()`
 
-`error_handler` 模块内部的 `static` 函数，由 `error_handler_task()` 调用。将错误码转为 `"模块名: 错误描述"` 格式的消息，调用 `display_show_error()` 输出。
+`static` 函数，由 `error_handler_task()` 调用。只上报第一个错误（`__builtin_ctz` 取最低置位 bit），一条屏显行足够。
 
 ```c
 static void error_report_display(void)
 {
-    for (遍历所有已记录的 handle) {
-        if (handle 有错误) {
-            display_show_error("%s: %s", handle_name, error_msg);
-        }
+    if (error_flags == 0) {
+        display_show_error("");
+        return;
     }
-    if (无任何错误) {
-        display_show_error("");  /* display 内部输出 "Working..." */
-    }
+
+    uint32_t idx = (uint32_t)__builtin_ctz(error_flags);
+    display_show_error("%s: %s",
+        error_source_names[idx],
+        error_code_names[-error_states[idx]]);
 }
 ```
 
@@ -1239,29 +1401,44 @@ static void error_report_display(void)
 
 #### 12.9.3 处理层 — `error_process()`
 
-`error_process()` 是 error_handler 内部的 `static` 函数，由 `error_handler_task()` 调用。负责**全部**错误处理逻辑：重试、故障升级、停机——应用层不介入。
+`static` 函数，由 `error_handler_task()` 调用。每次 tick 从队列弹出一个错误来源，`switch(source)` 分派到对应 case 执行具体处理（如重新初始化模块）。每次只处理一个，非阻塞。处理完调 `error_clear` 清除。
 
 ```c
 static void error_process(void)
 {
-    for (遍历所有记录在案的 handle) {
-        if (handle 无错误) {
-            continue;
-        }
-
-        handle->retry_count++;
-        if (handle->retry_count > MAX_RETRY) {
-            /* 重复出错超过阈值：标记永久故障，停机 */
-            led_flash_error();
-            while (1) {
-            }
-        }
-        /* 未超限：保持错误记录，等待恢复 */
+    if (error_queue_head == error_queue_tail) {
+        return;
     }
+
+    error_source_t source = error_queue[error_queue_head];
+    error_queue_head = (error_queue_head + 1) % ERROR_SOURCE_COUNT;
+    error_queued_flags &= ~(1u << source);
+
+    switch (source) {
+    case ERROR_SOURCE_MOTOR_LEFT:
+        motor_deinit(&motor_left);
+        motor_init(&motor_left, &motor_left_cfg);
+        break;
+
+    case ERROR_SOURCE_MOTOR_RIGHT:
+        motor_deinit(&motor_right);
+        motor_init(&motor_right, &motor_right_cfg);
+        break;
+
+    case ERROR_SOURCE_CAM:
+        cam_deinit(&cam_inst);
+        cam_init(&cam_inst, &cam_cfg);
+        break;
+
+    default:
+        break;
+    }
+
+    error_clear(source);
 }
 ```
 
-具体分级策略和停机条件由项目自行修改 `error_process()` 内部逻辑。
+每个 case 的具体处理逻辑由项目自行编写。常见策略：重新初始化模块、复位外设、降级运行。
 
 #### 12.9.4 Task 调度
 
@@ -1521,7 +1698,7 @@ def detect_circle(image, min_radius=10, max_radius=100):
 | 控制语句后空格 | `SpaceBeforeParens: ControlStatements` |
 | 函数名后不加空格 | 此为默认，不设置 |
 | 禁止短 if/for 同⾏ | `AllowShortIfStatementsOnASingleLine: false` / `AllowShortLoopsOnASingleLine: false` |
-| 不人为对齐 | `AlignConsecutiveAssignments: false` / `AlignConsecutiveDeclarations: false` |
+| 连续声明/赋值对齐 | `AlignConsecutiveAssignments: true` / `AlignConsecutiveDeclarations: true` |
 | 缩进 case 标签 | `IndentCaseLabels: true` |
 
 ---
