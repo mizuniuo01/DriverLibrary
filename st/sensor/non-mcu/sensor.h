@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
-#include "drv_err.h"
 
 /* 最大支持通道数（实际使用通道数通过 sensor_cfg_t.channel_count 配置） */
 typedef enum {
@@ -26,7 +25,7 @@ typedef struct {
 /* sensor_task 调度标志位（ISR 置1，task 清0） */
 extern volatile uint8_t sensor_tick_flag;
 
-drv_err_t sensor_init(const sensor_cfg_t *cfg);
+void sensor_init(const sensor_cfg_t *cfg);
 void sensor_task(void);
 uint8_t sensor_read_data(void);
 

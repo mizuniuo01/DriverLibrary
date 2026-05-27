@@ -5,7 +5,7 @@
  * @date    2026-05-25
  * @version 1.0.0
  * @note    依赖：GPIO 已在 CubeMX 中配置
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM) 上报
  *
  * @usage
  * 驱动层模块，负责单一 GPIO 的开关控制，不管理时序。多实例设计，
@@ -31,17 +31,19 @@
  */
 
 #include "buzzer.h"
+#include "../error_handler.h"
 
 /**
  * @brief  蜂鸣器初始化
  * @param  handle  蜂鸣器句柄指针
  * @param  cfg     蜂鸣器配置指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM);
+        return;
     }
 
     handle->port = cfg->port;
@@ -50,7 +52,6 @@ drv_err_t buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
     /* 初始状态：关闭 */
     HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
 
-    return DRV_OK;
 }
 
 /**
@@ -61,6 +62,7 @@ drv_err_t buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg)
 void buzzer_on(buzzer_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM);
         return;
     }
 
@@ -75,6 +77,7 @@ void buzzer_on(buzzer_handle_t *handle)
 void buzzer_off(buzzer_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM);
         return;
     }
 
@@ -89,6 +92,7 @@ void buzzer_off(buzzer_handle_t *handle)
 void buzzer_toggle(buzzer_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_BUZZER, DRV_ERR_PARAM);
         return;
     }
 

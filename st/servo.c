@@ -7,7 +7,7 @@
  * @note    依赖 FashionStar 官方 SDK（fashion_star_uart_servo.h、ring_buffer.h）
  * @note    通信层：DMA + IDLE 中断 + 环形缓冲区（§12.3）
  * @note    控制层：封装官方 FSUS_* API，增加角度限幅
- * @note    错误码：DRV_ERR_PARAM（init 判空）、DRV_ERR_IO（FSUS 通信失败）
+ * @note    错误通过 error_report(ERROR_SOURCE_SERVO, code) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -55,7 +55,7 @@
  */
 
 #include "servo.h"
-#include "drv_err.h"
+#include "../error_handler.h"
 
 /*
  * X 轴：向左为负(-)，向右为正(+)。
@@ -73,16 +73,20 @@ static float constrain_angle(const servo_cfg_t *cfg, uint8_t servo_id, float ang
 {
     if (servo_id == cfg->servo_id_x) {
         if (angle < cfg->x_angle_min) {
+            error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
             return cfg->x_angle_min;
         }
         if (angle > cfg->x_angle_max) {
+            error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
             return cfg->x_angle_max;
         }
     } else if (servo_id == cfg->servo_id_y) {
         if (angle < cfg->y_angle_min) {
+            error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
             return cfg->y_angle_min;
         }
         if (angle > cfg->y_angle_max) {
+            error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
             return cfg->y_angle_max;
         }
     }
@@ -90,28 +94,28 @@ static float constrain_angle(const servo_cfg_t *cfg, uint8_t servo_id, float ang
 }
 
 /**
- * @brief  FSUS_STATUS 转换为 drv_err_t
+ * @brief  上报 FSUS 通信状态
  * @param  status  FSUS 状态码
- * @retval DRV_OK 成功，负值为错误码
+ * @retval 无
  */
-static drv_err_t fsus_to_drv_err(FSUS_STATUS status)
+static void report_fsus_status(FSUS_STATUS status)
 {
-    if (status == FSUS_STATUS_SUCCESS) {
-        return DRV_OK;
+    if (status != FSUS_STATUS_SUCCESS) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
     }
-    return DRV_ERR_IO;
 }
 
 /**
  * @brief  舵机初始化
  * @param  handle  舵机句柄
  * @param  cfg     舵机配置
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
+void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
 {
     if (!handle || !cfg || !cfg->huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
+        return;
     }
 
     handle->cfg = *cfg;
@@ -126,7 +130,6 @@ drv_err_t servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
     HAL_UARTEx_ReceiveToIdle_DMA(
         cfg->huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
 
-    return DRV_OK;
 }
 
 /**
@@ -143,10 +146,12 @@ void servo_rx_callback(servo_handle_t *handle,
     uint16_t i;
 
     if (!handle || !huart) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance != handle->cfg.huart->Instance) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
         return;
     }
 
@@ -173,6 +178,7 @@ void servo_tx_task(servo_handle_t *handle)
     uint8_t temp_buf[SERVO_TX_FIFO_SIZE];
 
     if (!handle) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
         return;
     }
 
@@ -192,25 +198,25 @@ void servo_tx_task(servo_handle_t *handle)
  * @param  servo_id     舵机 ID
  * @param  angle        目标角度（度）
  * @param  interval_ms  到达时间（ms）
- * @retval DRV_OK 成功，负值为错误码
+ * @retval 无
  */
-drv_err_t servo_set_angle(servo_handle_t *handle,
-                          uint8_t servo_id,
-                          float angle,
-                          uint16_t interval_ms)
+void servo_set_angle(servo_handle_t *handle,
+                     uint8_t servo_id,
+                     float angle,
+                     uint16_t interval_ms)
 {
     FSUS_STATUS status;
     float safe_angle;
 
     if (!handle) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
+        return;
     }
 
     safe_angle = constrain_angle(&handle->cfg, servo_id, angle);
     status = FSUS_SetServoAngle(
         &handle->usart, servo_id, safe_angle, interval_ms, 0);
-
-    return fsus_to_drv_err(status);
+    report_fsus_status(status);
 }
 
 /**
@@ -219,25 +225,25 @@ drv_err_t servo_set_angle(servo_handle_t *handle,
  * @param  angle_x      X 轴目标角度（度）
  * @param  angle_y      Y 轴目标角度（度）
  * @param  interval_ms  到达时间（ms）
- * @retval DRV_OK 成功，负值为错误码
+ * @retval 无
  */
-drv_err_t servo_set_sync_angle(servo_handle_t *handle,
-                               float angle_x,
-                               float angle_y,
-                               uint16_t interval_ms)
+void servo_set_sync_angle(servo_handle_t *handle,
+                          float angle_x,
+                          float angle_y,
+                          uint16_t interval_ms)
 {
-    float safe_x;
-    float safe_y;
+    FSUS_STATUS status_x;
+    FSUS_STATUS status_y;
+    float       safe_x;
+    float       safe_y;
 
     if (!handle) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
+        return;
     }
 
     safe_x = constrain_angle(&handle->cfg, handle->cfg.servo_id_x, angle_x);
     safe_y = constrain_angle(&handle->cfg, handle->cfg.servo_id_y, angle_y);
-
-    FSUS_STATUS status_x;
-    FSUS_STATUS status_y;
 
     status_x = FSUS_SetServoAngle(
         &handle->usart, handle->cfg.servo_id_x, safe_x, interval_ms, 0);
@@ -245,13 +251,14 @@ drv_err_t servo_set_sync_angle(servo_handle_t *handle,
         &handle->usart, handle->cfg.servo_id_y, safe_y, interval_ms, 0);
 
     if (status_x != FSUS_STATUS_SUCCESS) {
-        return DRV_ERR_IO;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
+        return;
     }
     if (status_y != FSUS_STATUS_SUCCESS) {
-        return DRV_ERR_IO;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
+        return;
     }
 
-    return DRV_OK;
 }
 
 /**
@@ -259,21 +266,21 @@ drv_err_t servo_set_sync_angle(servo_handle_t *handle,
  * @param  handle    舵机句柄
  * @param  servo_id  舵机 ID
  * @param  angle     输出参数，当前角度（度）
- * @retval DRV_OK 成功，负值为错误码
+ * @retval 无
  */
-drv_err_t servo_get_angle(servo_handle_t *handle,
-                          uint8_t servo_id,
-                          float *angle)
+void servo_get_angle(servo_handle_t *handle,
+                     uint8_t servo_id,
+                     float *angle)
 {
     FSUS_STATUS status;
 
     if (!handle || !angle) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
+        return;
     }
 
     status = FSUS_QueryServoAngle(&handle->usart, servo_id, angle);
-
-    return fsus_to_drv_err(status);
+    report_fsus_status(status);
 }
 
 /**
@@ -284,6 +291,7 @@ drv_err_t servo_get_angle(servo_handle_t *handle,
 void servo_reset_center(servo_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
         return;
     }
 
@@ -302,6 +310,7 @@ void servo_reset_center(servo_handle_t *handle)
 void servo_release(servo_handle_t *handle, uint8_t servo_id)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
         return;
     }
 
@@ -312,17 +321,17 @@ void servo_release(servo_handle_t *handle, uint8_t servo_id)
  * @brief  舵机通讯检测（Ping）
  * @param  handle    舵机句柄
  * @param  servo_id  舵机 ID
- * @retval DRV_OK 成功，负值为错误码
+ * @retval 无
  */
-drv_err_t servo_ping(servo_handle_t *handle, uint8_t servo_id)
+void servo_ping(servo_handle_t *handle, uint8_t servo_id)
 {
     FSUS_STATUS status;
 
     if (!handle) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_PARAM);
+        return;
     }
 
     status = FSUS_Ping(&handle->usart, servo_id);
-
-    return fsus_to_drv_err(status);
+    report_fsus_status(status);
 }

@@ -9,7 +9,7 @@
  * @note    数据位序：低电平(0)=黑线，高电平(1)=白底，模块内部取反
  * @note    sensor_request 为 I2C 轮询状态机，由定时器 ISR 周期性调用
  * @warning I2C 通信期间不可重入，通过 pol_state 状态机保证
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -30,6 +30,7 @@
  */
 
 #include "sensor.h"
+#include "../../../error_handler.h"
 
 /* I2C 轮询状态 */
 typedef enum {
@@ -46,12 +47,13 @@ static volatile sensor_pol_state_t pol_state = MODE_IDLE;
 /**
  * @brief  传感器 I2C 外设初始化
  * @param  hi2c  I2C 外设句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t sensor_init(I2C_Regs *hi2c)
+void sensor_init(I2C_Regs *hi2c)
 {
     if (!hi2c) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
     }
 
     NVIC_EnableIRQ(I2C_SENSOR_INST_INT_IRQN);
@@ -65,7 +67,6 @@ drv_err_t sensor_init(I2C_Regs *hi2c)
     sensor_hi2c = hi2c;
     pol_state = MODE_IDLE;
 
-    return DRV_OK;
 }
 
 /**
@@ -86,7 +87,12 @@ sensor_state_t sensor_get_state(void)
  */
 void sensor_request(void)
 {
+    uint8_t raw_data;
+    uint8_t temp_data;
+    uint8_t i;
+
     if (!sensor_hi2c) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -135,24 +141,20 @@ void sensor_request(void)
             }
 
             sensor_rx_buffer[0] = DL_I2C_receiveControllerData(sensor_hi2c);
+            raw_data = sensor_rx_buffer[0];
+            temp_data = 0;
 
-            {
-                uint8_t raw_data = sensor_rx_buffer[0];
-                uint8_t temp_data = 0;
-                uint8_t i;
-
-                /*
-                 * 位序标准：bit0=最左探头, bit7=最右探头
-                 * 原始数据低电平(0)=黑线，取反转为正逻辑(1=黑线)
-                 */
-                for (i = 0; i < 8; i++) {
-                    if (((raw_data >> i) & 0x01) == 0) {
-                        temp_data |= (1 << i);
-                    }
+            /*
+             * 位序标准：bit0=最左探头, bit7=最右探头
+             * 原始数据低电平(0)=黑线，取反转为正逻辑(1=黑线)
+             */
+            for (i = 0; i < 8; i++) {
+                if (((raw_data >> i) & 0x01) == 0) {
+                    temp_data |= (1 << i);
                 }
-
-                sensor_processed_data = temp_data;
             }
+
+            sensor_processed_data = temp_data;
 
             pol_state = MODE_IDLE;
             break;
@@ -171,6 +173,7 @@ void sensor_request(void)
 void sensor_rx_callback(I2C_Regs *hi2c)
 {
     if (!hi2c || hi2c != sensor_hi2c) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -185,6 +188,7 @@ void sensor_rx_callback(I2C_Regs *hi2c)
 void sensor_error_callback(I2C_Regs *hi2c)
 {
     if (!hi2c || hi2c != sensor_hi2c) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 

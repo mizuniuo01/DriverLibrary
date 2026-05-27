@@ -7,7 +7,7 @@
  * @note    依赖：PWM 定时器已在 CubeMX 中配置
  * @note    使用 CH3/CH4 通道，适配 STM32 通用/高级定时器
  * @note    高级定时器（TIM1/TIM8）额外使能 MOE 主输出
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -28,17 +28,19 @@
  */
 
 #include "pwm.h"
+#include "../error_handler.h"
 
 /**
  * @brief  启动 PWM 通道输出
  * @note   高级定时器额外使能 MOE 和互补输出
  * @param  htim  定时器句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t pwm_init(TIM_HandleTypeDef *htim)
+void pwm_init(TIM_HandleTypeDef *htim)
 {
     if (!htim) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
+        return;
     }
 
     HAL_TIM_PWM_Start(htim, TIM_CHANNEL_3);
@@ -50,7 +52,6 @@ drv_err_t pwm_init(TIM_HandleTypeDef *htim)
         __HAL_TIM_MOE_ENABLE(htim);
     }
 
-    return DRV_OK;
 }
 
 /**
@@ -62,6 +63,7 @@ drv_err_t pwm_init(TIM_HandleTypeDef *htim)
 void pwm_set_compare_ch3(TIM_HandleTypeDef *htim, uint16_t compare)
 {
     if (!htim) {
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
         return;
     }
 
@@ -81,6 +83,7 @@ void pwm_set_compare_ch3(TIM_HandleTypeDef *htim, uint16_t compare)
 void pwm_set_compare_ch4(TIM_HandleTypeDef *htim, uint16_t compare)
 {
     if (!htim) {
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
         return;
     }
 

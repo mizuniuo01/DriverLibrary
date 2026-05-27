@@ -8,7 +8,7 @@
  * @note    key_scan_task 为 B 类操作，在 ISR 1ms tick 中直接调用
  * @note    key_task 为 A 类操作，由 key_task_flag 触发，调度周期 KEY_TASK_PERIOD_MS
  * @warning key_scan_task 中禁止浮点运算和循环等待
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM) 上报
  *
  * @usage
  * 按键模块采用两层 task 架构：
@@ -66,6 +66,7 @@
  */
 
 #include "key.h"
+#include "../error_handler.h"
 
 /* 按键消抖状态 */
 #define KEY_STATE_IDLE 0    /* 空闲 */
@@ -82,20 +83,21 @@ volatile uint8_t key_task_flag;
  * @param  debounce_ms    消抖时间（ms，典型值 20~50）
  * @param  long_press_ms  长按判定时间（ms，典型值 500~1000）
  * @param  repeat_ms      连发间隔（ms，0 表示禁用连发）
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t key_init(key_handle_t *handle,
-                   GPIO_Regs *port,
-                   const key_pin_cfg_t *pin_cfgs,
-                   uint8_t key_count,
-                   uint16_t debounce_ms,
-                   uint16_t long_press_ms,
-                   uint16_t repeat_ms)
+void key_init(key_handle_t *handle,
+              GPIO_Regs *port,
+              const key_pin_cfg_t *pin_cfgs,
+              uint8_t key_count,
+              uint16_t debounce_ms,
+              uint16_t long_press_ms,
+              uint16_t repeat_ms)
 {
     uint8_t i;
 
     if (!handle || !port || !pin_cfgs || key_count == 0 || key_count > KEY_MAX_COUNT) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
+        return;
     }
 
     handle->port = port;
@@ -117,8 +119,6 @@ drv_err_t key_init(key_handle_t *handle,
         handle->event[i] = KEY_EVENT_NONE;
         handle->hold_cnt[i] = 0;
     }
-
-    return DRV_OK;
 }
 
 /**
@@ -130,6 +130,7 @@ drv_err_t key_init(key_handle_t *handle,
 void key_set_callback(key_handle_t *handle, key_callback_t callback)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
         return;
     }
 
@@ -146,16 +147,18 @@ void key_set_callback(key_handle_t *handle, key_callback_t callback)
 void key_scan_task(key_handle_t *handle)
 {
     uint32_t pin_states;
-    uint8_t i;
+    uint32_t pin;
+    uint8_t  i;
 
     if (!handle) {
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
         return;
     }
 
     pin_states = DL_GPIO_readPins(handle->port, handle->pin_mask);
 
     for (i = 0; i < handle->key_count; i++) {
-        uint32_t pin = handle->pin_cfgs[i].pin;
+        pin = handle->pin_cfgs[i].pin;
 
         /* 低电平有效：pin_state 对应位为 0 表示按下 */
         if ((pin_states & pin) == 0) {
@@ -192,16 +195,18 @@ void key_scan_task(key_handle_t *handle)
  */
 void key_task(key_handle_t *handle)
 {
-    uint8_t i;
+    uint16_t repeat_phase;
+    uint8_t  i;
+
+    if (!handle) {
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
+        return;
+    }
 
     if (!key_task_flag) {
         return;
     }
     key_task_flag = 0;
-
-    if (!handle) {
-        return;
-    }
 
     for (i = 0; i < handle->key_count; i++) {
         /* 按下事件 */
@@ -213,11 +218,7 @@ void key_task(key_handle_t *handle)
             if (handle->callback) {
                 handle->callback(handle, handle->pin_cfgs[i].id, KEY_EVENT_PRESS);
             }
-            continue;
-        }
-
-        /* 释放事件 */
-        if (handle->just_released[i]) {
+        } else if (handle->just_released[i]) {
             handle->just_released[i] = 0;
 
             /* 未达长按阈值 → 短按（短按即释放，不另发 RELEASE） */
@@ -236,11 +237,7 @@ void key_task(key_handle_t *handle)
                     handle->callback(handle, handle->pin_cfgs[i].id, KEY_EVENT_RELEASE);
                 }
             }
-            continue;
-        }
-
-        /* 按住中：长按和连发检测 */
-        if (handle->state[i] == KEY_STATE_PRESSED) {
+        } else if (handle->state[i] == KEY_STATE_PRESSED) {
             handle->hold_cnt[i] += KEY_TASK_PERIOD_MS;
 
             /* 长按判定（>= 防止 task 周期不整除时跳过） */
@@ -256,8 +253,6 @@ void key_task(key_handle_t *handle)
 
             /* 连发判定（首次连发在长按后间隔 repeat_ms 才触发） */
             if (handle->repeat_ms > 0 && handle->hold_cnt[i] > handle->long_press_ms) {
-                uint16_t repeat_phase;
-
                 repeat_phase = handle->hold_cnt[i] - handle->long_press_ms;
                 if ((repeat_phase % handle->repeat_ms) == 0) {
                     handle->event[i] = KEY_EVENT_REPEAT;
@@ -280,16 +275,18 @@ void key_task(key_handle_t *handle)
  */
 key_event_t key_get_event(key_handle_t *handle, uint8_t key_id)
 {
-    uint8_t i;
+    uint32_t    primask;
     key_event_t evt;
+    uint8_t     i;
 
     if (!handle || key_id >= handle->key_count) {
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
         return KEY_EVENT_NONE;
     }
 
     for (i = 0; i < handle->key_count; i++) {
         if (handle->pin_cfgs[i].id == key_id) {
-            uint32_t primask = __get_PRIMASK();
+            primask = __get_PRIMASK();
             __disable_irq();
 
             evt = handle->event[i];
@@ -314,11 +311,13 @@ uint8_t key_is_pressed(key_handle_t *handle, uint8_t key_id)
     uint8_t i;
 
     if (!handle || key_id >= handle->key_count) {
+        error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
         return 0;
     }
 
     for (i = 0; i < handle->key_count; i++) {
         if (handle->pin_cfgs[i].id == key_id) {
+            error_report(ERROR_SOURCE_KEY, DRV_ERR_PARAM);
             return (handle->state[i] == KEY_STATE_PRESSED) ? 1 : 0;
         }
     }

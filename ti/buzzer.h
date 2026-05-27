@@ -3,7 +3,6 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
-#include "drv_err.h"
 
 /* 蜂鸣器配置结构体 */
 typedef struct {
@@ -17,7 +16,7 @@ typedef struct {
     uint32_t pin;
 } buzzer_handle_t;
 
-drv_err_t buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg);
+void buzzer_init(buzzer_handle_t *handle, const buzzer_cfg_t *cfg);
 void buzzer_on(buzzer_handle_t *handle);
 void buzzer_off(buzzer_handle_t *handle);
 void buzzer_toggle(buzzer_handle_t *handle);

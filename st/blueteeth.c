@@ -9,7 +9,7 @@
  * @note    STM32 使用硬件 IDLE 中断检测帧结束，无需软件轮询
  * @note    若使用非 F4 系列 MCU，将头文件中的 <stm32f4xx_hal.h> 替换为对应系列
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 blueteeth_task 中处理
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -89,6 +89,7 @@
  */
 
 #include "blueteeth.h"
+#include "../error_handler.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -121,12 +122,13 @@ static void process_command(const char *cmd_string)
 /**
  * @brief  蓝牙模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t blueteeth_init(UART_HandleTypeDef *huart)
+void blueteeth_init(UART_HandleTypeDef *huart)
 {
     if (!huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
+        return;
     }
 
     blueteeth_inst.huart = huart;
@@ -141,7 +143,6 @@ drv_err_t blueteeth_init(UART_HandleTypeDef *huart)
     HAL_UARTEx_ReceiveToIdle_DMA(
         blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
 
-    return DRV_OK;
 }
 
 /**
@@ -203,9 +204,11 @@ void blueteeth_printf(const char *format, ...)
     int32_t ret;
     uint16_t length;
     uint32_t primask;
+    uint16_t next;
     uint16_t i;
 
     if (!format) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
         return;
     }
 
@@ -222,8 +225,6 @@ void blueteeth_printf(const char *format, ...)
     __disable_irq();
 
     for (i = 0; i < length; i++) {
-        uint16_t next;
-
         next = (blueteeth_inst.tx_write_pos + 1) % BLUETEETH_TX_FIFO_SIZE;
         if (next != blueteeth_inst.tx_read_pos) {
             blueteeth_inst.tx_fifo[blueteeth_inst.tx_write_pos] = temp_buf[i];
@@ -252,6 +253,7 @@ void blueteeth_display(int16_t x, int16_t y, const char *format, ...)
     va_list args;
 
     if (!format) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
         return;
     }
 
@@ -284,6 +286,7 @@ void blueteeth_plot(const char *format, ...)
     va_list args;
 
     if (!format) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
         return;
     }
 
@@ -302,6 +305,7 @@ void blueteeth_plot(const char *format, ...)
 void blueteeth_tx_callback(UART_HandleTypeDef *huart)
 {
     if (!huart || !blueteeth_inst.huart) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
         return;
     }
 
@@ -318,16 +322,16 @@ void blueteeth_tx_callback(UART_HandleTypeDef *huart)
  */
 void blueteeth_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    uint16_t next;
     uint16_t i;
 
     if (!huart || !blueteeth_inst.huart) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance == blueteeth_inst.huart->Instance) {
         for (i = 0; i < size; i++) {
-            uint16_t next;
-
             next = (blueteeth_inst.rx_write_pos + 1) % BLUETEETH_RX_FIFO_SIZE;
             if (next != blueteeth_inst.rx_read_pos) {
                 blueteeth_inst.rx_fifo[blueteeth_inst.rx_write_pos] =

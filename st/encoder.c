@@ -7,7 +7,7 @@
  * @note    左右轮均使用 STM32 硬件 QEI 模式，方向由硬件自动判定
  * @note    encoder_scan_left / encoder_scan_right 为 B 类操作，ISR 中直接调用
  * @note    与 TI 版不同：无需 motor 模块提供方向标志位，无需捕获 ISR
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -32,6 +32,7 @@
  */
 
 #include "encoder.h"
+#include "../error_handler.h"
 
 static int16_t encoder_left_val;
 static int16_t encoder_right_val;
@@ -40,12 +41,13 @@ static int16_t encoder_right_val;
  * @brief  编码器初始化（双 QEI 定时器）
  * @param  htim_left   左编码器定时器句柄
  * @param  htim_right  右编码器定时器句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
+void encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_right)
 {
     if (!htim_left || !htim_right) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM);
+        return;
     }
 
     __HAL_TIM_SET_COUNTER(htim_left, 0);
@@ -54,7 +56,6 @@ drv_err_t encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_rig
     HAL_TIM_Encoder_Start(htim_left, TIM_CHANNEL_ALL);
     HAL_TIM_Encoder_Start(htim_right, TIM_CHANNEL_ALL);
 
-    return DRV_OK;
 }
 
 /**
@@ -65,11 +66,12 @@ drv_err_t encoder_init(TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef *htim_rig
  */
 void encoder_scan_left(TIM_HandleTypeDef *htim)
 {
-    static uint16_t last_count_left = 0;
+    static uint16_t last_count_left;
     uint16_t current_count;
     int16_t diff_value;
 
     if (!htim) {
+        error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM);
         return;
     }
 
@@ -88,11 +90,12 @@ void encoder_scan_left(TIM_HandleTypeDef *htim)
  */
 void encoder_scan_right(TIM_HandleTypeDef *htim)
 {
-    static uint16_t last_count_right = 0;
+    static uint16_t last_count_right;
     uint16_t current_count;
     int16_t diff_value;
 
     if (!htim) {
+        error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM);
         return;
     }
 

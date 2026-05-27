@@ -5,7 +5,7 @@
  * @date    2026-05-25
  * @version 1.0.0
  * @note    依赖：GPIO 已在 CubeMX 中配置
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_LASER, DRV_ERR_PARAM) 上报
  *
  * @usage
  * static laser_handle_t laser;
@@ -18,17 +18,19 @@
  */
 
 #include "laser.h"
+#include "../error_handler.h"
 
 /**
  * @brief  激光初始化
  * @param  handle  激光句柄指针
  * @param  cfg     激光配置指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
+void laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_LASER, DRV_ERR_PARAM);
+        return;
     }
 
     handle->port = cfg->port;
@@ -36,7 +38,6 @@ drv_err_t laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
 
     HAL_GPIO_WritePin(handle->port, handle->pin, GPIO_PIN_RESET);
 
-    return DRV_OK;
 }
 
 /**
@@ -47,6 +48,7 @@ drv_err_t laser_init(laser_handle_t *handle, const laser_cfg_t *cfg)
 void laser_on(laser_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_LASER, DRV_ERR_PARAM);
         return;
     }
 
@@ -61,6 +63,7 @@ void laser_on(laser_handle_t *handle)
 void laser_off(laser_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_LASER, DRV_ERR_PARAM);
         return;
     }
 
@@ -75,6 +78,7 @@ void laser_off(laser_handle_t *handle)
 void laser_toggle(laser_handle_t *handle)
 {
     if (!handle) {
+        error_report(ERROR_SOURCE_LASER, DRV_ERR_PARAM);
         return;
     }
 

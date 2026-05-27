@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
-#include "drv_err.h"
 #include "ring_buffer.h"
 #include "fashion_star_uart_servo.h"
 
@@ -42,24 +41,24 @@ typedef struct {
     RingBufferTypeDef tx_ring;                     /* 发送环形队列 */
 } servo_handle_t;
 
-drv_err_t servo_init(servo_handle_t *handle, const servo_cfg_t *cfg);
+void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg);
 void servo_rx_callback(servo_handle_t *handle,
                        UART_HandleTypeDef *huart,
                        uint16_t size);
 void servo_tx_task(servo_handle_t *handle);
-drv_err_t servo_set_angle(servo_handle_t *handle,
-                          uint8_t servo_id,
-                          float angle,
+void servo_set_angle(servo_handle_t *handle,
+                     uint8_t servo_id,
+                     float angle,
+                     uint16_t interval_ms);
+void servo_set_sync_angle(servo_handle_t *handle,
+                          float angle_x,
+                          float angle_y,
                           uint16_t interval_ms);
-drv_err_t servo_set_sync_angle(servo_handle_t *handle,
-                               float angle_x,
-                               float angle_y,
-                               uint16_t interval_ms);
-drv_err_t servo_get_angle(servo_handle_t *handle,
-                          uint8_t servo_id,
-                          float *angle);
+void servo_get_angle(servo_handle_t *handle,
+                     uint8_t servo_id,
+                     float *angle);
 void servo_reset_center(servo_handle_t *handle);
 void servo_release(servo_handle_t *handle, uint8_t servo_id);
-drv_err_t servo_ping(servo_handle_t *handle, uint8_t servo_id);
+void servo_ping(servo_handle_t *handle, uint8_t servo_id);
 
 #endif

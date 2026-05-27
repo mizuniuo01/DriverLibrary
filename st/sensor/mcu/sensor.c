@@ -8,7 +8,7 @@
  * @note    I2C 协议，7 位地址 0x4C，通过 DMA 发送 0xDD 命令读取数字量
  * @note    数据位序：低电平(0)=黑线，高电平(1)=白底，模块内部取反
  * @note    sensor_task 由 sensor_tick_flag 触发
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@
  */
 
 #include "sensor.h"
+#include "../../../error_handler.h"
 
 static I2C_HandleTypeDef *sensor_hi2c;
 static uint8_t sensor_rx_buffer[1];
@@ -49,18 +50,18 @@ volatile uint8_t sensor_tick_flag;
 /**
  * @brief  传感器 I2C 硬件初始化
  * @param  hi2c  I2C 外设句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t sensor_init(I2C_HandleTypeDef *hi2c)
+void sensor_init(I2C_HandleTypeDef *hi2c)
 {
     if (!hi2c) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
     }
 
     sensor_hi2c = hi2c;
     dma_busy = 0;
 
-    return DRV_OK;
 }
 
 /**
@@ -84,6 +85,7 @@ void sensor_request_dma(void)
     HAL_StatusTypeDef status;
 
     if (!sensor_hi2c || dma_busy) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -109,33 +111,36 @@ void sensor_request_dma(void)
  */
 void sensor_rx_callback(I2C_HandleTypeDef *hi2c)
 {
+    uint8_t raw_data;
+    uint8_t temp_data;
+    uint8_t i;
+
     if (!sensor_hi2c) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 
     if (hi2c->Instance != sensor_hi2c->Instance) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
         return;
     }
 
     dma_busy = 0;
 
-    {
-        uint8_t raw_data = sensor_rx_buffer[0];
-        uint8_t temp_data = 0;
-        uint8_t i;
+    raw_data = sensor_rx_buffer[0];
+    temp_data = 0;
 
-        /*
-         * 位序标准：bit0=最左探头, bit7=最右探头
-         * 原始数据低电平(0)=黑线，取反转为正逻辑(1=黑线)
-         */
-        for (i = 0; i < 8; i++) {
-            if (((raw_data >> i) & 0x01) == 0) {
-                temp_data |= (1 << i);
-            }
+    /*
+     * 位序标准：bit0=最左探头, bit7=最右探头
+     * 原始数据低电平(0)=黑线，取反转为正逻辑(1=黑线)
+     */
+    for (i = 0; i < 8; i++) {
+        if (((raw_data >> i) & 0x01) == 0) {
+            temp_data |= (1 << i);
         }
-
-        sensor_processed_data = temp_data;
     }
+
+    sensor_processed_data = temp_data;
 }
 
 /**

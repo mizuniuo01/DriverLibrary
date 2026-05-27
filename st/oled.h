@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
-#include "drv_err.h"
 
 /* SSD1306 硬件参数 */
 typedef enum {
@@ -19,7 +18,7 @@ typedef enum {
     OLED_FONT_8X16 = 8,
 } oled_font_size_t;
 
-drv_err_t oled_init(I2C_HandleTypeDef *hi2c);
+void oled_init(I2C_HandleTypeDef *hi2c);
 void oled_clear(void);
 void oled_update(void);
 void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size);

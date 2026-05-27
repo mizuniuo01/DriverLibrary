@@ -3,7 +3,6 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
-#include "drv_err.h"
 
 /* 缓冲区与帧参数 */
 typedef enum {
@@ -49,7 +48,7 @@ typedef struct {
 /* 软件 IDLE 检测标志位（定时器 ISR 中周期性置 1） */
 extern volatile uint8_t gyro_check_idle_flag;
 
-drv_err_t gyro_init(UART_Regs *huart);
+void gyro_init(UART_Regs *huart);
 void gyro_rx_callback(UART_Regs *huart, uint16_t size);
 void gyro_error_callback(UART_Regs *huart);
 void gyro_task(void);

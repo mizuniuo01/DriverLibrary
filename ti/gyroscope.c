@@ -8,7 +8,7 @@
  * @note    TI MSPM0 无硬件 IDLE 中断，使用 DMA 余量不变判定法
  * @note    帧协议：0x55 + 0x53 + 8字节数据 + 校验和（共11字节）
  * @warning ISR 回调中只做数据搬运，浮点转换在 gyro_task 中完成
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -35,6 +35,7 @@
  */
 
 #include "gyroscope.h"
+#include "../error_handler.h"
 #include <string.h>
 
 static gyro_handle_t gyro_inst;
@@ -61,12 +62,13 @@ static void start_dma_rx(uint8_t *buf, uint16_t size)
 /**
  * @brief  姿态传感器模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t gyro_init(UART_Regs *huart)
+void gyro_init(UART_Regs *huart)
 {
     if (!huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
+        return;
     }
 
     DL_UART_Main_setRXInterruptTimeout(UART_GYROSCOPE_INST, 10);
@@ -89,20 +91,21 @@ drv_err_t gyro_init(UART_Regs *huart)
  */
 void gyro_rx_callback(UART_Regs *huart, uint16_t size)
 {
+    uint16_t next;
     uint16_t i;
 
     if (!huart || !gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
     if (huart != gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
     if (size > 0) {
         for (i = 0; i < size; i++) {
-            uint16_t next;
-
             next = (gyro_inst.rx_write_pos + 1) % GYRO_RX_FIFO_SIZE;
             if (next != gyro_inst.rx_read_pos) {
                 gyro_inst.rx_fifo[gyro_inst.rx_write_pos] = gyro_inst.dma_rx_buffer[i];
@@ -113,8 +116,6 @@ void gyro_rx_callback(UART_Regs *huart, uint16_t size)
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
     start_dma_rx(gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
-
-    return DRV_OK;
 }
 /**
  * @brief  串口错误回调（ISR 中调用），复位接收状态机
@@ -123,10 +124,17 @@ void gyro_rx_callback(UART_Regs *huart, uint16_t size)
  */
 void gyro_error_callback(UART_Regs *huart)
 {
-    if (huart != gyro_inst.huart) {
+    if (!huart || !gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
+    if (huart != gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
+        return;
+    }
+
+    error_report(ERROR_SOURCE_GYRO, DRV_ERR_IO);
     gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
     gyro_inst.frame_index = 0;
 }
@@ -179,20 +187,19 @@ static void parse_angle_frame(const uint8_t *buf)
  */
 void gyro_task(void)
 {
-    uint8_t byte;
+    static uint16_t last_remain = GYRO_DMA_RX_BUF_SIZE;
+
+    uint16_t remain;
+    uint16_t rx_len;
+    uint8_t  byte;
 
     /* 软件 IDLE：DMA 余量连续两次不变则判定帧结束 */
     if (gyro_check_idle_flag) {
-        static uint16_t last_remain = GYRO_DMA_RX_BUF_SIZE;
-        uint16_t remain;
-
         gyro_check_idle_flag = 0;
 
         remain = DL_DMA_getTransferSize(DMA, DMA_CH_GYROSCOPE_RX_CHAN_ID);
         if (remain < GYRO_DMA_RX_BUF_SIZE) {
             if (remain == last_remain) {
-                uint16_t rx_len;
-
                 rx_len = GYRO_DMA_RX_BUF_SIZE - remain;
                 gyro_rx_callback(UART_GYROSCOPE_INST, rx_len);
             }

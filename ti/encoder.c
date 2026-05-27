@@ -9,7 +9,7 @@
  * @note    encoder_scan_left / encoder_scan_right 为 B 类操作，ISR 中直接调用
  * @note    依赖：motor 模块（右轮方向标志位）
  * @warning 右轮捕获 ISR 中仅更新计数，增量计算由 encoder_scan_right 在 ISR 对应时间槽完成
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@
  *     encoder_scan_right();
  *
  * // 注意：右轮捕获 ISR CAPTURE_ENCODER_RIGHT_INST_IRQHandler
- * // 在本文件中已实现，仅累加 timer_capture_right_count。
+ * // 在本文件中已实现，仅累加 encoder_capture_right_count。
  *
  * ── 数据读取 ──
  *
@@ -54,21 +54,22 @@
  */
 
 #include "encoder.h"
+#include "../error_handler.h"
 #include "motor.h"
 
 /* 模块私有数据 */
 static int16_t encoder_left_val;
 static int16_t encoder_right_val;
 
-volatile uint16_t timer_capture_right_count;
+volatile uint16_t encoder_capture_right_count;
 
 /**
  * @brief  编码器初始化
  * @param  htim_left_qei       左轮 QEI 定时器句柄
  * @param  htim_right_capture  右轮捕获定时器句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_capture)
+void encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_capture)
 {
     if (htim_left_qei) {
         DL_Timer_setTimerCount(htim_left_qei, 0);
@@ -118,7 +119,6 @@ drv_err_t encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_cap
         NVIC_EnableIRQ(CAPTURE_ENCODER_RIGHT_INST_INT_IRQN);
     }
 
-    return DRV_OK;
 }
 
 /**
@@ -129,11 +129,12 @@ drv_err_t encoder_init(GPTIMER_Regs *htim_left_qei, GPTIMER_Regs *htim_right_cap
  */
 void encoder_scan_left(GPTIMER_Regs *htim)
 {
-    static uint16_t last_count_left = 0;
+    static uint16_t last_count_left;
     uint16_t current_count;
     int16_t diff_value;
 
     if (!htim) {
+        error_report(ERROR_SOURCE_ENCODER, DRV_ERR_PARAM);
         return;
     }
 
@@ -153,14 +154,14 @@ void encoder_scan_left(GPTIMER_Regs *htim)
  */
 void encoder_scan_right(void)
 {
-    static uint16_t last_count_right = 0;
+    static uint16_t last_count_right;
     uint32_t primask;
     uint16_t current_count;
     int16_t diff_value;
 
     primask = __get_PRIMASK();
     __disable_irq();
-    current_count = timer_capture_right_count;
+    current_count = encoder_capture_right_count;
     __set_PRIMASK(primask);
 
     diff_value = (int16_t)(current_count - last_count_right);
@@ -209,7 +210,7 @@ void CAPTURE_ENCODER_RIGHT_INST_IRQHandler(void)
         (void)DL_TimerA_getCaptureCompareValue(CAPTURE_ENCODER_RIGHT_INST,
                                                DL_TIMER_CC_0_INDEX);
 
-        timer_capture_right_count++;
+        encoder_capture_right_count++;
 
         pending = DL_Timer_getPendingInterrupt(CAPTURE_ENCODER_RIGHT_INST);
     }

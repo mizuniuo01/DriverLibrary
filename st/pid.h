@@ -2,7 +2,6 @@
 #define PID_H
 
 #include <stdint.h>
-#include "drv_err.h"
 
 /* PID 控制器 */
 typedef struct {
@@ -23,7 +22,7 @@ typedef struct {
     float integral_max; /* 积分限幅 */
 } pid_t;
 
-drv_err_t pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max);
+void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max);
 float pid_calc(pid_t *pid, float target, float actual);
 void pid_clear(pid_t *pid);
 

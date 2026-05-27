@@ -8,7 +8,7 @@
  * @note    依赖：I2C 外设已在 SysConfig 中配置
  * @note    非阻塞 I2C 状态机，每 tick 推进一个 I2C 操作，严禁忙等
  * @note    此模块仅包含基础的字符显示功能，未实现图形绘制等高级功能
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM) 上报
  *
  * @usage
  * oled_init(I2C_OLED_INST);
@@ -20,6 +20,7 @@
  */
 
 #include "oled.h"
+#include "../error_handler.h"
 #include "oled_data.h"
 #include <stdbool.h>
 #include <string.h>
@@ -105,12 +106,13 @@ static bool oled_i2c_is_idle(void)
 /**
  * @brief  OLED 初始化
  * @param  hi2c  I2C 外设句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t oled_init(I2C_Regs *hi2c)
+void oled_init(I2C_Regs *hi2c)
 {
     if (!hi2c) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
+        return;
     }
 
     NVIC_EnableIRQ(I2C_OLED_INST_INT_IRQN);
@@ -126,7 +128,6 @@ drv_err_t oled_init(I2C_Regs *hi2c)
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
 
-    return DRV_OK;
 }
 
 /**
@@ -137,6 +138,7 @@ drv_err_t oled_init(I2C_Regs *hi2c)
 void oled_error_callback(I2C_Regs *hi2c)
 {
     if (!hi2c || hi2c != oled_i2c) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
@@ -176,6 +178,7 @@ void oled_update(void)
 void oled_draw_point(int16_t x, int16_t y)
 {
     if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= OLED_HEIGHT) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
@@ -197,6 +200,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
     uint8_t temp;
 
     if (x < 0 || y < 0 || y >= OLED_HEIGHT) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
@@ -242,6 +246,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
 void oled_show_string(int16_t x, int16_t y, const char *str, uint8_t font_size)
 {
     if (!str) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 

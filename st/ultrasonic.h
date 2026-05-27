@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <stm32f4xx_hal.h>
-#include "drv_err.h"
 
 /* 超声波运行参数 */
 typedef enum {
@@ -46,7 +45,7 @@ typedef struct {
     ultrasonic_state_t state;   /* 当前状态机状态 */
 } ultrasonic_handle_t;
 
-drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+void ultrasonic_init(ultrasonic_handle_t *handle,
                           const ultrasonic_cfg_t *cfg,
                           TIM_HandleTypeDef *htim);
 void ultrasonic_task(ultrasonic_handle_t *handle);

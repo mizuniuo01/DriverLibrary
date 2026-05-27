@@ -8,7 +8,7 @@
  * @note    使用双边沿输入捕获测量回波脉宽
  * @note    三态非阻塞触发：IDLE → WAIT_TRIGGER_END → WAIT_ECHO
  * @warning capture_callback 在 ISR 中调用，仅做时间戳记录和极性切换
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -49,6 +49,7 @@
  */
 
 #include "ultrasonic.h"
+#include "../error_handler.h"
 
 static ultrasonic_data_t ultra_data;
 
@@ -57,14 +58,15 @@ static ultrasonic_data_t ultra_data;
  * @param  handle  超声波句柄指针
  * @param  cfg     超声波配置指针
  * @param  htim    输入捕获定时器句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+void ultrasonic_init(ultrasonic_handle_t *handle,
                           const ultrasonic_cfg_t *cfg,
                           TIM_HandleTypeDef *htim)
 {
     if (!handle || !cfg || !htim) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
+        return;
     }
 
     handle->htim = htim;
@@ -77,7 +79,6 @@ drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
     /* 启动上升沿输入捕获中断 */
     HAL_TIM_IC_Start_IT(handle->htim, TIM_CHANNEL_1);
 
-    return DRV_OK;
 }
 
 /**
@@ -90,10 +91,12 @@ drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
 void ultrasonic_capture_callback(ultrasonic_handle_t *handle, TIM_HandleTypeDef *htim)
 {
     if (!handle || !htim) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
     if (htim->Instance != handle->htim->Instance) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
@@ -119,8 +122,10 @@ void ultrasonic_capture_callback(ultrasonic_handle_t *handle, TIM_HandleTypeDef 
 void ultrasonic_task(ultrasonic_handle_t *handle)
 {
     uint32_t current_tick;
+    uint32_t duration;
 
     if (!handle) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
@@ -151,8 +156,6 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
         case ULTRASONIC_STATE_WAIT_ECHO:
             if (handle->capture_flag == 2) {
-                uint32_t duration;
-
                 /* 处理定时器向上计数溢出的差值计算 */
                 if (handle->end_time >= handle->start_time) {
                     duration = handle->end_time - handle->start_time;

@@ -9,7 +9,7 @@
  * @note    右电机方向标志位供 encoder 模块获取编码器方向
  * @note    依赖：PWM 模块（pwm_set_compare_ch0/ch1）
  * @warning 参数 speed 为直接 PWM 比较值，非物理速度
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_MOTOR, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -77,6 +77,7 @@
  */
 
 #include "motor.h"
+#include "../error_handler.h"
 #include "pwm.h"
 
 static volatile int8_t motor_right_direction_sign = 1;
@@ -85,12 +86,13 @@ static volatile int8_t motor_right_direction_sign = 1;
  * @brief  电机初始化（唤醒驱动芯片）
  * @param  handle  电机句柄指针
  * @param  cfg     电机配置指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
+void motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
 {
     if (!handle || !cfg) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_MOTOR, DRV_ERR_PARAM);
+        return;
     }
 
     handle->port = cfg->port;
@@ -104,7 +106,6 @@ drv_err_t motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
     /* 拉高 nSLEEP 使驱动芯片脱离待机模式 */
     DL_GPIO_setPins(handle->port, handle->l_nsleep_pin | handle->r_nsleep_pin);
 
-    return DRV_OK;
 }
 
 /**
@@ -116,7 +117,10 @@ drv_err_t motor_init(motor_handle_t *handle, const motor_cfg_t *cfg)
  */
 void motor_set_speed_left(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed)
 {
+    int16_t temp;
+
     if (!handle || !htim) {
+        error_report(ERROR_SOURCE_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -133,7 +137,7 @@ void motor_set_speed_left(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t sp
         DL_GPIO_setPins(handle->port, handle->l_ph_in2_pin);
         pwm_set_compare_ch0(htim, (uint16_t)speed);
     } else {
-        int16_t temp = -speed;
+        temp = -speed;
         if (temp > MOTOR_MAX_SPEED) {
             temp = MOTOR_MAX_SPEED;
         }
@@ -158,7 +162,10 @@ void motor_set_speed_left(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t sp
  */
 void motor_set_speed_right(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t speed)
 {
+    int16_t temp;
+
     if (!handle || !htim) {
+        error_report(ERROR_SOURCE_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -176,7 +183,7 @@ void motor_set_speed_right(motor_handle_t *handle, GPTIMER_Regs *htim, int16_t s
         DL_GPIO_clearPins(handle->port, handle->r_ph_in2_pin);
         pwm_set_compare_ch1(htim, (uint16_t)speed);
     } else {
-        int16_t temp = -speed;
+        temp = -speed;
         if (temp > MOTOR_MAX_SPEED) {
             temp = MOTOR_MAX_SPEED;
         }

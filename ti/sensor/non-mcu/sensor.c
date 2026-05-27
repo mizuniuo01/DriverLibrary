@@ -6,7 +6,7 @@
  * @version 1.0.0
  * @note    适配任何无 MCU 的灰度传感器模块，通道数和有效电平通过 cfg 配置
  * @note    sensor_task 由 sensor_tick_flag 触发，非阻塞
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -46,6 +46,7 @@
  */
 
 #include "sensor.h"
+#include "../../../error_handler.h"
 
 static sensor_cfg_t sensor_cfg;
 static uint8_t sensor_data;
@@ -55,15 +56,16 @@ volatile uint8_t sensor_tick_flag;
 /**
  * @brief  传感器初始化
  * @param  cfg  传感器配置指针（通道引脚、数量、有效电平）
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t sensor_init(const sensor_cfg_t *cfg)
+void sensor_init(const sensor_cfg_t *cfg)
 {
     uint8_t i;
 
     if (!cfg || cfg->channel_count == 0
         || cfg->channel_count > SENSOR_MAX_CHANNELS) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
     }
 
     sensor_cfg.channel_count = cfg->channel_count;
@@ -76,7 +78,6 @@ drv_err_t sensor_init(const sensor_cfg_t *cfg)
 
     sensor_data = 0;
 
-    return DRV_OK;
 }
 
 /**
@@ -88,8 +89,10 @@ drv_err_t sensor_init(const sensor_cfg_t *cfg)
  */
 void sensor_task(void)
 {
-    uint8_t i;
-    uint8_t result;
+    uint32_t port_val;
+    uint8_t  bit_val;
+    uint8_t  i;
+    uint8_t  result;
 
     if (!sensor_tick_flag) {
         return;
@@ -99,9 +102,6 @@ void sensor_task(void)
     result = 0;
 
     for (i = 0; i < sensor_cfg.channel_count; i++) {
-        uint32_t port_val;
-        uint8_t bit_val;
-
         port_val = DL_GPIO_readPins(
             sensor_cfg.channels[i].port, sensor_cfg.channels[i].pin);
 

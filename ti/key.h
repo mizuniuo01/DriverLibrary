@@ -3,7 +3,6 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
-#include "drv_err.h"
 
 /* 按键模块配置参数 */
 typedef enum {
@@ -61,7 +60,7 @@ struct key_handle_t {
     key_callback_t callback;
 };
 
-drv_err_t key_init(key_handle_t *handle,
+void key_init(key_handle_t *handle,
               GPIO_Regs *port,
               const key_pin_cfg_t *pin_cfgs,
               uint8_t key_count,

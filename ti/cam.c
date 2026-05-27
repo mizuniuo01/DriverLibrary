@@ -8,7 +8,7 @@
  * @note    TI MSPM0 无硬件 IDLE 中断，需在 task 中做软件 IDLE 检测
  * @note    帧协议：0xFF 帧头 + 数据 + 0xFE 帧尾
  * @warning ISR 回调中只做数据搬运，复杂逻辑在 cam_task 中处理
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@
  */
 
 #include "cam.h"
+#include "../error_handler.h"
 #include <string.h>
 
 static cam_handle_t cam_inst;
@@ -57,12 +58,13 @@ static void start_dma_rx(uint8_t *buf, uint16_t size)
 /**
  * @brief  摄像头模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t cam_init(UART_Regs *huart)
+void cam_init(UART_Regs *huart)
 {
     if (!huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM);
+        return;
     }
 
     DL_UART_Main_setRXInterruptTimeout(UART_CAM_INST, 10);
@@ -77,7 +79,6 @@ drv_err_t cam_init(UART_Regs *huart)
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
     start_dma_rx(cam_inst.dma_rx_buffer, CAM_DMA_RX_BUF_SIZE);
 
-    return DRV_OK;
 }
 
 /**
@@ -88,20 +89,21 @@ drv_err_t cam_init(UART_Regs *huart)
  */
 void cam_rx_callback(UART_Regs *huart, uint16_t size)
 {
+    uint16_t next;
     uint16_t i;
 
     if (!huart || !cam_inst.huart) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM);
         return;
     }
 
     if (huart != cam_inst.huart) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM);
         return;
     }
 
     if (size > 0) {
         for (i = 0; i < size; i++) {
-            uint16_t next;
-
             next = (cam_inst.rx_write_pos + 1) % CAM_RX_FIFO_SIZE;
             if (next != cam_inst.rx_read_pos) {
                 cam_inst.rx_fifo[cam_inst.rx_write_pos] = cam_inst.dma_rx_buffer[i];
@@ -122,6 +124,7 @@ void cam_rx_callback(UART_Regs *huart, uint16_t size)
 void cam_error_callback(UART_Regs *huart)
 {
     if (huart != cam_inst.huart) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM);
         return;
     }
 

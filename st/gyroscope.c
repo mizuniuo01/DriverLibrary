@@ -9,7 +9,7 @@
  * @note    帧协议：0x55 + 0x53 + 8字节数据 + 校验和（共11字节）
  * @note    提供 yaw 增量追踪，配合摄像头帧同步
  * @warning ISR 回调中只做数据搬运，浮点转换在 gyro_task 中完成
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -39,6 +39,7 @@
  */
 
 #include "gyroscope.h"
+#include "../error_handler.h"
 #include <string.h>
 
 static gyro_handle_t gyro_inst;
@@ -55,12 +56,13 @@ static uint8_t gyro_delta_initialized;
 /**
  * @brief  姿态传感器模块初始化
  * @param  huart  绑定的串口句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t gyro_init(UART_HandleTypeDef *huart)
+void gyro_init(UART_HandleTypeDef *huart)
 {
     if (!huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
+        return;
     }
 
     gyro_inst.huart = huart;
@@ -77,7 +79,6 @@ drv_err_t gyro_init(UART_HandleTypeDef *huart)
     HAL_UARTEx_ReceiveToIdle_DMA(
         gyro_inst.huart, gyro_inst.dma_rx_buffer, GYRO_DMA_RX_BUF_SIZE);
 
-    return DRV_OK;
 }
 
 /**
@@ -88,20 +89,21 @@ drv_err_t gyro_init(UART_HandleTypeDef *huart)
  */
 void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    uint16_t next;
     uint16_t i;
 
     if (!huart || !gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance != gyro_inst.huart->Instance) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
     if (size > 0) {
         for (i = 0; i < size; i++) {
-            uint16_t next;
-
             next = (gyro_inst.rx_write_pos + 1) % GYRO_RX_FIFO_SIZE;
             if (next != gyro_inst.rx_read_pos) {
                 gyro_inst.rx_fifo[gyro_inst.rx_write_pos] = gyro_inst.dma_rx_buffer[i];
@@ -123,10 +125,12 @@ void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 void gyro_error_callback(UART_HandleTypeDef *huart)
 {
     if (!huart || !gyro_inst.huart) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance != gyro_inst.huart->Instance) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
     }
 

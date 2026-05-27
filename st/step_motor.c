@@ -10,7 +10,7 @@
  * @note    含心跳检测、软限位、梯形加减速控制
  * @note    协议细节以官方用户手册 V1.0.3 为准
  * @warning 上电初始化阶段使用 HAL_Delay 等待底板稳定（38.4ms）
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM) 上报
  *
  * @usage
  * step_motor_init(&huart1);
@@ -21,6 +21,7 @@
  */
 
 #include "step_motor.h"
+#include "../error_handler.h"
 #include <math.h>
 #include <string.h>
 
@@ -106,15 +107,14 @@ static void data_transmit(void)
  */
 static void push_tx_data(uint8_t *data, uint16_t len)
 {
-    uint16_t i;
     uint32_t primask;
+    uint16_t next;
+    uint16_t i;
 
     primask = __get_PRIMASK();
     __disable_irq();
 
     for (i = 0; i < len; i++) {
-        uint16_t next;
-
         next = (motor_comm.tx_write_pos + 1) % STEPMOTOR_TX_FIFO_SIZE;
 
         if (next != motor_comm.tx_read_pos) {
@@ -141,13 +141,17 @@ static void push_tx_data(uint8_t *data, uint16_t len)
 static void process_reply(uint8_t *frame, uint8_t length)
 {
     step_motor_t *motor;
-    uint8_t receive_id;
-    uint8_t command_val;
+    uint32_t raw_position;
+    uint8_t  receive_id;
+    uint8_t  command_val;
+    uint8_t  sign_flag;
+    uint8_t  status_val;
 
     receive_id = frame[0];
     command_val = frame[1];
 
     if (receive_id != MOTOR_ID_X && receive_id != MOTOR_ID_Y) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
     motor = (receive_id == MOTOR_ID_X) ? &motor_x : &motor_y;
@@ -157,9 +161,7 @@ static void process_reply(uint8_t *frame, uint8_t length)
     motor->is_online = 1;
 
     if (command_val == MOTOR_CMD_READ_POS && length == 8) {
-        uint8_t sign_flag = frame[2];
-        uint32_t raw_position;
-
+        sign_flag = frame[2];
         raw_position = (frame[3] << 24) | (frame[4] << 16) | (frame[5] << 8) | frame[6];
 
         motor->current_angle = (float)raw_position / STEPMOTOR_ANGLE_READ_DIVIDER;
@@ -174,7 +176,7 @@ static void process_reply(uint8_t *frame, uint8_t length)
         }
     } else if (command_val == MOTOR_CMD_MOVE_ACC || command_val == MOTOR_CMD_STOP ||
                command_val == MOTOR_CMD_SYNC_TRIG) {
-        uint8_t status_val = frame[2];
+        status_val = frame[2];
 
         if (status_val == MOTOR_STATUS_REACHED) {
             motor->is_reached = 1;
@@ -191,11 +193,12 @@ static void process_reply(uint8_t *frame, uint8_t length)
  */
 static void heartbeat_check(void)
 {
-    uint32_t current_tick = HAL_GetTick();
+    uint8_t  tx_buffer[3];
+    uint32_t current_tick;
+
+    current_tick = HAL_GetTick();
 
     if (current_tick - motor_comm.last_ping_time > STEPMOTOR_HEARTBEAT_PING_MS) {
-        uint8_t tx_buffer[3];
-
         tx_buffer[0] = motor_comm.ping_target_id;
         tx_buffer[1] = MOTOR_CMD_READ_POS;
         tx_buffer[2] = MOTOR_CHECKSUM;
@@ -219,14 +222,15 @@ static void heartbeat_check(void)
 /**
  * @brief  步进电机初始化
  * @param  huart  绑定的串口句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t step_motor_init(UART_HandleTypeDef *huart)
+void step_motor_init(UART_HandleTypeDef *huart)
 {
     uint32_t current_tick;
 
     if (!huart) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
+        return;
     }
 
     motor_comm.huart = huart;
@@ -254,7 +258,6 @@ drv_err_t step_motor_init(UART_HandleTypeDef *huart)
     step_motor_clear_zero(MOTOR_ID_X);
     step_motor_clear_zero(MOTOR_ID_Y);
 
-    return DRV_OK;
 }
 
 /**
@@ -265,6 +268,7 @@ drv_err_t step_motor_init(UART_HandleTypeDef *huart)
 void step_motor_tx_callback(UART_HandleTypeDef *huart)
 {
     if (!huart || !motor_comm.huart) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -281,20 +285,21 @@ void step_motor_tx_callback(UART_HandleTypeDef *huart)
  */
 void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    uint16_t next;
     uint16_t i;
 
     if (!huart || !motor_comm.huart) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance != motor_comm.huart->Instance) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
     if (size > 0) {
         for (i = 0; i < size; i++) {
-            uint16_t next;
-
             next = (motor_comm.rx_write_pos + 1) % STEPMOTOR_RX_FIFO_SIZE;
 
             if (next != motor_comm.rx_read_pos) {
@@ -317,10 +322,12 @@ void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 void step_motor_error_callback(UART_HandleTypeDef *huart)
 {
     if (!huart || !motor_comm.huart) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
     if (huart->Instance != motor_comm.huart->Instance) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
     }
 
@@ -366,6 +373,7 @@ uint8_t step_motor_set_angle(uint8_t id,
         return 2;
     }
     if (isnan(angle) || isinf(angle)) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return 2;
     }
 
@@ -412,6 +420,7 @@ uint8_t step_motor_set_angle(uint8_t id,
     abs_angle = fabs(angle) * STEPMOTOR_ANGLE_SEND_MULTIPLIER;
 
     if (abs_angle < 0.5f) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return limit_triggered;
     }
 

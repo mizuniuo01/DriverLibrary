@@ -9,7 +9,7 @@
  * @note    TRIG 脉冲约 10us，由 delay_cycles 实现（~320 cycles @ 32MHz）
  * @note    依赖：应用层提供 get_system_tick() 获取毫秒 tick
  * @warning capture_callback 在 ISR 中调用，仅做时间戳记录
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -45,6 +45,7 @@
  */
 
 #include "ultrasonic.h"
+#include "../error_handler.h"
 
 /* TRIG 脉冲延时参数 */
 #define ULTRASONIC_TRIG_DELAY_CYCLES 320 /* ~10us @ 32MHz */
@@ -69,14 +70,15 @@ static void delay_10us(void)
  * @param  handle  超声波句柄指针
  * @param  cfg     超声波配置指针
  * @param  htim    捕获定时器句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+void ultrasonic_init(ultrasonic_handle_t *handle,
                           const ultrasonic_cfg_t *cfg,
                           GPTIMER_Regs *htim)
 {
     if (!handle || !cfg || !htim) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
+        return;
     }
 
     NVIC_EnableIRQ(CAPTURE_ULTRASONIC_ECHO_INST_INT_IRQN);
@@ -90,7 +92,6 @@ drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
 
     DL_Timer_startCounter(handle->htim);
 
-    return DRV_OK;
 }
 
 /**
@@ -105,15 +106,18 @@ void ultrasonic_capture_callback(ultrasonic_handle_t *handle, GPTIMER_Regs *htim
     uint32_t val;
 
     if (!handle || !htim) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
     if (htim != handle->htim) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
     /* 仅在等待回波状态下处理捕获 */
     if (handle->state != ULTRASONIC_STATE_WAIT_ECHO) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
@@ -137,8 +141,10 @@ void ultrasonic_capture_callback(ultrasonic_handle_t *handle, GPTIMER_Regs *htim
 void ultrasonic_task(ultrasonic_handle_t *handle)
 {
     uint32_t current_tick;
+    uint32_t duration;
 
     if (!handle) {
+        error_report(ERROR_SOURCE_ULTRASONIC, DRV_ERR_PARAM);
         return;
     }
 
@@ -161,8 +167,6 @@ void ultrasonic_task(ultrasonic_handle_t *handle)
 
         case ULTRASONIC_STATE_WAIT_ECHO:
             if (handle->capture_flag == 2) {
-                uint32_t duration;
-
                 /* 处理定时器向上计数溢出的差值计算 */
                 if (handle->end_time >= handle->start_time) {
                     duration = handle->end_time - handle->start_time;

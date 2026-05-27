@@ -8,7 +8,7 @@
  * @note    依赖：I2C 外设已在 CubeMX 中配置
  * @note    使用 HAL_I2C_Mem_Write 发送命令和数据
  * @note    此模块仅包含基础的字符显示功能，未实现图形绘制等高级功能
- * @note    错误码：DRV_ERR_PARAM（init 判空）、DRV_ERR_IO（I2C 通信失败）
+ * @note    错误通过 error_report(ERROR_SOURCE_OLED, code) 上报
  *
  * @usage
  * oled_init(&hi2c1);
@@ -18,6 +18,7 @@
  */
 
 #include "oled.h"
+#include "../error_handler.h"
 #include "oled_data.h"
 #include <string.h>
 
@@ -50,14 +51,15 @@ static void oled_write_cmd(uint8_t cmd)
 /**
  * @brief  OLED 初始化
  * @param  hi2c  I2C 外设句柄
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t oled_init(I2C_HandleTypeDef *hi2c)
+void oled_init(I2C_HandleTypeDef *hi2c)
 {
     uint8_t i;
 
     if (!hi2c) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
+        return;
     }
 
     oled_i2c = hi2c;
@@ -68,7 +70,6 @@ drv_err_t oled_init(I2C_HandleTypeDef *hi2c)
 
     memset(oled_buffer, 0, sizeof(oled_buffer));
 
-    return DRV_OK;
 }
 
 /**
@@ -89,11 +90,10 @@ void oled_clear(void)
  */
 void oled_update(void)
 {
+    uint8_t cmds[3];
     uint8_t page;
 
     for (page = 0; page < OLED_PAGES; page++) {
-        uint8_t cmds[3];
-
         cmds[0] = 0xB0 | page;
         cmds[1] = 0x00;
         cmds[2] = 0x10;
@@ -119,6 +119,7 @@ void oled_update(void)
 void oled_draw_point(int16_t x, int16_t y)
 {
     if (x < 0 || x >= OLED_WIDTH || y < 0 || y >= OLED_HEIGHT) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
@@ -140,6 +141,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
     uint8_t temp;
 
     if (x < 0 || y < 0 || y >= OLED_HEIGHT) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
@@ -185,6 +187,7 @@ void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size)
 void oled_show_string(int16_t x, int16_t y, const char *str, uint8_t font_size)
 {
     if (!str) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 

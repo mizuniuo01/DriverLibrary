@@ -6,7 +6,7 @@
  * @version 1.0.0
  * @note    依赖：PWM 定时器已在 SysConfig 中配置
  * @note    无内部状态，通过传入的定时器句柄直接操作硬件
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM) 上报
  *
  * @usage
  * ─────────────────────────────────────────────────────────
@@ -37,21 +37,22 @@
  */
 
 #include "pwm.h"
+#include "../error_handler.h"
 
 /**
  * @brief  启动 PWM 定时器计数器
  * @param  htim  定时器句柄指针
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t pwm_init(GPTIMER_Regs *htim)
+void pwm_init(GPTIMER_Regs *htim)
 {
     if (!htim) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
+        return;
     }
 
     DL_Timer_startCounter(htim);
 
-    return DRV_OK;
 }
 
 /**
@@ -63,6 +64,7 @@ drv_err_t pwm_init(GPTIMER_Regs *htim)
 void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare)
 {
     if (!htim) {
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
         return;
     }
 
@@ -82,6 +84,7 @@ void pwm_set_compare_ch0(GPTIMER_Regs *htim, uint16_t compare)
 void pwm_set_compare_ch1(GPTIMER_Regs *htim, uint16_t compare)
 {
     if (!htim) {
+        error_report(ERROR_SOURCE_PWM, DRV_ERR_PARAM);
         return;
     }
 

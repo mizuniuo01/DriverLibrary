@@ -33,6 +33,7 @@
  */
 
 #include "display.h"
+#include "../error_handler.h"
 #include "blueteeth.h"
 #include <stdio.h>
 
@@ -52,6 +53,7 @@ void display_show_error(const char *format, ...)
     va_list args;
 
     if (!format) {
+        error_report(ERROR_SOURCE_DISPLAY, DRV_ERR_PARAM);
         return;
     }
 

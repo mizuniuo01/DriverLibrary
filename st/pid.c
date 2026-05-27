@@ -7,7 +7,7 @@
  * @note    纯算法模块，无硬件依赖
  * @note    微分项作用在误差上（标准位置式 PID）
  * @note    含积分饱和限幅和输出限幅
- * @note    错误码：init 判空返回 DRV_ERR_PARAM
+ * @note    参数非法时通过 error_report(ERROR_SOURCE_PID, DRV_ERR_PARAM) 上报
  *
  * @usage
  * pid_t pid;
@@ -17,6 +17,7 @@
  */
 
 #include "pid.h"
+#include "../error_handler.h"
 
 /**
  * @brief  PID 初始化
@@ -26,12 +27,13 @@
  * @param  d             微分系数
  * @param  out_max       输出限幅
  * @param  integral_max  积分饱和限幅
- * @retval DRV_OK 成功，DRV_ERR_PARAM 参数非法
+ * @retval 无
  */
-drv_err_t pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
+void pid_init(pid_t *pid, float p, float i, float d, float out_max, float integral_max)
 {
     if (!pid) {
-        return DRV_ERR_PARAM;
+        error_report(ERROR_SOURCE_PID, DRV_ERR_PARAM);
+        return;
     }
 
     pid->kp = p;
@@ -49,7 +51,6 @@ drv_err_t pid_init(pid_t *pid, float p, float i, float d, float out_max, float i
     pid->out_min = -out_max;
     pid->integral_max = integral_max;
 
-    return DRV_OK;
 }
 
 /**
@@ -62,6 +63,7 @@ drv_err_t pid_init(pid_t *pid, float p, float i, float d, float out_max, float i
 float pid_calc(pid_t *pid, float target, float actual)
 {
     if (!pid) {
+        error_report(ERROR_SOURCE_PID, DRV_ERR_PARAM);
         return 0.0f;
     }
 
@@ -105,6 +107,7 @@ float pid_calc(pid_t *pid, float target, float actual)
 void pid_clear(pid_t *pid)
 {
     if (!pid) {
+        error_report(ERROR_SOURCE_PID, DRV_ERR_PARAM);
         return;
     }
 

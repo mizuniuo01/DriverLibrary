@@ -3,7 +3,6 @@
 
 #include "ti_msp_dl_config.h"
 #include <stdint.h>
-#include "drv_err.h"
 
 /* 超声波运行参数 */
 typedef enum {
@@ -51,7 +50,7 @@ typedef struct {
 /* 获取系统 tick（ms），需由应用层提供实现 */
 extern uint32_t get_system_tick(void);
 
-drv_err_t ultrasonic_init(ultrasonic_handle_t *handle,
+void ultrasonic_init(ultrasonic_handle_t *handle,
                           const ultrasonic_cfg_t *cfg,
                           GPTIMER_Regs *htim);
 void ultrasonic_task(ultrasonic_handle_t *handle);
