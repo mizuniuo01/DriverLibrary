@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
 - `CODING_STANDARD.md` — 唯一的权威规范文档（v1.3 Release），包含代码风格和软件设计模式
-- `error_handler.h` / `error_handler.c` — 统一错误处理模块，包含 `drv_err_t`、`error_source_t`、错误队列、上报和 tick 驱动处理框架
+- `error_handler.h` / `error_handler.c` — 统一错误处理模块，包含 `drv_err_t`、`error_source_t`、错误队列、上报和 tick 驱动处理框架；当前通用错误码主要落地 `DRV_ERR_PARAM`、`DRV_ERR_BUSY`、`DRV_ERR_TIMEOUT`、`DRV_ERR_IO`
 
 ## 无构建系统
 
@@ -42,7 +42,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **12.6 模块接口**：`init()` → `task()` / 回调 的标准函数模式。驱动函数统一返回 `void` 或具体数据类型，错误通过 `error_report(source, code)` 报告。`drv_err_t` 定义在 `error_handler.h`，由 error_handler 模块统一管理
 - **12.7 数据共享**：`static` 私有变量 + getter 函数暴露。模块间通信三种方式按场景选用：直接函数调用（一对一）、getter 函数（一写多读）、回调函数（异步事件）
 - **12.8 单/多实例**：默认多实例（句柄注入），客观上唯一的硬件允许单实例
-- **12.9 错误处理**：三层分离，全部逻辑集中在 `error_handler` 模块。错误来源用项目级枚举 `error_source_t` 标识——传输（`error_report(source, code)` 记录到队列）、上报（`error_report_display` 只报第一个错误）、处理（`error_process` 每次 tick 从队列弹出一个，`switch(source)` 分派处理）。驱动层不调 display，应用层不介入错误决策
+- **12.9 错误处理**：三层分离，全部逻辑集中在 `error_handler` 模块。错误来源用项目级枚举 `error_source_t` 标识——传输（`error_report(source, code)` 记录到队列）、上报（`error_report_display` 只报第一个错误）、处理（`error_process` 每次 tick 从队列弹出一个，`switch(source)` 分派处理）。驱动层不调 display，应用层不介入错误决策。当前错误码细分策略为：可直接拿到 HAL 返回值时优先区分 `BUSY` / `TIMEOUT` / `IO`；TI I2C 错误回调可通过 `DL_I2C_getPendingInterrupt()` 区分 `TIMEOUT_A/B`；TI UART 当前仍统一上报 `DRV_ERR_IO`，不为细分错误码扩大 ISR 接口
 - **12.11 看门狗**：硬件 IWDG，喂狗在 main() 循环统一位置。软件任务心跳监控按需启用
 
 ## 旧代码 → 新代码迁移要点（历史参考）
@@ -127,6 +127,7 @@ PWM 参数以 20kHz 载波为基准：`PWM_MAX_COMPARE = 定时器时钟 / 20000
 | ISR 回调判空 | 无（用户 ISR 已确认实例） | 有（HAL 全局回调需防御） |
 | 实例匹配 | `huart == inst.huart`（指针比较） | `huart->Instance == inst.huart->Instance` |
 | 中断配置 | `DL_UART_Main_setRXInterruptTimeout` + `NVIC_EnableIRQ` | HAL 内部处理 |
+| 错误码细分 | I2C 可区分 `TIMEOUT`，UART 当前统一报 `IO` | 可在 `HAL_StatusTypeDef` 调用点区分 `BUSY` / `TIMEOUT` / `IO` |
 
 ## key 双 task 架构（重写其他输入模块时参考）
 

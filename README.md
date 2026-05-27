@@ -2,7 +2,7 @@
 
 个人嵌入式外设驱动库，适用于 STM32（HAL）和 TI MSPM0（DriverLib）系列 MCU。
 
-所有代码遵循 `CODING_STANDARD.md`（v1.0 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
+所有代码遵循 `CODING_STANDARD.md`（v1.3 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
 
 > **注意**：全部模块已完成代码重写，但**均未实际测试**，使用前请验证。
 
@@ -24,7 +24,7 @@ DriverLibrary/
 - **句柄注入**：硬件引脚和外设实例通过 `xxx_init()` 结构体参数传入
 - **统一调度**：定时器 ISR 管理各模块执行周期，`volatile` 标志位驱动 task
 - **数据封装**：`static` 私有变量 + getter 函数，禁止 `extern` 全局变量
-- **错误码**：可能失败的操作返回 `drv_err_t` 枚举值（`DRV_OK` / `DRV_ERR_*`），定义在 `drv_err.h`
+- **错误处理**：驱动函数统一返回 `void` 或具体数据类型，错误通过 `error_report(source, code)` 上报；`drv_err_t` 定义在 `error_handler.h`
 - **列宽**：代码 90 字符，宏+行尾注释放宽到 100 字符
 
 详见 `CODING_STANDARD.md` §12。
@@ -96,8 +96,26 @@ DriverLibrary/
 | pid | 未测 | 未测 | |
 | pattern | 未测 | 未测 |  |
 
+## 错误码使用现状
+
+当前驱动实际使用的通用错误码主要为：
+
+- `DRV_OK`
+- `DRV_ERR_PARAM`
+- `DRV_ERR_BUSY`
+- `DRV_ERR_TIMEOUT`
+- `DRV_ERR_IO`
+
+当前落地策略：
+
+- **STM32**：对可直接取得 `HAL_StatusTypeDef` 的调用点，已区分 `HAL_BUSY` → `DRV_ERR_BUSY`、`HAL_TIMEOUT` → `DRV_ERR_TIMEOUT`、其余通信失败 → `DRV_ERR_IO`
+- **TI I2C**：`ti/oled.c` 与 `ti/sensor/mcu/sensor.c` 的错误回调已通过 `DL_I2C_getPendingInterrupt()` 区分 `TIMEOUT_A/B`，映射为 `DRV_ERR_TIMEOUT`
+- **TI UART**：当前仍统一上报 `DRV_ERR_IO`。虽然 DriverLib 提供更细的 UART 中断索引，但现有驱动未把中断原因向下传递；为避免扩大 ISR 接口改动范围，暂不细分为 `BUSY`/`TIMEOUT`
+
+如果目标项目不需要这套统一错误处理逻辑，可以手动删除 `error_handler.c/.h` 及各驱动中的 `error_report(...)` 调用，再按项目自己的错误处理方式接入。
+
 ## 规范
 
-所有代码遵循 `CODING_STANDARD.md`（v1.0 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
+所有代码遵循 `CODING_STANDARD.md`（v1.3 Release），C 语言部分参照 BARR-C:2018 + Linux 内核编码规范，Python 部分参照 PEP 8。
 
-所有 `.c` 文件的文件头中包含完整的 `@usage` 使用示例。各模块详细说明见 `CLAUDE.md`。
+所有 `.c` 文件的文件头中包含完整的 `@usage` 使用示例。各模块详细说明见 `.claude/CLAUDE.md`。
