@@ -353,6 +353,7 @@ void step_motor_error_callback(UART_Regs *huart)
         return;
     }
 
+    error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
     motor_comm.rx_read_pos = 0;
     motor_comm.rx_write_pos = 0;
     motor_comm.rx_state = MOTOR_STATE_WAIT_ADDR;

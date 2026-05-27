@@ -389,6 +389,7 @@ void blueteeth_error_callback(UART_Regs *huart)
         return;
     }
 
+    error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_IO);
     blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 }

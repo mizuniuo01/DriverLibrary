@@ -127,7 +127,15 @@ void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
     handle->usart.recvBuf = &handle->rx_ring;
     handle->usart.sendBuf = &handle->tx_ring;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(cfg->huart, handle->dma_rx_buf, SERVO_DMA_RX_BUF_SIZE);
+    HAL_StatusTypeDef status;
+
+    status = HAL_UARTEx_ReceiveToIdle_DMA(cfg->huart, handle->dma_rx_buf,
+        SERVO_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -139,6 +147,7 @@ void servo_init(servo_handle_t *handle, const servo_cfg_t *cfg)
  */
 void servo_rx_callback(servo_handle_t *handle, UART_HandleTypeDef *huart, uint16_t size)
 {
+    HAL_StatusTypeDef status;
     uint16_t i;
 
     if (!handle || !huart) {
@@ -158,8 +167,13 @@ void servo_rx_callback(servo_handle_t *handle, UART_HandleTypeDef *huart, uint16
     }
 
     memset(handle->dma_rx_buf, 0, SERVO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(handle->cfg.huart, handle->dma_rx_buf,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(handle->cfg.huart, handle->dma_rx_buf,
         SERVO_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -170,6 +184,7 @@ void servo_rx_callback(servo_handle_t *handle, UART_HandleTypeDef *huart, uint16
  */
 void servo_tx_task(servo_handle_t *handle)
 {
+    HAL_StatusTypeDef status;
     uint16_t num_to_send;
     uint8_t temp_buf[SERVO_TX_FIFO_SIZE];
 
@@ -184,8 +199,15 @@ void servo_tx_task(servo_handle_t *handle)
     }
 
     RingBuffer_ReadByteArray(&handle->tx_ring, temp_buf, num_to_send);
-    HAL_UART_Transmit(handle->cfg.huart, temp_buf, num_to_send,
+    status = HAL_UART_Transmit(handle->cfg.huart, temp_buf, num_to_send,
         SERVO_DEFAULT_INTERVAL_MS);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_BUSY);
+    } else if (status == HAL_TIMEOUT) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_TIMEOUT);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_SERVO, DRV_ERR_IO);
+    }
 }
 
 /**

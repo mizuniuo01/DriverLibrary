@@ -60,6 +60,8 @@ static uint8_t gyro_delta_initialized;
  */
 void gyro_init(UART_HandleTypeDef *huart)
 {
+    HAL_StatusTypeDef status;
+
     if (!huart) {
         error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
@@ -76,8 +78,13 @@ void gyro_init(UART_HandleTypeDef *huart)
     gyro_last_yaw = 0.0f;
     gyro_delta_initialized = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
         GYRO_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -88,6 +95,7 @@ void gyro_init(UART_HandleTypeDef *huart)
  */
 void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    HAL_StatusTypeDef status;
     uint16_t next;
     uint16_t i;
 
@@ -112,8 +120,13 @@ void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
     }
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
         GYRO_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -123,6 +136,8 @@ void gyro_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
  */
 void gyro_error_callback(UART_HandleTypeDef *huart)
 {
+    HAL_StatusTypeDef status;
+
     if (!huart || !gyro_inst.huart) {
         error_report(ERROR_SOURCE_GYRO, DRV_ERR_PARAM);
         return;
@@ -133,6 +148,7 @@ void gyro_error_callback(UART_HandleTypeDef *huart)
         return;
     }
 
+    error_report(ERROR_SOURCE_GYRO, DRV_ERR_IO);
     gyro_inst.rx_read_pos = 0;
     gyro_inst.rx_write_pos = 0;
     gyro_inst.rx_state = GYRO_STATE_WAIT_HEADER;
@@ -142,8 +158,13 @@ void gyro_error_callback(UART_HandleTypeDef *huart)
     gyro_frame_delta_yaw = 0.0f;
 
     memset(gyro_inst.dma_rx_buffer, 0, GYRO_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(gyro_inst.huart, gyro_inst.dma_rx_buffer,
         GYRO_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_GYRO, DRV_ERR_IO);
+    }
 }
 
 /**

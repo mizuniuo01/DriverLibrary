@@ -52,6 +52,8 @@ volatile uint8_t cam_frame_ready;
  */
 void cam_init(UART_HandleTypeDef *huart)
 {
+    HAL_StatusTypeDef status;
+
     if (!huart) {
         error_report(ERROR_SOURCE_CAM, DRV_ERR_PARAM);
         return;
@@ -65,8 +67,13 @@ void cam_init(UART_HandleTypeDef *huart)
     cam_frame_ready = 0;
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
         CAM_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -77,6 +84,7 @@ void cam_init(UART_HandleTypeDef *huart)
  */
 void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    HAL_StatusTypeDef status;
     uint16_t next;
     uint16_t i;
 
@@ -101,8 +109,13 @@ void cam_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
     }
 
     memset(cam_inst.dma_rx_buffer, 0, CAM_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(cam_inst.huart, cam_inst.dma_rx_buffer,
         CAM_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_CAM, DRV_ERR_IO);
+    }
 }
 
 /**

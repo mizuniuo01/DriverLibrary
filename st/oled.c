@@ -46,8 +46,17 @@ static const uint8_t oled_init_cmds[] = {0xAE, 0xD5, 0x80, 0xA8, 0x3F, 0xD3, 0x0
  */
 static void oled_write_cmd(uint8_t cmd)
 {
-    HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, &cmd, 1,
-        OLED_I2C_TIMEOUT_MS);
+    HAL_StatusTypeDef status;
+
+    status = HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT,
+        &cmd, 1, OLED_I2C_TIMEOUT_MS);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_BUSY);
+    } else if (status == HAL_TIMEOUT) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_TIMEOUT);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -93,16 +102,43 @@ void oled_update(void)
 {
     uint8_t cmds[3];
     uint8_t page;
+    HAL_StatusTypeDef status;
 
     for (page = 0; page < OLED_PAGES; page++) {
         cmds[0] = 0xB0 | page;
         cmds[1] = 0x00;
         cmds[2] = 0x10;
 
-        HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00, I2C_MEMADD_SIZE_8BIT, cmds,
-            3, OLED_I2C_TIMEOUT_MS);
-        HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x40, I2C_MEMADD_SIZE_8BIT,
-            oled_buffer[page], OLED_WIDTH, OLED_I2C_TIMEOUT_MS);
+        status = HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x00,
+            I2C_MEMADD_SIZE_8BIT, cmds, 3, OLED_I2C_TIMEOUT_MS);
+        if (status == HAL_BUSY) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_BUSY);
+            return;
+        }
+        if (status == HAL_TIMEOUT) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_TIMEOUT);
+            return;
+        }
+        if (status != HAL_OK) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
+            return;
+        }
+
+        status = HAL_I2C_Mem_Write(oled_i2c, OLED_I2C_ADDR << 1, 0x40,
+            I2C_MEMADD_SIZE_8BIT, oled_buffer[page], OLED_WIDTH,
+            OLED_I2C_TIMEOUT_MS);
+        if (status == HAL_BUSY) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_BUSY);
+            return;
+        }
+        if (status == HAL_TIMEOUT) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_TIMEOUT);
+            return;
+        }
+        if (status != HAL_OK) {
+            error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
+            return;
+        }
     }
 }
 

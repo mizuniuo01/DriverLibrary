@@ -141,6 +141,7 @@ void oled_error_callback(I2C_Regs *hi2c)
         return;
     }
 
+    error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
     DL_I2C_resetControllerTransfer(hi2c);
     DL_I2C_clearInterruptStatus(hi2c, 0xFFFFFFFF);
 }

@@ -127,6 +127,7 @@ void cam_error_callback(UART_Regs *huart)
         return;
     }
 
+    error_report(ERROR_SOURCE_CAM, DRV_ERR_IO);
     cam_inst.rx_state = CAM_STATE_WAIT_HEADER;
     cam_inst.frame_index = 0;
 }

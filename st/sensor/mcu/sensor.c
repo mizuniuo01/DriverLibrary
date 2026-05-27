@@ -83,8 +83,13 @@ void sensor_request_dma(void)
 {
     HAL_StatusTypeDef status;
 
-    if (!sensor_hi2c || dma_busy) {
+    if (!sensor_hi2c) {
         error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
+    }
+
+    if (dma_busy) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_BUSY);
         return;
     }
 
@@ -95,6 +100,13 @@ void sensor_request_dma(void)
         dma_busy = 1;
     } else {
         dma_busy = 0;
+        if (status == HAL_BUSY) {
+            error_report(ERROR_SOURCE_SENSOR, DRV_ERR_BUSY);
+        } else if (status == HAL_TIMEOUT) {
+            error_report(ERROR_SOURCE_SENSOR, DRV_ERR_TIMEOUT);
+        } else {
+            error_report(ERROR_SOURCE_SENSOR, DRV_ERR_IO);
+        }
     }
 }
 
@@ -145,9 +157,18 @@ void sensor_rx_callback(I2C_HandleTypeDef *hi2c)
  */
 void sensor_error_callback(I2C_HandleTypeDef *hi2c)
 {
-    if (sensor_hi2c && hi2c->Instance == sensor_hi2c->Instance) {
-        dma_busy = 0;
+    if (!hi2c || !sensor_hi2c) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
     }
+
+    if (hi2c->Instance != sensor_hi2c->Instance) {
+        error_report(ERROR_SOURCE_SENSOR, DRV_ERR_PARAM);
+        return;
+    }
+
+    dma_busy = 0;
+    error_report(ERROR_SOURCE_SENSOR, DRV_ERR_IO);
 }
 
 /**

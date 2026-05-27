@@ -59,6 +59,7 @@ static step_motor_t motor_y = {
  */
 static void data_transmit(void)
 {
+    HAL_StatusTypeDef status;
     uint16_t send_len;
 
     if (motor_comm.tx_write_pos == motor_comm.tx_read_pos) {
@@ -94,7 +95,14 @@ static void data_transmit(void)
         }
     }
 
-    HAL_UART_Transmit_DMA(motor_comm.huart, motor_comm.dma_tx_buffer, send_len);
+    status = HAL_UART_Transmit_DMA(motor_comm.huart, motor_comm.dma_tx_buffer, send_len);
+    if (status == HAL_BUSY) {
+        motor_comm.is_tx_busy = 0;
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        motor_comm.is_tx_busy = 0;
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -224,6 +232,7 @@ static void heartbeat_check(void)
  */
 void step_motor_init(UART_HandleTypeDef *huart)
 {
+    HAL_StatusTypeDef status;
     uint32_t current_tick;
 
     if (!huart) {
@@ -241,8 +250,13 @@ void step_motor_init(UART_HandleTypeDef *huart)
     motor_comm.frame_index = 0;
     motor_comm.expected_frame_len = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
         STEPMOTOR_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
+    }
 
     current_tick = HAL_GetTick();
     motor_x.last_ack_time = current_tick;
@@ -282,6 +296,7 @@ void step_motor_tx_callback(UART_HandleTypeDef *huart)
  */
 void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    HAL_StatusTypeDef status;
     uint16_t next;
     uint16_t i;
 
@@ -307,8 +322,13 @@ void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
     }
 
     memset(motor_comm.dma_rx_buffer, 0, STEPMOTOR_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
         STEPMOTOR_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -318,6 +338,8 @@ void step_motor_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
  */
 void step_motor_error_callback(UART_HandleTypeDef *huart)
 {
+    HAL_StatusTypeDef status;
+
     if (!huart || !motor_comm.huart) {
         error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_PARAM);
         return;
@@ -328,6 +350,7 @@ void step_motor_error_callback(UART_HandleTypeDef *huart)
         return;
     }
 
+    error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
     motor_comm.rx_read_pos = 0;
     motor_comm.rx_write_pos = 0;
     motor_comm.rx_state = MOTOR_STATE_WAIT_ADDR;
@@ -335,8 +358,13 @@ void step_motor_error_callback(UART_HandleTypeDef *huart)
     motor_comm.expected_frame_len = 0;
 
     memset(motor_comm.dma_rx_buffer, 0, STEPMOTOR_DMA_RX_BUF_SIZE);
-    HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
+    status = HAL_UARTEx_ReceiveToIdle_DMA(motor_comm.huart, motor_comm.dma_rx_buffer,
         STEPMOTOR_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_STEP_MOTOR, DRV_ERR_IO);
+    }
 }
 
 /**

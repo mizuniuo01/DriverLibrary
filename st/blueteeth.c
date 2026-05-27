@@ -140,8 +140,15 @@ void blueteeth_init(UART_HandleTypeDef *huart)
     blueteeth_inst.rx_state = BLUETEETH_STATE_WAIT_HEADER;
     blueteeth_inst.frame_index = 0;
 
-    HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer,
-        BLUETEETH_DMA_RX_BUF_SIZE);
+    HAL_StatusTypeDef status;
+
+    status = HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart,
+        blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
+    if (status == HAL_BUSY) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -185,7 +192,17 @@ static void data_transmit(void)
         send_len = len_to_copy;
     }
 
-    HAL_UART_Transmit_DMA(blueteeth_inst.huart, blueteeth_inst.dma_tx_buffer, send_len);
+    HAL_StatusTypeDef status;
+
+    status = HAL_UART_Transmit_DMA(blueteeth_inst.huart, blueteeth_inst.dma_tx_buffer,
+        send_len);
+    if (status == HAL_BUSY) {
+        blueteeth_inst.is_tx_busy = 0;
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_BUSY);
+    } else if (status != HAL_OK) {
+        blueteeth_inst.is_tx_busy = 0;
+        error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_IO);
+    }
 }
 
 /**
@@ -319,6 +336,7 @@ void blueteeth_tx_callback(UART_HandleTypeDef *huart)
  */
 void blueteeth_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
 {
+    HAL_StatusTypeDef status;
     uint16_t next;
     uint16_t i;
 
@@ -338,8 +356,13 @@ void blueteeth_rx_callback(UART_HandleTypeDef *huart, uint16_t size)
         }
 
         memset(blueteeth_inst.dma_rx_buffer, 0, BLUETEETH_DMA_RX_BUF_SIZE);
-        HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart, blueteeth_inst.dma_rx_buffer,
-            BLUETEETH_DMA_RX_BUF_SIZE);
+        status = HAL_UARTEx_ReceiveToIdle_DMA(blueteeth_inst.huart,
+            blueteeth_inst.dma_rx_buffer, BLUETEETH_DMA_RX_BUF_SIZE);
+        if (status == HAL_BUSY) {
+            error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_BUSY);
+        } else if (status != HAL_OK) {
+            error_report(ERROR_SOURCE_BLUETEETH, DRV_ERR_IO);
+        }
     }
 }
 
