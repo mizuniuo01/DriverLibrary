@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `st/` — STM32 平台驱动（依赖 STM32 HAL）
 - `ti/` — TI MSP 平台驱动（依赖 TI DriverLib，目前仅适配 MSPM0G3507）
-- `CODING_STANDARD.md` — 唯一的权威规范文档（v1.2 Release），包含代码风格和软件设计模式
+- `CODING_STANDARD.md` — 唯一的权威规范文档（v1.3 Release），包含代码风格和软件设计模式
   - **注意**：§12.9 错误处理框架采用三层架构（传输/上报/处理），方案已确认，**尚未落实到代码中**。当前代码仍使用 `drv_err_t` 返回值模式，缺少 `error_report()` 调用
 
 ## 无构建系统
@@ -19,13 +19,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 所有代码遵循 `CODING_STANDARD.md`（参照 BARR-C:2018 + Linux 内核编码规范）。关键约定：
 
-- **命名**：函数 `snake_case`，类型 `snake_case_t`（BARR-C 规则 1.5），宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`
-- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），90 列宽，指针 `*` 靠右
+- **命名**：函数 `snake_case`，类型 `snake_case_t`（BARR-C 规则 5.1.a），宏 `UPPER_SNAKE_CASE`，文件名 `snake_case`。模块对外标识符以模块名为前缀（如 `motor_init`）
+- **格式**：Linux 风格花括号（控制流 K&R，函数 Allman），4 空格缩进（禁止 Tab），90 列宽，指针 `*` 靠右。连续变量声明/赋值进行对齐。变量在代码块开头声明
 - **头文件保护**：`MODULE_H`（禁止双下划线 `__MODULE_H`）
-- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 100 列时注释放上一行
-- **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`
+- **注释**：中文，Doxygen 格式，`.c` 写详细文件头（`@file/@brief/@author/@date/@version/@note/@warning`）+ 函数注释（`@brief/@param/@retval`），`.h` 不写文件头。宏定义优先上行注释；行尾注释仅限短宏，超 100 列时注释放上一行。不得用注释屏蔽代码（用 `#if 0`）
+- **数据类型**：`<stdint.h>` 固定宽度类型（`uint8_t`/`int16_t` 等），禁止 `int`/`long`。`char` 仅用于 ASCII/字符串。位操作必须用无符号类型。无 FPU 时避免浮点数，优先定点数
+- **结构体/联合体**：联合体必须有判别字段；映射硬件或协议的结构体用 `__attribute__((packed))`
 - **枚举 vs 宏**：逻辑相关的整数常量用 `typedef enum`（命令码、状态码、设备 ID、帧标记、速度限值、缓冲区/帧大小、硬件参数等），孤立的配置常量（单个 timeout、校验值）和浮点常量用 `#define`。运算宏（如 `SENSOR_I2C_ADDR (ADDR_7BIT << 1)`）因预处理器无法识别 enum 成员，也必须保留 `#define`。BARR-C:2018 规则 1.8：相关常量放入枚举，与数量无关——2 个也该用 enum
-- **禁止**：动态内存、递归、VLA、阻塞延时、条件中赋值
+- **函数**：无参写 `(void)`，显式声明返回类型（禁止隐式 `int`）。避免不必要类型转换
+- **初始化**：不要为消除编译器警告做无意义初始化（掩盖真正的未初始化 bug）
+- **循环**：禁止空循环体、禁止在循环体内修改循环变量
+- **禁止**：动态内存、递归、VLA、阻塞延时、条件中赋值、`auto`/`register`/`continue`（`goto` 仅限统一错误出口）
 
 ## 软件设计模式（CODING_STANDARD.md §12）
 
