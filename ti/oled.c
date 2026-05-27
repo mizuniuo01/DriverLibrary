@@ -136,12 +136,20 @@ void oled_init(I2C_Regs *hi2c)
  */
 void oled_error_callback(I2C_Regs *hi2c)
 {
+    DL_I2C_IIDX pending_interrupt;
+
     if (!hi2c || hi2c != oled_i2c) {
         error_report(ERROR_SOURCE_OLED, DRV_ERR_PARAM);
         return;
     }
 
-    error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
+    pending_interrupt = DL_I2C_getPendingInterrupt(hi2c);
+    if (pending_interrupt == DL_I2C_IIDX_TIMEOUT_A ||
+        pending_interrupt == DL_I2C_IIDX_TIMEOUT_B) {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_TIMEOUT);
+    } else {
+        error_report(ERROR_SOURCE_OLED, DRV_ERR_IO);
+    }
     DL_I2C_resetControllerTransfer(hi2c);
     DL_I2C_clearInterruptStatus(hi2c, 0xFFFFFFFF);
 }
