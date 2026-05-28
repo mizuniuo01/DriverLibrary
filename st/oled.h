@@ -18,7 +18,11 @@ typedef enum {
     OLED_FONT_8X16 = 8,
 } oled_font_size_t;
 
+/* OLED 刷新调度标志位（ISR 置1，oled_task 清0，周期 ~30ms） */
+extern volatile uint8_t oled_tick_flag;
+
 void oled_init(I2C_HandleTypeDef *hi2c);
+void oled_task(void);
 void oled_clear(void);
 void oled_update(void);
 void oled_show_char(int16_t x, int16_t y, char ch, uint8_t font_size);

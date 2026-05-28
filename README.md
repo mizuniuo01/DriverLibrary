@@ -12,6 +12,11 @@
 DriverLibrary/
 ├── st/                    # STM32 平台驱动（依赖 STM32 HAL）
 ├── ti/                    # TI MSP 平台驱动（依赖 TI DriverLib）
+├── menu.h                 # OLED 按键菜单（ST/TI 共用）
+├── menu.c
+├── menu_config.h          # 菜单参数配置（集中管理所有可调参数）
+├── error_handler.h        # 统一错误处理模块
+├── error_handler.c
 ├── .claude/               # Claude Code 配置与 AI 协作指引
 ├── CODING_STANDARD.md     # 软件设计规范（代码风格 + 设计模式）
 └── README.md
@@ -51,7 +56,7 @@ DriverLibrary/
 | pwm | ✓ | ✓ | PWM 输出（TI: CH0+CH1/20kHz，STM32: CH3+CH4/ARR=8400） |
 | ultrasonic | ✓ | ✓ | 超声波测距 HC-SR04（定时器捕获，STM32: 三态非阻塞触发） |
 | sensor | ✓ | ✓ | 灰度传感器（mcu: 感为科技 I2C，non-mcu: 通用 GPIO 直读） |
-| oled | ✓ | ✓ | OLED 0.96 寸 SSD1306 I2C 128×64（ASCII 字模 6×8 + 8×16） |
+| oled | ✓ | ✓ | OLED 0.96 寸 SSD1306 I2C 128×64（ASCII 字模 6×8 + 8×16，非阻塞 I2C 状态机，`oled_task`/`oled_update` 分离） |
 
 ### GPIO 控制
 
@@ -68,6 +73,12 @@ DriverLibrary/
 |------|:--:|:--:|------|
 | pid | ✓ | ✓ | PID 控制器（TI: 微分-on-实际值，STM32: 微分-on-误差） |
 | pattern | ✓ | ✓ | 循迹图案识别（查表法，8 位灰度传感器） |
+
+### 应用工具
+
+| 模块 | STM32 | TI | 说明 |
+|------|:--:|:--:|------|
+| menu | ✓ | ✓ | OLED 按键菜单（多级菜单+现场调参，ST/TI 共用。与按键解耦，值体系 int32_t+decimals，menu_task_flag 节流渲染。参数配置集中在 menu_config.h） |
 
 ## 使用方式
 
@@ -95,6 +106,7 @@ DriverLibrary/
 | key | 未测 | 未测 | |
 | pid | 未测 | 未测 | |
 | pattern | 未测 | 未测 |  |
+| menu | 未测 | 未测 | 需配合 oled + key 实际硬件验证 |
 
 ## 错误码使用现状
 

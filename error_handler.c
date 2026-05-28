@@ -49,6 +49,7 @@ static const char *error_source_names[ERROR_SOURCE_COUNT] = {
     "Servo",
     "Step Motor",
     "Ultrasonic",
+    "Menu",
 };
 
 static const char *error_code_names[DRV_ERR_CODE_COUNT] = {

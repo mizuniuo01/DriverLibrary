@@ -35,6 +35,7 @@ typedef enum {
     ERROR_SOURCE_SERVO,
     ERROR_SOURCE_STEP_MOTOR,
     ERROR_SOURCE_ULTRASONIC,
+    ERROR_SOURCE_MENU,
     ERROR_SOURCE_COUNT,
 } error_source_t;
 
